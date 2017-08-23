@@ -62,7 +62,7 @@ pub fn encode_instruction_into(
 /// unsafe { *req.operands[1].imm.u.as_mut() += 1; }
 /// let new_insn = zydis::encoder::encode_instruction(&mut req).unwrap();
 /// assert_eq!(new_insn, b"\x48\xC7\xC1\x38\x13\x00\x00");
-/// 
+///
 /// // Decode and format the new instruction.
 /// let mut new_info = decoder.decode(&new_insn, 0).unwrap();
 /// let new_fmt = formatter.format_instruction(&mut new_info).unwrap();

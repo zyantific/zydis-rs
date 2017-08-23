@@ -50,17 +50,17 @@ impl Decoder {
     ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
     ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
     /// ).unwrap();
-    /// let info = decoder.decode(INT3, 0x00400000).unwrap();
+    /// let info = decoder.decode(INT3, 0x00400000).unwrap().unwrap();
     /// assert_eq!(info.mnemonic as u32, zydis::gen::ZYDIS_MNEMONIC_INT3);
     /// ```
     pub fn decode(
         &self,
         buffer: &[u8],
         instruction_pointer: u64,
-    ) -> ZydisResult<ZydisDecodedInstruction> {
+    ) -> ZydisResult<Option<ZydisDecodedInstruction>> {
         unsafe {
             let mut info: ZydisDecodedInstruction = uninitialized();
-            check!(
+            check!(@option
                 ZydisDecoderDecodeBuffer(
                     &self.decoder,
                     buffer.as_ptr() as _,
