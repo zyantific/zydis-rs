@@ -13,19 +13,27 @@ macro_rules! check {
             e => Err(e),
         }
     };
+}
+
+#[macro_export]
+macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
-    (option $expression:expr, $ok:expr) => {
+    ($expression:expr, $ok:expr) => {
         match $expression as _ {
             ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
             ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
             e => Err(e),
         }
     };
-    (string $expression:expr) => { {
+}
+
+#[macro_export]
+macro_rules! check_string {
+    ($expression:expr) => { {
             match $expression {
                 x if x.is_null() => None,
                 x => Some(CStr::from_ptr(x).to_str().unwrap())
             }
         }
-    }
+    };
 }

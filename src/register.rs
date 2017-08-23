@@ -73,7 +73,7 @@ impl ZydisRegisterMethods for ZydisRegisters {
     }
 
     fn get_string(self) -> Option<&'static str> {
-        unsafe { check!(string ZydisRegisterGetString(self as _)) }
+        unsafe { check_string!(ZydisRegisterGetString(self as _)) }
     }
 
     fn get_width(self) -> ZydisRegisterWidth {

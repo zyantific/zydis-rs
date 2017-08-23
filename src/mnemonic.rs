@@ -19,6 +19,6 @@ pub trait ZydisMnemonicMethods {
 
 impl ZydisMnemonicMethods for c_uint {
     fn get_string(self) -> Option<&'static str> {
-        unsafe { check!(string ZydisMnemonicGetString(self as _)) }
+        unsafe { check_string!(ZydisMnemonicGetString(self as _)) }
     }
 }
