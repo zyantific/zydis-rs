@@ -1,24 +1,28 @@
 //! Miscellaneous utility functions.
 
+use std::mem::uninitialized;
+
 use gen::*;
 use status::ZydisResult;
 
+impl ZydisDecodedInstruction {
+    pub fn calc_absolute_target_addr(&self, operand: &ZydisDecodedOperand) -> ZydisResult<u64> {
+        unsafe {
+            let mut address = 0u64;
+            check!(
+                ZydisUtilsCalcAbsoluteTargetAddress(self, operand, &mut address),
+                address
+            )
+        }
+    }
 
-/// Calculates the absolute target-address of a relative instruction operand.
-pub fn calc_abs_target_addr(
-    instruction: &ZydisDecodedInstruction,
-    operand: &ZydisDecodedOperand
-) -> ZydisResult<u64> {
-    unsafe {
-        let mut address = 0u64;
-        let status = ZydisUtilsCalcAbsoluteTargetAddress(
-            instruction,
-            operand,
-            &mut address,
-        );
-        match status {
-            ZYDIS_STATUS_SUCCESS => Ok(address),
-            _ => Err(status)
+    pub fn get_cpu_flags_by_action(
+        &self,
+        action: ZydisCPUFlagAction,
+    ) -> ZydisResult<ZydisCPUFlagMask> {
+        unsafe {
+            let mut code = uninitialized();
+            check!(ZydisGetCPUFlagsByAction(self, action, &mut code), code)
         }
     }
 }

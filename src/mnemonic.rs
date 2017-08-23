@@ -2,23 +2,23 @@
 
 use gen::*;
 use std::ffi::CStr;
-use std::ptr;
-use std::borrow::Cow;
+use std::os::raw::c_uint;
 
+/// Extensions for `ZydisMnemonic`
+pub trait ZydisMnemonicMethods {
+    /// Given a mnemonic ID, returns the corresponding string.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::mnemonic::ZydisMnemonicMethods;
+    /// let mnem = zydis::gen::ZYDIS_MNEMONIC_CMOVP.get_string();
+    /// assert_eq!(mnem.unwrap(), "cmovp");
+    /// ```
+    fn get_string(self) -> Option<&'static str>;
+}
 
-/// Given a mnemonic ID, returns the corresponding string.
-///
-/// # Examples
-/// ```
-/// let mnem = zydis::mnemonic::get_str(zydis::gen::ZYDIS_MNEMONIC_CMOVP);
-/// assert_eq!(mnem.unwrap(), "cmovp");
-/// ```
-pub fn get_str(mnem: u32) -> Option<Cow<'static, str>> {
-    unsafe {
-        let ptr = ZydisMnemonicGetString(mnem as ZydisMnemonic);
-        if ptr == ptr::null() {
-            return None;
-        }
-        Some(CStr::from_ptr(ptr).to_string_lossy())
+impl ZydisMnemonicMethods for c_uint {
+    fn get_string(self) -> Option<&'static str> {
+        unsafe { check!(@string ZydisMnemonicGetString(self as _)) }
     }
 }

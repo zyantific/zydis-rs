@@ -23,7 +23,7 @@ fn main() {
 
     let res = match res {
         Ok(r) => r,
-        Err(e) => panic!("{:?}", e)
+        Err(e) => panic!("{:?}", e),
     };
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());

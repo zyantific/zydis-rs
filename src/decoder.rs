@@ -2,41 +2,40 @@
 
 use gen::*;
 use status::ZydisResult;
-use std::mem;
-use std::os::raw::c_void;
-
+use std::mem::uninitialized;
 
 pub struct Decoder {
-    decoder: ZydisDecoder
+    decoder: ZydisDecoder,
 }
-
 
 impl Decoder {
     pub fn new_ex(
         machine_mode: ZydisMachineModes,
         address_width: ZydisAddressWidths,
-        granularity: ZydisDecodeGranularities
+        granularity: ZydisDecodeGranularities,
     ) -> ZydisResult<Decoder> {
         unsafe {
-            let mut decoder = Decoder { decoder: mem::uninitialized() };
-            let status = ZydisDecoderInitEx(
-                &mut decoder.decoder,
-                machine_mode as ZydisMachineMode,
-                address_width as ZydisAddressWidth,
-                granularity as ZydisDecodeGranularity
-            );
-            match status { ZYDIS_STATUS_SUCCESS => Ok(decoder), _ => Err(status) }
+            let mut decoder = uninitialized();
+            check!(
+                ZydisDecoderInitEx(
+                    &mut decoder,
+                    machine_mode as _,
+                    address_width as _,
+                    granularity as _
+                ),
+                Decoder { decoder }
+            )
         }
     }
 
     pub fn new(
         machine_mode: ZydisMachineModes,
-        address_width: ZydisAddressWidths
+        address_width: ZydisAddressWidths,
     ) -> ZydisResult<Decoder> {
         Decoder::new_ex(
             machine_mode,
             address_width,
-            ZYDIS_DECODE_GRANULARITY_DEFAULT
+            ZYDIS_DECODE_GRANULARITY_DEFAULT,
         )
     }
 
@@ -55,23 +54,22 @@ impl Decoder {
     /// assert_eq!(info.mnemonic as u32, zydis::gen::ZYDIS_MNEMONIC_INT3);
     /// ```
     pub fn decode(
-        &mut self,
+        &self,
         buffer: &[u8],
         instruction_pointer: u64,
     ) -> ZydisResult<ZydisDecodedInstruction> {
         unsafe {
-            let mut info: ZydisDecodedInstruction = mem::uninitialized();
-            let status = ZydisDecoderDecodeBuffer(
-                &mut self.decoder,
-                buffer.as_ptr() as *const c_void,
-                buffer.len(),
-                instruction_pointer,
-                &mut info,
-            );
-            match status {
-                ZYDIS_STATUS_SUCCESS => Ok(info),
-                _ => Err(status)
-            }
+            let mut info: ZydisDecodedInstruction = uninitialized();
+            check!(
+                ZydisDecoderDecodeBuffer(
+                    &self.decoder,
+                    buffer.as_ptr() as _,
+                    buffer.len(),
+                    instruction_pointer,
+                    &mut info
+                ),
+                info
+            )
         }
     }
 }
