@@ -4,51 +4,67 @@ extern crate gcc;
 use std::env;
 use std::path::PathBuf;
 
+use bindgen::Builder;
+use gcc::Build;
 
-fn main() {
-    let res = bindgen::builder()
-        .clang_arg("-Izydis-c/include")
-        .clang_arg("-Izydis-c/src")
-        .clang_arg("-Isrc")
-        .clang_arg("-DZYDIS_ENABLE_FEATURE_DECODER")
-        .clang_arg("-DZYDIS_ENABLE_FEATURE_ENCODER")
-        .clang_arg("-DZYDIS_ENABLE_FEATURE_EVEX")
-        .clang_arg("-DZYDIS_ENABLE_FEATURE_MVEX")
-        .clang_arg("-DZYDIS_ENABLE_FEATURE_FLAGS")
-        .clang_arg("zydis-c/include/Zydis/Zydis.h")
-        .constified_enum("Zydis.*")
-        .prepend_enum_name(false)
-        .unstable_rust(false)
-        .generate();
+const ZYDIS_INCLUDE_PATH: &'static str = "zydis-c/include";
+const ZYDIS_SRC_PATH: &'static str = "zydis-c/src";
 
-    let res = match res {
-        Ok(r) => r,
-        Err(e) => panic!("{:?}", e),
-    };
-
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    if let Err(e) = res.write_to_file(out_path.join("bindings.rs")) {
-        panic!("{:?}", e);
-    }
-
-    gcc::Build::new()
-        .define("ZYDIS_ENABLE_FEATURE_DECODER", None)
-        .define("ZYDIS_ENABLE_FEATURE_ENCODER", None)
+fn build_library() {
+    Build::new()
+        .include(ZYDIS_INCLUDE_PATH)
+        .include(ZYDIS_SRC_PATH)
+        .include("src")
         .define("ZYDIS_ENABLE_FEATURE_EVEX", None)
         .define("ZYDIS_ENABLE_FEATURE_MVEX", None)
         .define("ZYDIS_ENABLE_FEATURE_FLAGS", None)
-        .include("zydis-c/include")
-        .include("zydis-c/src")
-        .include("src")
-        .file("zydis-c/src/Mnemonic.c")
-        .file("zydis-c/src/Register.c")
-        .file("zydis-c/src/SharedData.c")
-        .file("zydis-c/src/Utils.c")
-        .file("zydis-c/src/Zydis.c")
-        .file("zydis-c/src/Decoder.c")
-        .file("zydis-c/src/DecoderData.c")
-        .file("zydis-c/src/Formatter.c")
-        //.file("zydis-c/src/Encoder.c")
-        //.file("zydis-c/src/EncoderData.c")
+        .define("ZYDIS_ENABLE_FEATURE_DECODER", None)
+        .define("ZYDIS_ENABLE_FEATURE_ENCODER", None)
+        .files(vec![
+            format!("{}/Decoder.c", ZYDIS_SRC_PATH),
+            format!("{}/DecoderData.c", ZYDIS_SRC_PATH),
+            format!("{}/Encoder.c", ZYDIS_SRC_PATH),
+            format!("{}/EncoderData.c", ZYDIS_SRC_PATH),
+            format!("{}/Formatter.c", ZYDIS_SRC_PATH),
+            format!("{}/Mnemonic.c", ZYDIS_SRC_PATH),
+            format!("{}/Register.c", ZYDIS_SRC_PATH),
+            format!("{}/SharedData.c", ZYDIS_SRC_PATH),
+            format!("{}/Utils.c", ZYDIS_SRC_PATH),
+            format!("{}/Zydis.c", ZYDIS_SRC_PATH),
+        ])
         .compile("libzydis.a");
+}
+
+fn build_bindings(out_path: PathBuf) {
+    let bindings = Builder::default()
+        .unstable_rust(true)
+        .header(format!("{}/Zydis/Zydis.h", ZYDIS_INCLUDE_PATH))
+        //.header(format!("{}/Zydis/Encoder.h", ZYDIS_INCLUDE_PATH))
+        .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
+        .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
+        .clang_arg("-Isrc")
+        .clang_arg("-DZYDIS_ENABLE_FEATURE_EVEX")
+        .clang_arg("-DZYDIS_ENABLE_FEATURE_MVEX")
+        .clang_arg("-DZYDIS_ENABLE_FEATURE_FLAGS")
+        .clang_arg("-DZYDIS_ENABLE_FEATURE_DECODER")
+        .clang_arg("-DZYDIS_ENABLE_FEATURE_ENCODER")
+        .emit_builtins()
+        .constified_enum("Zydis.*")
+        .layout_tests(true)
+        .prepend_enum_name(false)
+        .generate()
+        .expect("Could not generate bindings to zydis");
+
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Could not write bindings");
+}
+
+fn main() {
+    println!("cargo:rerun-if-changed=zydis-c");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    build_library();
+    build_bindings(out_path);
 }

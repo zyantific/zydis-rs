@@ -3,34 +3,33 @@
 /*
 use gen::*;
 use status::ZydisResult;
-use std::os::raw::c_void;
-use std::mem;
 
+use std::mem::uninitialized;
+
+// TODO: We might want to use `TryFrom` for this so its easier to convert a instruction
+// to a request.
 pub fn decoded_instruction_to_request(
     instruction: &ZydisDecodedInstruction
 ) -> ZydisResult<ZydisEncoderRequest> {
     unsafe {
-        let mut req = mem::uninitialized();
-        let status = ZydisEncoderDecodedInstructionToRequest(
-            instruction, &mut req
-        );
-        match status { ZYDIS_STATUS_SUCCESS => Ok(req), _ => Err(status) }
+        let mut ret = uninitialized();
+        check!(
+                ZydisEncoderDecodedInstructionToRequest(instruction, &mut ret),
+                ret
+        )
     }
 }
 
-
 /// Encodes the given instruction info into byte-code, using a given buffer.
 pub fn encode_instruction_into(
-    buffer: &mut [u8], req: &mut ZydisEncoderRequest
+    buffer: &mut [u8], request: &mut ZydisEncoderRequest
 ) -> ZydisResult<usize> {
     unsafe {
-        let mut insn_len = buffer.len();
-        let status = ZydisEncoderEncodeInstruction(
-            buffer.as_mut_ptr() as *mut c_void,
-            &mut insn_len,
-            req
-        );
-        match status { ZYDIS_STATUS_SUCCESS => Ok(insn_len), _ => Err(status) }
+        let mut len = buffer.len();
+        check!(
+            ZydisEncoderEncodeInstruction(buffer.as_ptr() as _, &mut len, request),
+            len
+        )
     }
 }
 
@@ -41,10 +40,10 @@ pub fn encode_instruction_into(
 /// Rewriting the destination register of a `mov` instruction:
 ///
 /// ```
-/// let mut formatter = zydis::formatter::Formatter::new(
+/// let formatter = zydis::formatter::Formatter::new(
 ///     zydis::gen::ZYDIS_FORMATTER_STYLE_INTEL
 /// ).unwrap();
-/// let mut decoder = zydis::decoder::Decoder::new(
+/// let decoder = zydis::decoder::Decoder::new(
 ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
 ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
 /// ).unwrap();
@@ -52,21 +51,21 @@ pub fn encode_instruction_into(
 /// static MOV: &'static [u8] = b"\x48\xC7\xC0\x37\x13\x00\x00";
 ///
 /// // Decode and format current instruction.
-/// let mut info = decoder.decode(MOV, 0).unwrap();
-/// let fmt = formatter.format_instruction(&mut info).unwrap();
+/// let mut info = decoder.decode(MOV, 0).unwrap().unwrap();
+/// let fmt = formatter.format_instruction(&mut info, 200).unwrap();
 /// assert_eq!(fmt, "mov rax, 0x1337");
 ///
 /// // Transform and assemble / encode a patched one.
 /// let mut req = zydis::encoder::decoded_instruction_to_request(&info).unwrap();
 /// req.operands[0].reg = zydis::gen::ZYDIS_REGISTER_RCX as zydis::gen::ZydisRegister;
-/// unsafe { *req.operands[1].imm.u.as_mut() += 1; }
+/// unsafe { req.operands[1].imm.u += 1; }
 /// let new_insn = zydis::encoder::encode_instruction(&mut req).unwrap();
 /// assert_eq!(new_insn, b"\x48\xC7\xC1\x38\x13\x00\x00");
 ///
 /// // Decode and format the new instruction.
-/// let mut new_info = decoder.decode(&new_insn, 0).unwrap();
-/// let new_fmt = formatter.format_instruction(&mut new_info).unwrap();
-/// assert_eq!(new_fmt, "mov rcx, 0x1338");
+/// let mut info = decoder.decode(&new_insn, 0).unwrap().unwrap();
+/// let fmt = formatter.format_instruction(&mut info, 200).unwrap();
+/// assert_eq!(fmt, "mov rcx, 0x1338");
 /// ```
 pub fn encode_instruction(
     req: &mut ZydisEncoderRequest
