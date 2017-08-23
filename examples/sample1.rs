@@ -10,7 +10,6 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() {
-    use zydis::register::ZydisRegisterMethods;
     let reg_str = zydis::gen::ZYDIS_REGISTER_EAX.get_string();
     assert_eq!(reg_str.unwrap(), "eax");
     let formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL).unwrap();
