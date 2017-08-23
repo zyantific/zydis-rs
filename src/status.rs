@@ -5,7 +5,6 @@ use gen::ZydisStatusCode;
 // A Zydis result, holding either a result or a failure code.
 pub type ZydisResult<T> = Result<T, ZydisStatusCode>;
 
-#[macro_export]
 macro_rules! check {
     ($expression:expr, $ok:expr) => {
         match $expression as _ {
@@ -15,7 +14,6 @@ macro_rules! check {
     };
 }
 
-#[macro_export]
 macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
@@ -27,7 +25,6 @@ macro_rules! check_option {
     };
 }
 
-#[macro_export]
 macro_rules! check_string {
     ($expression:expr) => { {
             match $expression {
