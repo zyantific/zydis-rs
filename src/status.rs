@@ -22,9 +22,8 @@ macro_rules! check {
         }
     };
     (@string $expression:expr) => { {
-            use std::ptr::null;
             match $expression {
-                x if x == null() => None,
+                x if x.is_null() => None,
                 x => Some(CStr::from_ptr(x).to_str().unwrap())
             }
         }
