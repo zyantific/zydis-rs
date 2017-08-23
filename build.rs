@@ -31,7 +31,7 @@ fn main() {
         panic!("{:?}", e);
     }
 
-    gcc::Config::new()
+    gcc::Build::new()
         .define("ZYDIS_ENABLE_FEATURE_DECODER", None)
         .define("ZYDIS_ENABLE_FEATURE_ENCODER", None)
         .define("ZYDIS_ENABLE_FEATURE_EVEX", None)
