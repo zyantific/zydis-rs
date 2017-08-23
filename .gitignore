@@ -44,3 +44,4 @@ Cargo.lock
 
 src/gen.rs
 
+.idea

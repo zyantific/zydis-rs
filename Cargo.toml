@@ -1,6 +1,6 @@
 [package]
 name        = "zydis"
-version     = "0.2.0"
+version     = "0.0.1"
 authors     = ["Joel Höner <joel@zyantific.com>"]
 
 description = "Bindings for Zydis"

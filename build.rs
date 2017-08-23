@@ -48,7 +48,7 @@ fn main() {
         .file("zydis-c/src/Decoder.c")
         .file("zydis-c/src/DecoderData.c")
         .file("zydis-c/src/Formatter.c")
-        .file("zydis-c/src/Encoder.c")
-        .file("zydis-c/src/EncoderData.c")
+        //.file("zydis-c/src/Encoder.c")
+        //.file("zydis-c/src/EncoderData.c")
         .compile("libzydis.a");
 }
