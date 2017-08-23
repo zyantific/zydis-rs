@@ -72,4 +72,38 @@ impl Decoder {
             )
         }
     }
+
+    /// Returns an iterator over all the instructions in the buffer.
+    pub fn instruction_iterator<'a, 'b>(
+        &'a self,
+        buffer: &'b [u8],
+        ip: u64,
+    ) -> InstructionIterator<'a, 'b> {
+        InstructionIterator {
+            decoder: self,
+            buffer,
+            ip,
+        }
+    }
+}
+
+pub struct InstructionIterator<'a, 'b> {
+    decoder: &'a Decoder,
+    buffer: &'b [u8],
+    ip: u64,
+}
+
+impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
+    type Item = (ZydisDecodedInstruction, u64);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.decoder.decode(self.buffer, self.ip) {
+            Ok(Some(insn)) => {
+                self.buffer = &self.buffer[insn.length as usize..];
+                self.ip += insn.length as _;
+                Some((insn, self.ip))
+            }
+            _ => None,
+        }
+    }
 }
