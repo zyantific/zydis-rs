@@ -60,7 +60,7 @@ impl Decoder {
     ) -> ZydisResult<Option<ZydisDecodedInstruction>> {
         unsafe {
             let mut info: ZydisDecodedInstruction = uninitialized();
-            check!(@option
+            check!(option
                 ZydisDecoderDecodeBuffer(
                     &self.decoder,
                     buffer.as_ptr() as _,

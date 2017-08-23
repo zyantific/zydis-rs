@@ -14,14 +14,14 @@ macro_rules! check {
         }
     };
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
-    (@option $expression:expr, $ok:expr) => {
+    (option $expression:expr, $ok:expr) => {
         match $expression as _ {
             ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
             ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
             e => Err(e),
         }
     };
-    (@string $expression:expr) => { {
+    (string $expression:expr) => { {
             match $expression {
                 x if x.is_null() => None,
                 x => Some(CStr::from_ptr(x).to_str().unwrap())
