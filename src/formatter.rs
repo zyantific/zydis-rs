@@ -51,21 +51,21 @@ impl Hook {
     pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
         match *self {
-            FuncPre(ref x) => mem::transmute(x),
-            FuncPost(ref x) => mem::transmute(x),
-            FuncFormatInstruction(ref x) => mem::transmute(x),
-            FuncPrintPrefixes(ref x) => mem::transmute(x),
-            FuncPrintMnemonic(ref x) => mem::transmute(x),
-            FuncFormatOperandReg(ref x) => mem::transmute(x),
-            FuncFormatOperandMem(ref x) => mem::transmute(x),
-            FuncFormatOperandPtr(ref x) => mem::transmute(x),
-            FuncFormatOperandImm(ref x) => mem::transmute(x),
-            FuncPrintOperandsize(ref x) => mem::transmute(x),
-            FuncPrintSegment(ref x) => mem::transmute(x),
-            FuncPrintDecorator(ref x) => mem::transmute(x),
-            FuncPrintDisplacement(ref x) => mem::transmute(x),
-            FuncPrintImmediate(ref x) => mem::transmute(x),
-            FuncPrintAddress(ref x) => mem::transmute(x),
+            FuncPre(x) => mem::transmute(x),
+            FuncPost(x) => mem::transmute(x),
+            FuncFormatInstruction(x) => mem::transmute(x),
+            FuncPrintPrefixes(x) => mem::transmute(x),
+            FuncPrintMnemonic(x) => mem::transmute(x),
+            FuncFormatOperandReg(x) => mem::transmute(x),
+            FuncFormatOperandMem(x) => mem::transmute(x),
+            FuncFormatOperandPtr(x) => mem::transmute(x),
+            FuncFormatOperandImm(x) => mem::transmute(x),
+            FuncPrintOperandsize(x) => mem::transmute(x),
+            FuncPrintSegment(x) => mem::transmute(x),
+            FuncPrintDecorator(x) => mem::transmute(x),
+            FuncPrintDisplacement(x) => mem::transmute(x),
+            FuncPrintImmediate(x) => mem::transmute(x),
+            FuncPrintAddress(x) => mem::transmute(x),
         }
     }
 
