@@ -10,8 +10,6 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() {
-    let reg_str = zydis::gen::ZYDIS_REGISTER_EAX.get_string();
-    assert_eq!(reg_str.unwrap(), "eax");
     let formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL).unwrap();
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
 
