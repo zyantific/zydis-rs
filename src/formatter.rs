@@ -137,10 +137,10 @@ impl Formatter {
     /// # Examples
     ///
     /// ```
-    /// let mut formatter = zydis::Formatter::new(
+    /// let formatter = zydis::Formatter::new(
     ///     zydis::gen::ZYDIS_FORMATTER_STYLE_INTEL
     /// ).unwrap();
-    /// let mut dec = zydis::Decoder::new(
+    /// let dec = zydis::Decoder::new(
     ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
     ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
     /// ).unwrap();
@@ -148,7 +148,7 @@ impl Formatter {
     /// static INT3: &'static [u8] = &[0xCCu8];
     /// let mut info = dec.decode(INT3, 0).unwrap().unwrap();
     /// let fmt = formatter.format_instruction(&mut info, 200).unwrap();
-    /// assert_eq!(fmt, "int3 ");
+    /// assert_eq!(fmt, "int3");
     /// ```
     pub fn format_instruction(
         &self,

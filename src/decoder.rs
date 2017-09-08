@@ -46,7 +46,7 @@ impl Decoder {
     ///
     /// ```
     /// static INT3: &'static [u8] = &[0xCCu8];
-    /// let mut decoder = zydis::Decoder::new(
+    /// let decoder = zydis::Decoder::new(
     ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
     ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
     /// ).unwrap();
