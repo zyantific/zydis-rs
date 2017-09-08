@@ -1,5 +1,5 @@
 //! Sample generating a simple pattern from instructions, masking out things
-//! that commonly change during recompilation (dispositions and immediates
+//! that commonly change during recompilation (displacements and immediates
 //! of branch instructions).
 
 extern crate zydis;
@@ -26,8 +26,11 @@ fn main() {
 
             // Obtain offsets for relevant operands, skip others.
             let (dyn_offs, dyn_len) = match op.type_ as ZydisOperandTypes {
-                ZYDIS_OPERAND_TYPE_MEMORY => (insn.raw.disp.offset, insn.raw.disp.size),
-                ZYDIS_OPERAND_TYPE_IMMEDIATE => (
+                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.hasDisplacement == 1 => (
+                    insn.raw.disp.offset,
+                    insn.raw.disp.size,
+                ),
+                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.isRelative == 1 => (
                     insn.raw.imm[op_idx].offset,
                     insn.raw.imm[op_idx].size,
                 ),
@@ -36,7 +39,7 @@ fn main() {
 
             // Apply offsets to our bitmask.
             for i in dyn_offs..dyn_offs + dyn_len / 8 {
-                mask |= (1u16 << i);
+                mask |= 1 << i;
             }
         }
 
