@@ -10,12 +10,11 @@ static CODE: &'static [u8] = &[
 ];
 
 fn print_mnemonic(
-    formatter: &Formatter,
+    _formatter: &Formatter,
     buffer: &mut Buffer,
-    instruction: &ZydisDecodedInstruction,
+    _instruction: &ZydisDecodedInstruction,
 ) -> ZydisResult<()> {
-    buffer.append("abc");
-    Ok(())
+    buffer.append("abc")
 }
 
 fn main() {
