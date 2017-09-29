@@ -9,14 +9,20 @@ static CODE: &'static [u8] = &[
     0xDA, 0x02, 0x00u8,
 ];
 
-fn print_mnemonic(formatter: &Formatter, buffer: &mut Buffer, instruction: &ZydisDecodedInstruction) -> ZydisResult<()> {
+fn print_mnemonic(
+    formatter: &Formatter,
+    buffer: &mut Buffer,
+    instruction: &ZydisDecodedInstruction,
+) -> ZydisResult<()> {
     buffer.append("abc");
     Ok(())
 }
 
 fn main() {
     let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL).unwrap();
-    formatter.set_print_mnemonic(Box::new(print_mnemonic)).unwrap();
+    formatter
+        .set_print_mnemonic(Box::new(print_mnemonic))
+        .unwrap();
 
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
 
