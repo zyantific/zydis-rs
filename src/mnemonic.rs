@@ -2,7 +2,6 @@
 
 use gen::*;
 use std::ffi::CStr;
-use std::os::raw::c_uint;
 
 /// Extensions for `ZydisMnemonic`
 pub trait ZydisMnemonicMethods {
@@ -17,7 +16,7 @@ pub trait ZydisMnemonicMethods {
     fn get_string(self) -> Option<&'static str>;
 }
 
-impl ZydisMnemonicMethods for c_uint {
+impl ZydisMnemonicMethods for i32 {
     fn get_string(self) -> Option<&'static str> {
         unsafe { check_string!(ZydisMnemonicGetString(self as _)) }
     }
