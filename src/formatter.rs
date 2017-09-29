@@ -93,6 +93,7 @@ impl Hook {
     }
 }
 
+/// Wraps the raw `*mut *mut c_char` of formatter hooks and makes it easier to use.
 pub struct Buffer {
     raw: *mut *mut c_char,
     buffer_length: usize,
@@ -103,6 +104,12 @@ impl Buffer {
         Self { raw, buffer_length }
     }
 
+    /// Appends the given string `s` to this buffer.
+    ///
+    /// Warning: The actual rust `&str`ings are encoded in UTF-8 and they are not
+    /// converted to any other encoding. They're simply copied, byte for byte, to the
+    /// buffer. Therefor the buffer should be interpreted as UTF-8 when later being printed.
+    /// A `\0` is automatically added.
     pub fn append(&mut self, s: &str) -> ZydisResult<()> {
         let bytes = s.as_bytes();
         if bytes.len() + 1 >= self.buffer_length {
