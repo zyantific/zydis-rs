@@ -162,8 +162,10 @@ macro_rules! wrapped_hook_setter{
 
 macro_rules! dispatch_wrapped_func{
     (notify $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(formatter: *const ZydisFormatter,
-                                        instruction: *mut ZydisDecodedInstruction) -> ZydisStatus {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter,
+            instruction: *mut ZydisDecodedInstruction,
+        ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(formatter, &*instruction) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
@@ -173,13 +175,18 @@ macro_rules! dispatch_wrapped_func{
         }
     };
     (format $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-                                        len: usize,
-                                        instruction: *mut ZydisDecodedInstruction) -> ZydisStatus {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter,
+            buffer: *mut *mut c_char,
+            len: usize,
+            instruction: *mut ZydisDecodedInstruction
+        ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter,
-                                                                  &mut Buffer::new(buffer, len),
-                                                                  &*instruction) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut Buffer::new(buffer, len),
+                &*instruction,
+            ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
@@ -187,15 +194,20 @@ macro_rules! dispatch_wrapped_func{
         }
     };
     (format_operand $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-                                        len: usize,
-                                        instruction: *mut ZydisDecodedInstruction,
-                                        operand: *mut ZydisDecodedOperand) -> ZydisStatus {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter,
+            buffer: *mut *mut c_char,
+            len: usize,
+            instruction: *mut ZydisDecodedInstruction,
+            operand: *mut ZydisDecodedOperand,
+        ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter,
-                                                                  &mut Buffer::new(buffer, len),
-                                                                  &*instruction,
-                                                                  &*operand) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut Buffer::new(buffer, len),
+                &*instruction,
+                &*operand,
+            ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
@@ -203,17 +215,21 @@ macro_rules! dispatch_wrapped_func{
         }
     };
     (format_decorator $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-                                        len: usize,
-                                        instruction: *mut ZydisDecodedInstruction,
-                                        operand: *mut ZydisDecodedOperand,
-                                        decorator: ZydisDecoratorType) -> ZydisStatus {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
+            len: usize,
+            instruction: *mut ZydisDecodedInstruction,
+            operand: *mut ZydisDecodedOperand,
+            decorator: ZydisDecoratorType
+        ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter,
-                                                                  &mut Buffer::new(buffer, len),
-                                                                  &*instruction,
-                                                                  &*operand,
-                                                                  decorator) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut Buffer::new(buffer, len),
+                &*instruction,
+                &*operand,
+                decorator,
+            ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
@@ -221,17 +237,21 @@ macro_rules! dispatch_wrapped_func{
         }
     };
     (format_address $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-                                        len: usize,
-                                        instruction: *mut ZydisDecodedInstruction,
-                                        operand: *mut ZydisDecodedOperand,
-                                        address: u64) -> ZydisStatus {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
+            len: usize,
+            instruction: *mut ZydisDecodedInstruction,
+            operand: *mut ZydisDecodedOperand,
+            address: u64,
+        ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter,
-                                                                  &mut Buffer::new(buffer, len),
-                                                                  &*instruction,
-                                                                  &*operand,
-                                                                  address) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut Buffer::new(buffer, len),
+                &*instruction,
+                &*operand,
+                address,
+            ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
