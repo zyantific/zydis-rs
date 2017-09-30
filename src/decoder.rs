@@ -51,7 +51,7 @@ impl Decoder {
     ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
     /// ).unwrap();
     /// let info = decoder.decode(INT3, 0x00400000).unwrap().unwrap();
-    /// assert_eq!(info.mnemonic as i32, zydis::gen::ZYDIS_MNEMONIC_INT3);
+    /// assert_eq!(info.mnemonic as u32, zydis::gen::ZYDIS_MNEMONIC_INT3);
     /// ```
     pub fn decode(
         &self,
