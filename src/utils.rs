@@ -10,7 +10,7 @@ impl ZydisDecodedInstruction {
         unsafe {
             let mut address = 0u64;
             check!(
-                ZydisUtilsCalcAbsoluteTargetAddress(self, operand, &mut address),
+                ZydisCalcAbsoluteAddress(self, operand, &mut address),
                 address
             )
         }
@@ -22,7 +22,7 @@ impl ZydisDecodedInstruction {
     ) -> ZydisResult<ZydisCPUFlagMask> {
         unsafe {
             let mut code = uninitialized();
-            check!(ZydisGetCPUFlagsByAction(self, action, &mut code), code)
+            check!(ZydisGetAccessedFlagsByAction(self, action, &mut code), code)
         }
     }
 }

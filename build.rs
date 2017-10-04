@@ -35,6 +35,7 @@ fn build_library() {
             format!("{}/Encoder.c", ZYDIS_SRC_PATH),
             format!("{}/EncoderData.c", ZYDIS_SRC_PATH),
             format!("{}/Formatter.c", ZYDIS_SRC_PATH),
+            format!("{}/FormatHelper.c", ZYDIS_SRC_PATH),
             format!("{}/Mnemonic.c", ZYDIS_SRC_PATH),
             format!("{}/Register.c", ZYDIS_SRC_PATH),
             format!("{}/SharedData.c", ZYDIS_SRC_PATH),

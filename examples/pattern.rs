@@ -26,14 +26,12 @@ fn main() {
 
             // Obtain offsets for relevant operands, skip others.
             let (dyn_offs, dyn_len) = match op.type_ as ZydisOperandTypes {
-                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.hasDisplacement == 1 => (
-                    insn.raw.disp.offset,
-                    insn.raw.disp.size,
-                ),
-                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.isRelative == 1 => (
-                    insn.raw.imm[op_idx].offset,
-                    insn.raw.imm[op_idx].size,
-                ),
+                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.hasDisplacement == 1 => {
+                    (insn.raw.disp.offset, insn.raw.disp.size)
+                }
+                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.isRelative == 1 => {
+                    (insn.raw.imm[op_idx].offset, insn.raw.imm[op_idx].size)
+                }
                 _ => continue,
             };
 
