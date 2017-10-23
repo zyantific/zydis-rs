@@ -100,7 +100,7 @@ impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
         match self.decoder.decode(self.buffer, self.ip) {
             Ok(Some(insn)) => {
                 self.buffer = &self.buffer[insn.length as usize..];
-                self.ip += insn.length as _;
+                self.ip += insn.length as u64;
                 Some((insn, self.ip))
             }
             _ => None,
