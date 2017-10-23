@@ -160,7 +160,7 @@ macro_rules! wrapped_hook_setter{
     }
 }
 
-macro_rules! dispatch_wrapped_func{
+macro_rules! wrap_func{
     (notify $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
@@ -260,21 +260,21 @@ macro_rules! dispatch_wrapped_func{
     }
 }
 
-dispatch_wrapped_func!(notify pre, dispatch_pre);
-dispatch_wrapped_func!(notify post, dispatch_post);
-dispatch_wrapped_func!(format format_instruction, dispatch_format_instruction);
-dispatch_wrapped_func!(format print_prefixes, dispatch_print_prefixes);
-dispatch_wrapped_func!(format print_mnemonic, dispatch_print_mnemonic);
-dispatch_wrapped_func!(format_operand format_operand_reg, dispatch_format_operand_reg);
-dispatch_wrapped_func!(format_operand format_operand_mem, dispatch_format_operand_mem);
-dispatch_wrapped_func!(format_operand format_operand_ptr, dispatch_format_operand_ptr);
-dispatch_wrapped_func!(format_operand format_operand_imm, dispatch_format_operand_imm);
-dispatch_wrapped_func!(format_operand print_operand_size, dispatch_print_operand_size);
-dispatch_wrapped_func!(format_operand print_segment, dispatch_print_segment);
-dispatch_wrapped_func!(format_decorator print_decorator, dispatch_print_decorator);
-dispatch_wrapped_func!(format_address print_address, dispatch_print_address);
-dispatch_wrapped_func!(format_operand print_displacement, dispatch_print_displacement);
-dispatch_wrapped_func!(format_operand print_immediate, dispatch_print_immediate);
+wrap_func!(notify pre, dispatch_pre);
+wrap_func!(notify post, dispatch_post);
+wrap_func!(format format_instruction, dispatch_format_instruction);
+wrap_func!(format print_prefixes, dispatch_print_prefixes);
+wrap_func!(format print_mnemonic, dispatch_print_mnemonic);
+wrap_func!(format_operand format_operand_reg, dispatch_format_operand_reg);
+wrap_func!(format_operand format_operand_mem, dispatch_format_operand_mem);
+wrap_func!(format_operand format_operand_ptr, dispatch_format_operand_ptr);
+wrap_func!(format_operand format_operand_imm, dispatch_format_operand_imm);
+wrap_func!(format_operand print_operand_size, dispatch_print_operand_size);
+wrap_func!(format_operand print_segment, dispatch_print_segment);
+wrap_func!(format_decorator print_decorator, dispatch_print_decorator);
+wrap_func!(format_address print_address, dispatch_print_address);
+wrap_func!(format_operand print_displacement, dispatch_print_displacement);
+wrap_func!(format_operand print_immediate, dispatch_print_immediate);
 
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the rust compiler
