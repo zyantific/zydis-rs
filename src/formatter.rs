@@ -164,7 +164,8 @@ macro_rules! wrap_func{
     (notify $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            instruction: *mut ZydisDecodedInstruction,
+            instruction: *const ZydisDecodedInstruction,
+            _user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(formatter, &*instruction) {
@@ -179,7 +180,8 @@ macro_rules! wrap_func{
             formatter: *const ZydisFormatter,
             buffer: *mut *mut c_char,
             len: usize,
-            instruction: *mut ZydisDecodedInstruction
+            instruction: *const ZydisDecodedInstruction,
+            _user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -198,8 +200,9 @@ macro_rules! wrap_func{
             formatter: *const ZydisFormatter,
             buffer: *mut *mut c_char,
             len: usize,
-            instruction: *mut ZydisDecodedInstruction,
-            operand: *mut ZydisDecodedOperand,
+            instruction: *const ZydisDecodedInstruction,
+            operand: *const ZydisDecodedOperand,
+            _user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -218,9 +221,10 @@ macro_rules! wrap_func{
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
             len: usize,
-            instruction: *mut ZydisDecodedInstruction,
-            operand: *mut ZydisDecodedOperand,
-            decorator: ZydisDecoratorType
+            instruction: *const ZydisDecodedInstruction,
+            operand: *const ZydisDecodedOperand,
+            decorator: ZydisDecoratorType,
+            _user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -240,9 +244,10 @@ macro_rules! wrap_func{
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
             len: usize,
-            instruction: *mut ZydisDecodedInstruction,
-            operand: *mut ZydisDecodedOperand,
+            instruction: *const ZydisDecodedInstruction,
+            operand: *const ZydisDecodedOperand,
             address: u64,
+            _user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(

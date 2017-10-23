@@ -14,7 +14,7 @@ const ZYDIS_DEFINES: &'static [&'static str] = &[
     "ZYDIS_ENABLE_FEATURE_MVEX",
     "ZYDIS_ENABLE_FEATURE_FLAGS",
     "ZYDIS_ENABLE_FEATURE_DECODER",
-    "ZYDIS_ENABLE_FEATURE_ENCODER",
+    //"ZYDIS_ENABLE_FEATURE_ENCODER",
 ];
 
 fn build_library() {
@@ -32,8 +32,8 @@ fn build_library() {
             format!("{}/Decoder.c", ZYDIS_SRC_PATH),
             format!("{}/DecoderData.c", ZYDIS_SRC_PATH),
             format!("{}/MetaInfo.c", ZYDIS_SRC_PATH),
-            format!("{}/Encoder.c", ZYDIS_SRC_PATH),
-            format!("{}/EncoderData.c", ZYDIS_SRC_PATH),
+            //format!("{}/Encoder.c", ZYDIS_SRC_PATH),
+            //format!("{}/EncoderData.c", ZYDIS_SRC_PATH),
             format!("{}/Formatter.c", ZYDIS_SRC_PATH),
             format!("{}/FormatHelper.c", ZYDIS_SRC_PATH),
             format!("{}/Mnemonic.c", ZYDIS_SRC_PATH),
