@@ -5,6 +5,8 @@ authors     = ["Joel Höner <joel@zyantific.com>"]
 
 description = "Bindings for Zydis"
 license     = "MIT"
+keywords    = ["disassembler"]
+repository  = "https://github.com/zyantific/zydis-rs/"
 
 build       = true
 
