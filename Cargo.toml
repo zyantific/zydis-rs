@@ -1,11 +1,11 @@
 [package]
 name        = "zydis"
-version     = "0.0.1"
+version     = "0.0.2"
 authors     = ["Joel Höner <joel@zyantific.com>"]
 
 description = "Bindings for Zydis"
 license     = "MIT"
-keywords    = ["disassembler"]
+keywords    = ["disassembler", "x86", "amd64", "decoder"]
 repository  = "https://github.com/zyantific/zydis-rs/"
 
 build       = true
