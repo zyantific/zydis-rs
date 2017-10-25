@@ -108,10 +108,10 @@ impl Buffer {
 
     /// Appends the given string `s` to this buffer.
     ///
-    /// Warning: The actual rust `&str`ings are encoded in UTF-8 and they are not
-    /// converted to any other encoding. They're simply copied, byte for byte, to the
-    /// buffer. Therefor the buffer should be interpreted as UTF-8 when later being printed.
-    /// A `\0` is automatically added.
+    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't converted to any
+    /// other encoding. They're simply copied, byte by byte, to the buffer. Therefore, the
+    /// buffer should be interpreted as UTF-8 when later being printed.
+    /// A terminating `\0` is automatically added.
     pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> ZydisResult<()> {
         let s = s.as_ref();
         let bytes = s.as_bytes();
@@ -453,14 +453,14 @@ impl Formatter {
         }
     }
 
-    /// Sets a hook, allowing for customizations along the formatting process.
+    /// Sets a raw hook, allowing for customizations along the formatting process.
     ///
-    /// This function contains "raw", because the Hook you set is not wrapped,
-    /// and you're dealing with not that nice types when using this function.
-    /// You might want to consider using any of the wrapped variants.
+    /// This is the raw C style version of the formatter hook mechanism. No
+    /// wrapping occurs, your callback will receive raw pointers. You might want
+    /// to consider using any of the wrapped variants instead.
     ///
-    /// You need to be carefull with accessing the `user_data` parameter in
-    /// the raw hooks. The type of it will be `*mut &mut Any`.
+    /// Be careful with accessing the `user_data` parameter in the raw hooks.
+    /// It's type is `*mut &mut Any`.
     pub fn set_raw_hook(&mut self, hook: Hook) -> ZydisResult<Hook> {
         unsafe {
             let mut cb = hook.to_raw();
