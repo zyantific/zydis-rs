@@ -1,6 +1,6 @@
 [package]
 name        = "zydis"
-version     = "0.0.2"
+version     = "0.0.3"
 authors     = [
     "Joel Höner <joel@zyantific.com>",
     "Timo von Hartz <c0untlizzi@gmail.com>"
