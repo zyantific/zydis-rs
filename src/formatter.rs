@@ -395,7 +395,7 @@ impl Formatter {
     ///
     /// static INT3: &'static [u8] = &[0xCCu8];
     /// let mut info = dec.decode(INT3, 0).unwrap().unwrap();
-    /// let fmt = formatter.format_instruction(&mut info, 200).unwrap();
+    /// let fmt = formatter.format_instruction(&mut info, 200, None).unwrap();
     /// assert_eq!(fmt, "int3");
     /// ```
     pub fn format_instruction(
