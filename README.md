@@ -34,7 +34,7 @@ fn main() {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
 
     for (mut instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        let insn = formatter.format_instruction(&mut instruction, 200);
+        let insn = formatter.format_instruction(&mut instruction, 200, None);
         println!("0x{:016X} {}", ip, insn.unwrap());
     }
 }
