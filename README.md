@@ -34,7 +34,7 @@ fn main() {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
 
     for (mut instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        let insn = formatter.format_instruction(&mut instruction, 200);
+        let insn = formatter.format_instruction(&mut instruction, 200, None);
         println!("0x{:016X} {}", ip, insn.unwrap());
     }
 }
@@ -58,5 +58,5 @@ fn main() {
 
 | Bindings | Zydis    |
 | -------- | -------- |
-| v0.0.2   | [v2.0.0-alpha2](https://github.com/zyantific/zydis/tree/v2.0.0-alpha2) |
+| v0.0.2   | [v2.0.0-develop@e967510](https://github.com/zyantific/zydis/tree/e967510fb251cf39a3556942b58218a9dcac5554) |
 | v0.0.1   | [v2.0.0-develop@4a79d57](https://github.com/zyantific/zydis/tree/4a79d5762ea7f15a5961733cc6d3a7704d3d5206) |

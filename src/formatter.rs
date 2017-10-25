@@ -2,9 +2,11 @@
 
 use gen::*;
 use status::ZydisResult;
+use std::any::Any;
 use std::mem;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_void};
+use std::ptr;
 use std::slice;
 
 
@@ -106,11 +108,12 @@ impl Buffer {
 
     /// Appends the given string `s` to this buffer.
     ///
-    /// Warning: The actual rust `&str`ings are encoded in UTF-8 and they are not
-    /// converted to any other encoding. They're simply copied, byte for byte, to the
-    /// buffer. Therefor the buffer should be interpreted as UTF-8 when later being printed.
-    /// A `\0` is automatically added.
-    pub fn append(&mut self, s: &str) -> ZydisResult<()> {
+    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't converted to any
+    /// other encoding. They're simply copied, byte by byte, to the buffer. Therefore, the
+    /// buffer should be interpreted as UTF-8 when later being printed.
+    /// A terminating `\0` is automatically added.
+    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> ZydisResult<()> {
+        let s = s.as_ref();
         let bytes = s.as_bytes();
         if bytes.len() + 1 >= self.buffer_length {
             return Err(ZYDIS_STATUS_INSUFFICIENT_BUFFER_SIZE);
@@ -125,37 +128,62 @@ impl Buffer {
     }
 }
 
-pub type WrappedNotifyFunc = Fn(&Formatter, &ZydisDecodedInstruction)
+pub type WrappedNotifyFunc = Fn(&Formatter, &ZydisDecodedInstruction, Option<&mut Any>)
     -> ZydisResult<()>;
-pub type WrappedFormatFunc = Fn(&Formatter, &mut Buffer, &ZydisDecodedInstruction)
-    -> ZydisResult<()>;
+
+pub type WrappedFormatFunc = Fn(
+    &Formatter,
+    &mut Buffer,
+    &ZydisDecodedInstruction,
+    Option<&mut Any>,
+) -> ZydisResult<()>;
+
 pub type WrappedFormatOperandFunc = Fn(
     &Formatter,
     &mut Buffer,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
+    Option<&mut Any>,
 ) -> ZydisResult<()>;
+
 pub type WrappedFormatAddressFunc = Fn(
     &Formatter,
     &mut Buffer,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     u64,
+    Option<&mut Any>,
 ) -> ZydisResult<()>;
+
 pub type WrappedFormatDecoratorFunc = Fn(
     &Formatter,
     &mut Buffer,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     ZydisDecoratorType,
+    Option<&mut Any>,
 ) -> ZydisResult<()>;
 
 macro_rules! wrapped_hook_setter{
     ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
         => {
+        /// Sets the formatter hook to the provided value.
+        ///
+        /// This function accepts a wrapped version of the raw hook.
+        /// It returns the previous set *raw* hook.
         pub fn $func_name(&mut self, new_func: Box<$field_type>) -> ZydisResult<Hook> {
             self.$field_name = Some(new_func);
             self.set_raw_hook($constructor(Some($dispatch_func)))
+        }
+    }
+}
+
+macro_rules! get_user_data {
+    ($user_data:expr) => {
+        if $user_data.is_null() {
+            None
+        } else {
+            Some(*($user_data as *mut &mut Any))
         }
     }
 }
@@ -165,10 +193,13 @@ macro_rules! wrap_func{
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
             instruction: *const ZydisDecodedInstruction,
-            _user_data: *mut c_void,
+            user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter, &*instruction) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &*instruction,
+                get_user_data!(user_data)) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
@@ -181,13 +212,14 @@ macro_rules! wrap_func{
             buffer: *mut *mut c_char,
             len: usize,
             instruction: *const ZydisDecodedInstruction,
-            _user_data: *mut c_void,
+            user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut Buffer::new(buffer, len),
                 &*instruction,
+                get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
@@ -202,7 +234,7 @@ macro_rules! wrap_func{
             len: usize,
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
-            _user_data: *mut c_void,
+            user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -210,6 +242,7 @@ macro_rules! wrap_func{
                 &mut Buffer::new(buffer, len),
                 &*instruction,
                 &*operand,
+                get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
@@ -224,7 +257,7 @@ macro_rules! wrap_func{
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
             decorator: ZydisDecoratorType,
-            _user_data: *mut c_void,
+            user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -233,6 +266,7 @@ macro_rules! wrap_func{
                 &*instruction,
                 &*operand,
                 decorator,
+                get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
@@ -247,7 +281,7 @@ macro_rules! wrap_func{
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
             address: u64,
-            _user_data: *mut c_void,
+            user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
             let r = match formatter.$field_name.as_ref().unwrap()(
@@ -256,6 +290,7 @@ macro_rules! wrap_func{
                 &*instruction,
                 &*operand,
                 address,
+                get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
@@ -356,7 +391,8 @@ impl Formatter {
         )
     }
 
-    /// Formats the given instruction, returning a string.
+    /// Formats the given instruction, returning a string. `size` is the size
+    /// allocated (in bytes) for the string that holds the result.
     ///
     /// # Examples
     ///
@@ -371,16 +407,17 @@ impl Formatter {
     ///
     /// static INT3: &'static [u8] = &[0xCCu8];
     /// let mut info = dec.decode(INT3, 0).unwrap().unwrap();
-    /// let fmt = formatter.format_instruction(&mut info, 200).unwrap();
+    /// let fmt = formatter.format_instruction(&mut info, 200, None).unwrap();
     /// assert_eq!(fmt, "int3");
     /// ```
     pub fn format_instruction(
         &self,
-        instruction: &mut ZydisDecodedInstruction,
+        instruction: &ZydisDecodedInstruction,
         size: usize,
+        user_data: Option<&mut Any>,
     ) -> ZydisResult<String> {
         let mut buffer = vec![0u8; size];
-        self.format_instruction_raw(instruction, &mut buffer)
+        self.format_instruction_raw(instruction, &mut buffer, user_data)
             .map(|_| {
                 unsafe { CStr::from_ptr(buffer.as_ptr() as _) }
                     .to_string_lossy()
@@ -388,25 +425,42 @@ impl Formatter {
             })
     }
 
+    /// Formats the given `instruction`, using the given `buffer` for the
+    /// result.
+    ///
+    /// `user_data` may contain any data you wish to pass on to the
+    /// Formatter hooks.
     pub fn format_instruction_raw(
         &self,
-        instruction: &mut ZydisDecodedInstruction,
+        instruction: &ZydisDecodedInstruction,
         buffer: &mut [u8],
+        user_data: Option<&mut Any>,
     ) -> ZydisResult<()> {
         unsafe {
             check!(
-                ZydisFormatterFormatInstruction(
+                ZydisFormatterFormatInstructionEx(
                     &self.formatter,
                     instruction,
                     buffer.as_ptr() as _,
-                    buffer.len()
+                    buffer.len(),
+                    match user_data {
+                        None => ptr::null_mut(),
+                        Some(mut x) => (&mut x as *mut &mut Any) as *mut _,
+                    }
                 ),
                 ()
             )
         }
     }
 
-    /// Sets a hook, allowing for customizations along the formatting process.
+    /// Sets a raw hook, allowing for customizations along the formatting process.
+    ///
+    /// This is the raw C style version of the formatter hook mechanism. No
+    /// wrapping occurs, your callback will receive raw pointers. You might want
+    /// to consider using any of the wrapped variants instead.
+    ///
+    /// Be careful with accessing the `user_data` parameter in the raw hooks.
+    /// It's type is `*mut &mut Any`.
     pub fn set_raw_hook(&mut self, hook: Hook) -> ZydisResult<Hook> {
         unsafe {
             let mut cb = hook.to_raw();
