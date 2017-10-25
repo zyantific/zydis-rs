@@ -45,13 +45,14 @@ impl Decoder {
     /// # Examples
     ///
     /// ```
+    /// use zydis::gen::*;
     /// static INT3: &'static [u8] = &[0xCCu8];
     /// let decoder = zydis::Decoder::new(
-    ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
-    ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
+    ///     ZYDIS_MACHINE_MODE_LONG_64,
+    ///     ZYDIS_ADDRESS_WIDTH_64
     /// ).unwrap();
     /// let info = decoder.decode(INT3, 0x00400000).unwrap().unwrap();
-    /// assert_eq!(info.mnemonic as u32, zydis::gen::ZYDIS_MNEMONIC_INT3);
+    /// assert_eq!(info.mnemonic as ZydisMnemonics, ZYDIS_MNEMONIC_INT3);
     /// ```
     pub fn decode(
         &self,
