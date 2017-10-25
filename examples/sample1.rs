@@ -15,6 +15,10 @@ fn main() {
 
     for (mut instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         let insn = formatter.format_instruction(&mut instruction, 200, None);
-        println!("0x{:016X} {}", ip - instruction.length as u64, insn.unwrap());
+        println!(
+            "0x{:016X} {}",
+            ip - instruction.length as u64,
+            insn.unwrap()
+        );
     }
 }

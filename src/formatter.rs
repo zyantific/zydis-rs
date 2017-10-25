@@ -131,15 +131,19 @@ impl Buffer {
 pub type WrappedNotifyFunc = Fn(&Formatter, &ZydisDecodedInstruction, Option<&mut Any>)
     -> ZydisResult<()>;
 
-pub type WrappedFormatFunc = Fn(&Formatter, &mut Buffer, &ZydisDecodedInstruction, Option<&mut Any>)
-    -> ZydisResult<()>;
+pub type WrappedFormatFunc = Fn(
+    &Formatter,
+    &mut Buffer,
+    &ZydisDecodedInstruction,
+    Option<&mut Any>,
+) -> ZydisResult<()>;
 
 pub type WrappedFormatOperandFunc = Fn(
     &Formatter,
     &mut Buffer,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
-    Option<&mut Any>
+    Option<&mut Any>,
 ) -> ZydisResult<()>;
 
 pub type WrappedFormatAddressFunc = Fn(
@@ -163,6 +167,10 @@ pub type WrappedFormatDecoratorFunc = Fn(
 macro_rules! wrapped_hook_setter{
     ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
         => {
+        /// Sets the formatter hook to the provided value.
+        ///
+        /// This function accepts a wrapped version of the raw hook.
+        /// It returns the previous set *raw* hook.
         pub fn $func_name(&mut self, new_func: Box<$field_type>) -> ZydisResult<Hook> {
             self.$field_name = Some(new_func);
             self.set_raw_hook($constructor(Some($dispatch_func)))
@@ -188,7 +196,10 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(formatter, &*instruction, get_user_data!(user_data)) {
+            let r = match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &*instruction,
+                get_user_data!(user_data)) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
             };
@@ -380,7 +391,8 @@ impl Formatter {
         )
     }
 
-    /// Formats the given instruction, returning a string.
+    /// Formats the given instruction, returning a string. `size` is the size
+    /// allocated (in bytes) for the string that holds the result.
     ///
     /// # Examples
     ///
@@ -415,7 +427,7 @@ impl Formatter {
 
     /// Formats the given `instruction`, using the given `buffer` for the
     /// result.
-    /// 
+    ///
     /// `user_data` may contain any data you wish to pass on to the
     /// Formatter hooks.
     pub fn format_instruction_raw(
@@ -442,11 +454,11 @@ impl Formatter {
     }
 
     /// Sets a hook, allowing for customizations along the formatting process.
-    /// 
+    ///
     /// This function contains "raw", because the Hook you set is not wrapped,
     /// and you're dealing with not that nice types when using this function.
     /// You might want to consider using any of the wrapped variants.
-    /// 
+    ///
     /// You need to be carefull with accessing the `user_data` parameter in
     /// the raw hooks. The type of it will be `*mut &mut Any`.
     pub fn set_raw_hook(&mut self, hook: Hook) -> ZydisResult<Hook> {
