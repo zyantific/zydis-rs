@@ -14,5 +14,5 @@ repository  = "https://github.com/zyantific/zydis-rs/"
 build       = true
 
 [build-dependencies]
-gcc         = "0.3.53"
-bindgen     = "0.29"
+cc          = "1.0"
+bindgen     = "0.32"

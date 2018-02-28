@@ -9,34 +9,21 @@ pub struct Decoder {
 }
 
 impl Decoder {
-    pub fn new_ex(
-        machine_mode: ZydisMachineModes,
-        address_width: ZydisAddressWidths,
-        granularity: ZydisDecodeGranularities,
-    ) -> ZydisResult<Decoder> {
-        unsafe {
-            let mut decoder = uninitialized();
-            check!(
-                ZydisDecoderInitEx(
-                    &mut decoder,
-                    machine_mode as _,
-                    address_width as _,
-                    granularity as _
-                ),
-                Decoder { decoder }
-            )
-        }
-    }
-
     pub fn new(
         machine_mode: ZydisMachineModes,
         address_width: ZydisAddressWidths,
     ) -> ZydisResult<Decoder> {
-        Decoder::new_ex(
-            machine_mode,
-            address_width,
-            ZYDIS_DECODE_GRANULARITY_DEFAULT,
-        )
+        unsafe {
+            let mut decoder = uninitialized();
+            check!(
+                ZydisDecoderInit(
+                    &mut decoder,
+                    machine_mode as _,
+                    address_width as _,
+                ),
+                Decoder { decoder }
+            )
+        }
     }
 
     /// Decodes a binary instruction to `ZydisDecodedInstruction`, taking
@@ -101,8 +88,9 @@ impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
         match self.decoder.decode(self.buffer, self.ip) {
             Ok(Some(insn)) => {
                 self.buffer = &self.buffer[insn.length as usize..];
+                let item = Some((insn, self.ip));
                 self.ip += insn.length as u64;
-                Some((insn, self.ip))
+                item
             }
             _ => None,
         }

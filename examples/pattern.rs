@@ -16,7 +16,7 @@ static CODE: &'static [u8] = &[
 fn main() {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
 
-    for (insn, offs) in decoder.instruction_iterator(CODE, 0) {
+    for (insn, ip) in decoder.instruction_iterator(CODE, 0) {
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
         let mut mask = 0u16;
 
@@ -43,8 +43,8 @@ fn main() {
 
         // Print pattern.
         let len = insn.length as usize;
-        let end = offs as usize;
-        for (i, byte) in (&CODE[end - len..end]).iter().enumerate() {
+        let ip = ip as usize;
+        for (i, byte) in (&CODE[ip..ip + len]).iter().enumerate() {
             if mask & (1 << i) != 0 {
                 print!("??");
             } else {

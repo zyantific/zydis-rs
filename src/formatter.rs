@@ -7,103 +7,107 @@ use std::mem;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
-use std::slice;
-
 
 #[derive(Clone)]
 pub enum Hook {
-    FuncPre(ZydisFormatterNotifyFunc),
-    FuncPost(ZydisFormatterNotifyFunc),
-    FuncFormatInstruction(ZydisFormatterFormatFunc),
-    FuncPrintPrefixes(ZydisFormatterFormatFunc),
-    FuncPrintMnemonic(ZydisFormatterFormatFunc),
-    FuncFormatOperandReg(ZydisFormatterFormatOperandFunc),
-    FuncFormatOperandMem(ZydisFormatterFormatOperandFunc),
-    FuncFormatOperandPtr(ZydisFormatterFormatOperandFunc),
-    FuncFormatOperandImm(ZydisFormatterFormatOperandFunc),
-    FuncPrintOperandsize(ZydisFormatterFormatOperandFunc),
-    FuncPrintSegment(ZydisFormatterFormatOperandFunc),
-    FuncPrintDecorator(ZydisFormatterFormatDecoratorFunc),
-    FuncPrintDisplacement(ZydisFormatterFormatOperandFunc),
-    FuncPrintImmediate(ZydisFormatterFormatOperandFunc),
-    FuncPrintAddress(ZydisFormatterFormatAddressFunc),
+    PreInstruction(ZydisFormatterFunc),
+    PostInstruction(ZydisFormatterFunc),
+    PreOperand(ZydisFormatterOperandFunc),
+    PostOperand(ZydisFormatterOperandFunc),
+    FormatInstruction(ZydisFormatterFunc),
+    FormatOperandReg(ZydisFormatterOperandFunc),
+    FormatOperandMem(ZydisFormatterOperandFunc),
+    FormatOperandPtr(ZydisFormatterOperandFunc),
+    FormatOperandImm(ZydisFormatterOperandFunc),
+    PrintMnemonic(ZydisFormatterFunc),
+    PrintRegister(ZydisFormatterRegisterFunc),
+    PrintAddress(ZydisFormatterAddressFunc),
+    PrintDisp(ZydisFormatterOperandFunc),
+    PrintImm(ZydisFormatterOperandFunc),
+    PrintMemsize(ZydisFormatterOperandFunc),
+    PrintPrefixes(ZydisFormatterFunc),
+    PrintDecorator(ZydisFormatterDecoratorFunc),
 }
 
 impl Hook {
-    pub fn to_id(&self) -> ZydisFormatterHookTypes {
+    pub fn to_id(&self) -> ZydisFormatterHookType {
         use self::Hook::*;
-        match *self {
-            FuncPre(_) => ZYDIS_FORMATTER_HOOK_PRE,
-            FuncPost(_) => ZYDIS_FORMATTER_HOOK_POST,
-            FuncFormatInstruction(_) => ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION,
-            FuncPrintPrefixes(_) => ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES,
-            FuncPrintMnemonic(_) => ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC,
-            FuncFormatOperandReg(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG,
-            FuncFormatOperandMem(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM,
-            FuncFormatOperandPtr(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR,
-            FuncFormatOperandImm(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM,
-            FuncPrintOperandsize(_) => ZYDIS_FORMATTER_HOOK_PRINT_OPERANDSIZE,
-            FuncPrintSegment(_) => ZYDIS_FORMATTER_HOOK_PRINT_SEGMENT,
-            FuncPrintDecorator(_) => ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR,
-            FuncPrintDisplacement(_) => ZYDIS_FORMATTER_HOOK_PRINT_DISPLACEMENT,
-            FuncPrintImmediate(_) => ZYDIS_FORMATTER_HOOK_PRINT_IMMEDIATE,
-            FuncPrintAddress(_) => ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS,
-        }
+        (match *self {
+            PreInstruction(_) => ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION,
+            PostInstruction(_) => ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION,
+            PreOperand(_) => ZYDIS_FORMATTER_HOOK_PRE_OPERAND,
+            PostOperand(_) => ZYDIS_FORMATTER_HOOK_POST_OPERAND,
+            FormatInstruction(_) => ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION,
+            FormatOperandReg(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG,
+            FormatOperandMem(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM,
+            FormatOperandPtr(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR,
+            FormatOperandImm(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM,
+            PrintMnemonic(_) => ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC,
+            PrintRegister(_) => ZYDIS_FORMATTER_HOOK_PRINT_REGISTER,
+            PrintAddress(_) => ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS,
+            PrintDisp(_) => ZYDIS_FORMATTER_HOOK_PRINT_DISP,
+            PrintImm(_) => ZYDIS_FORMATTER_HOOK_PRINT_IMM,
+            PrintMemsize(_) => ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE,
+            PrintPrefixes(_) => ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES,
+            PrintDecorator(_) => ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR,
+        }) as _
     }
 
     pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
         match *self {
-            FuncPre(x) => mem::transmute(x),
-            FuncPost(x) => mem::transmute(x),
-            FuncFormatInstruction(x) => mem::transmute(x),
-            FuncPrintPrefixes(x) => mem::transmute(x),
-            FuncPrintMnemonic(x) => mem::transmute(x),
-            FuncFormatOperandReg(x) => mem::transmute(x),
-            FuncFormatOperandMem(x) => mem::transmute(x),
-            FuncFormatOperandPtr(x) => mem::transmute(x),
-            FuncFormatOperandImm(x) => mem::transmute(x),
-            FuncPrintOperandsize(x) => mem::transmute(x),
-            FuncPrintSegment(x) => mem::transmute(x),
-            FuncPrintDecorator(x) => mem::transmute(x),
-            FuncPrintDisplacement(x) => mem::transmute(x),
-            FuncPrintImmediate(x) => mem::transmute(x),
-            FuncPrintAddress(x) => mem::transmute(x),
+            PreInstruction(x) => mem::transmute(x),
+            PostInstruction(x) => mem::transmute(x),
+            PreOperand(x) => mem::transmute(x),
+            PostOperand(x) => mem::transmute(x),
+            FormatInstruction(x) => mem::transmute(x),
+            FormatOperandReg(x) => mem::transmute(x),
+            FormatOperandMem(x) => mem::transmute(x),
+            FormatOperandPtr(x) => mem::transmute(x),
+            FormatOperandImm(x) => mem::transmute(x),
+            PrintMnemonic(x) => mem::transmute(x),
+            PrintRegister(x) => mem::transmute(x),
+            PrintAddress(x) => mem::transmute(x),
+            PrintDisp(x) => mem::transmute(x),
+            PrintImm(x) => mem::transmute(x),
+            PrintMemsize(x) => mem::transmute(x),
+            PrintPrefixes(x) => mem::transmute(x),
+            PrintDecorator(x) => mem::transmute(x),
         }
     }
 
-    pub unsafe fn from_raw(id: ZydisFormatterHookTypes, cb: *const c_void) -> Hook {
+    pub unsafe fn from_raw(id: ZydisFormatterHookType, cb: *const c_void) -> Hook {
         use self::Hook::*;
-        match id {
-            ZYDIS_FORMATTER_HOOK_PRE => FuncPre(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_POST => FuncPost(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION => FuncFormatInstruction(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES => FuncPrintPrefixes(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC => FuncPrintMnemonic(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG => FuncFormatOperandReg(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM => FuncFormatOperandMem(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR => FuncFormatOperandPtr(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM => FuncFormatOperandImm(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_OPERANDSIZE => FuncPrintOperandsize(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_SEGMENT => FuncPrintSegment(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR => FuncPrintDecorator(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_DISPLACEMENT => FuncPrintDisplacement(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_IMMEDIATE => FuncPrintImmediate(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS => FuncPrintAddress(mem::transmute(cb)),
+        match id as _ {
+            ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION => PreInstruction(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION => PostInstruction(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRE_OPERAND => PreOperand(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_POST_OPERAND => PostOperand(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION => FormatInstruction(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG => FormatOperandReg(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM => FormatOperandMem(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR => FormatOperandPtr(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM => FormatOperandImm(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC => PrintMnemonic(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_REGISTER => PrintRegister(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS => PrintAddress(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_DISP => PrintDisp(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_IMM => PrintImm(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE => PrintMemsize(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES => PrintPrefixes(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR => PrintDecorator(mem::transmute(cb)),
             _ => unreachable!(),
         }
     }
 }
 
-/// Wraps the raw `*mut *mut c_char` of formatter hooks and makes it easier to use.
-pub struct Buffer {
-    raw: *mut *mut c_char,
-    buffer_length: usize,
-}
-
-impl Buffer {
-    pub fn new(raw: *mut *mut c_char, buffer_length: usize) -> Self {
-        Self { raw, buffer_length }
+impl ZydisString {
+    pub fn new(buffer: *mut c_char, capacity: usize) -> Self {
+        Self {
+            buffer: buffer,
+            length: 0,
+            capacity: capacity,
+        }
     }
 
     /// Appends the given string `s` to this buffer.
@@ -111,53 +115,46 @@ impl Buffer {
     /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't converted to any
     /// other encoding. They're simply copied, byte by byte, to the buffer. Therefore, the
     /// buffer should be interpreted as UTF-8 when later being printed.
-    /// A terminating `\0` is automatically added.
     pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> ZydisResult<()> {
-        let s = s.as_ref();
-        let bytes = s.as_bytes();
-        if bytes.len() + 1 >= self.buffer_length {
-            return Err(ZYDIS_STATUS_INSUFFICIENT_BUFFER_SIZE);
+        let bytes = s.as_ref().as_bytes();
+        unsafe {
+            check!(
+                ZydisStringAppendStatic(
+                    self,
+                    &ZydisStaticString {
+                        buffer: bytes.as_ptr() as _,
+                        length: bytes.len() as _,
+                    },
+                    ZYDIS_LETTER_CASE_DEFAULT as _,
+                ),
+                ()
+            )
         }
-
-        let slice =
-            unsafe { slice::from_raw_parts_mut(*(self.raw) as *mut u8, self.buffer_length) };
-        (&mut slice[..bytes.len()]).clone_from_slice(bytes);
-        slice[bytes.len()] = '\0' as u8;
-        unsafe { *self.raw = (*self.raw).offset(bytes.len() as _) };
-        Ok(())
     }
 }
 
-pub type WrappedNotifyFunc = Fn(&Formatter, &ZydisDecodedInstruction, Option<&mut Any>)
-    -> ZydisResult<()>;
+pub type WrappedGeneralFunc =
+    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, Option<&mut Any>) -> ZydisResult<()>;
 
-pub type WrappedFormatFunc = Fn(
+pub type WrappedOperandFunc = Fn(
     &Formatter,
-    &mut Buffer,
-    &ZydisDecodedInstruction,
-    Option<&mut Any>,
-) -> ZydisResult<()>;
-
-pub type WrappedFormatOperandFunc = Fn(
-    &Formatter,
-    &mut Buffer,
+    &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     Option<&mut Any>,
 ) -> ZydisResult<()>;
 
-pub type WrappedFormatAddressFunc = Fn(
-    &Formatter,
-    &mut Buffer,
-    &ZydisDecodedInstruction,
-    &ZydisDecodedOperand,
-    u64,
-    Option<&mut Any>,
-) -> ZydisResult<()>;
+pub type WrappedRegisterFunc =
+    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, &ZydisDecodedOperand, ZydisRegister, Option<&mut Any>)
+        -> ZydisResult<()>;
 
-pub type WrappedFormatDecoratorFunc = Fn(
+pub type WrappedAddressFunc =
+    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, &ZydisDecodedOperand, u64, Option<&mut Any>)
+        -> ZydisResult<()>;
+
+pub type WrappedDecoratorFunc = Fn(
     &Formatter,
-    &mut Buffer,
+    &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     ZydisDecoratorType,
@@ -189,104 +186,82 @@ macro_rules! get_user_data {
 }
 
 macro_rules! wrap_func{
-    (notify $field_name:ident, $func_name:ident) => {
+    (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
+            string: *mut ZydisString,
             instruction: *const ZydisDecodedInstruction,
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(
+            (match formatter.$field_name.as_ref().unwrap()(
                 formatter,
+                &mut *string,
                 &*instruction,
-                get_user_data!(user_data)) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
-            };
-            r as _
-        }
-    };
-    (format $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            buffer: *mut *mut c_char,
-            len: usize,
-            instruction: *const ZydisDecodedInstruction,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
-            let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(
-                formatter,
-                &mut Buffer::new(buffer, len),
-                &*instruction,
-                get_user_data!(user_data),
+                get_user_data!(user_data)
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            };
-            r as _
+            }) as _
         }
     };
-    (format_operand $field_name:ident, $func_name:ident) => {
+    (operand $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            buffer: *mut *mut c_char,
-            len: usize,
+            string: *mut ZydisString,
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(
+            (match formatter.$field_name.as_ref().unwrap()(
                 formatter,
-                &mut Buffer::new(buffer, len),
+                &mut *string,
                 &*instruction,
                 &*operand,
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            };
-            r as _
+            }) as _
         }
     };
-    (format_decorator $field_name:ident, $func_name:ident) => {
+    (register $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-            len: usize,
+            formatter: *const ZydisFormatter,
+            string: *mut ZydisString,
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
-            decorator: ZydisDecoratorType,
+            reg: ZydisRegister,
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(
+            (match formatter.$field_name.as_ref().unwrap()(
                 formatter,
-                &mut Buffer::new(buffer, len),
+                &mut *string,
                 &*instruction,
                 &*operand,
-                decorator,
+                reg,
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            };
-            r as _
+            }) as _
         }
     };
-    (format_address $field_name:ident, $func_name:ident) => {
+    (address $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter, buffer: *mut *mut c_char,
-            len: usize,
+            formatter: *const ZydisFormatter,
+            string: *mut ZydisString,
             instruction: *const ZydisDecodedInstruction,
             operand: *const ZydisDecodedOperand,
             address: u64,
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            let r = match formatter.$field_name.as_ref().unwrap()(
+            (match formatter.$field_name.as_ref().unwrap()(
                 formatter,
-                &mut Buffer::new(buffer, len),
+                &mut *string,
                 &*instruction,
                 &*operand,
                 address,
@@ -294,101 +269,106 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            };
-            r as _
+            }) as _
         }
-    }
+    };
+    (decorator $field_name:ident, $func_name:ident) => {
+        unsafe extern "C" fn $func_name(
+            formatter: *const ZydisFormatter,
+            string: *mut ZydisString,
+            instruction: *const ZydisDecodedInstruction,
+            operand: *const ZydisDecodedOperand,
+            decorator: ZydisDecoratorType,
+            user_data: *mut c_void,
+        ) -> ZydisStatus {
+            let formatter = &*(formatter as *const Formatter);
+            (match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut *string,
+                &*instruction,
+                &*operand,
+                decorator,
+                get_user_data!(user_data),
+            ) {
+                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Err(e) => e,
+            }) as _
+        }
+    };
 }
 
-wrap_func!(notify pre, dispatch_pre);
-wrap_func!(notify post, dispatch_post);
-wrap_func!(format format_instruction, dispatch_format_instruction);
-wrap_func!(format print_prefixes, dispatch_print_prefixes);
-wrap_func!(format print_mnemonic, dispatch_print_mnemonic);
-wrap_func!(format_operand format_operand_reg, dispatch_format_operand_reg);
-wrap_func!(format_operand format_operand_mem, dispatch_format_operand_mem);
-wrap_func!(format_operand format_operand_ptr, dispatch_format_operand_ptr);
-wrap_func!(format_operand format_operand_imm, dispatch_format_operand_imm);
-wrap_func!(format_operand print_operand_size, dispatch_print_operand_size);
-wrap_func!(format_operand print_segment, dispatch_print_segment);
-wrap_func!(format_decorator print_decorator, dispatch_print_decorator);
-wrap_func!(format_address print_address, dispatch_print_address);
-wrap_func!(format_operand print_displacement, dispatch_print_displacement);
-wrap_func!(format_operand print_immediate, dispatch_print_immediate);
+wrap_func!(general pre_instruction, dispatch_pre_instruction);
+wrap_func!(general post_instruction, dispatch_post_instruction);
+wrap_func!(operand pre_operand, dispatch_pre_operand);
+wrap_func!(operand post_operand, dispatch_post_operand);
+wrap_func!(general format_instruction, dispatch_format_instruction);
+wrap_func!(operand format_operand_reg, dispatch_format_operand_reg);
+wrap_func!(operand format_operand_mem, dispatch_format_operand_mem);
+wrap_func!(operand format_operand_ptr, dispatch_format_operand_ptr);
+wrap_func!(operand format_operand_imm, dispatch_format_operand_imm);
+wrap_func!(general print_mnemonic, dispatch_print_mnemonic);
+wrap_func!(register print_register, dispatch_print_register);
+wrap_func!(address print_address, dispatch_print_address);
+wrap_func!(operand print_disp, dispatch_print_disp);
+wrap_func!(operand print_imm, dispatch_print_imm);
+wrap_func!(operand print_memsize, dispatch_print_memsize);
+wrap_func!(general print_prefixes, dispatch_print_prefixes);
+wrap_func!(decorator print_decorator, dispatch_print_decorator);
 
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the rust compiler
 // could reorder the fields if this wasn't #[repr(C)].
 pub struct Formatter {
     formatter: ZydisFormatter,
-    pre: Option<Box<WrappedNotifyFunc>>,
-    post: Option<Box<WrappedNotifyFunc>>,
-    format_instruction: Option<Box<WrappedFormatFunc>>,
-    print_prefixes: Option<Box<WrappedFormatFunc>>,
-    print_mnemonic: Option<Box<WrappedFormatFunc>>,
-    format_operand_reg: Option<Box<WrappedFormatOperandFunc>>,
-    format_operand_mem: Option<Box<WrappedFormatOperandFunc>>,
-    format_operand_ptr: Option<Box<WrappedFormatOperandFunc>>,
-    format_operand_imm: Option<Box<WrappedFormatOperandFunc>>,
-    print_operand_size: Option<Box<WrappedFormatOperandFunc>>,
-    print_segment: Option<Box<WrappedFormatOperandFunc>>,
-    print_decorator: Option<Box<WrappedFormatDecoratorFunc>>,
-    print_address: Option<Box<WrappedFormatAddressFunc>>,
-    print_displacement: Option<Box<WrappedFormatOperandFunc>>,
-    print_immediate: Option<Box<WrappedFormatOperandFunc>>,
+
+    pre_instruction: Option<Box<WrappedGeneralFunc>>,
+    post_instruction: Option<Box<WrappedGeneralFunc>>,
+    pre_operand: Option<Box<WrappedOperandFunc>>,
+    post_operand: Option<Box<WrappedOperandFunc>>,
+    format_instruction: Option<Box<WrappedGeneralFunc>>,
+    format_operand_reg: Option<Box<WrappedOperandFunc>>,
+    format_operand_mem: Option<Box<WrappedOperandFunc>>,
+    format_operand_ptr: Option<Box<WrappedOperandFunc>>,
+    format_operand_imm: Option<Box<WrappedOperandFunc>>,
+    print_mnemonic: Option<Box<WrappedGeneralFunc>>,
+    print_register: Option<Box<WrappedRegisterFunc>>,
+    print_address: Option<Box<WrappedAddressFunc>>,
+    print_disp: Option<Box<WrappedOperandFunc>>,
+    print_imm: Option<Box<WrappedOperandFunc>>,
+    print_memsize: Option<Box<WrappedOperandFunc>>,
+    print_prefixes: Option<Box<WrappedGeneralFunc>>,
+    print_decorator: Option<Box<WrappedDecoratorFunc>>,
 }
 
 impl Formatter {
-    /// Creates a new formatter instance, accepting formatter flags.
-    pub fn new_ex(
-        style: ZydisFormatterStyles,
-        flags: ZydisFormatterFlags,
-        address_format: ZydisFormatterAddressFormats,
-        displacement_format: ZydisFormatterDisplacementFormats,
-        immediate_format: ZydisFormatterImmediateFormats,
-    ) -> ZydisResult<Self> {
+    /// Creates a new formatter instance.
+    pub fn new(style: ZydisFormatterStyles) -> ZydisResult<Self> {
         unsafe {
             let mut formatter = mem::uninitialized();
             check!(
-                ZydisFormatterInitEx(
-                    &mut formatter,
-                    style as _,
-                    flags,
-                    address_format as _,
-                    displacement_format as _,
-                    immediate_format as _,
-                ),
+                ZydisFormatterInit(&mut formatter, style as _,),
                 Formatter {
                     formatter,
-                    pre: None,
-                    post: None,
+                    pre_instruction: None,
+                    post_instruction: None,
+                    pre_operand: None,
+                    post_operand: None,
                     format_instruction: None,
-                    print_prefixes: None,
-                    print_mnemonic: None,
                     format_operand_reg: None,
                     format_operand_mem: None,
                     format_operand_ptr: None,
                     format_operand_imm: None,
-                    print_operand_size: None,
-                    print_segment: None,
-                    print_decorator: None,
+                    print_mnemonic: None,
+                    print_register: None,
                     print_address: None,
-                    print_displacement: None,
-                    print_immediate: None,
+                    print_disp: None,
+                    print_imm: None,
+                    print_memsize: None,
+                    print_prefixes: None,
+                    print_decorator: None,
                 }
             )
         }
-    }
-
-    /// Creates a new formatter instance.
-    pub fn new(style: ZydisFormatterStyles) -> ZydisResult<Self> {
-        Self::new_ex(
-            style,
-            0,
-            ZYDIS_FORMATTER_ADDR_DEFAULT,
-            ZYDIS_FORMATTER_DISP_DEFAULT,
-            ZYDIS_FORMATTER_IMM_DEFAULT,
-        )
     }
 
     /// Formats the given instruction, returning a string. `size` is the size
@@ -459,7 +439,7 @@ impl Formatter {
     /// wrapping occurs, your callback will receive raw pointers. You might want
     /// to consider using any of the wrapped variants instead.
     ///
-    /// Be careful with accessing the `user_data` parameter in the raw hooks.
+    /// Be careful when accessing the `user_data` parameter in the raw hooks.
     /// It's type is `*mut &mut Any`.
     pub fn set_raw_hook(&mut self, hook: Hook) -> ZydisResult<Hook> {
         unsafe {
@@ -473,103 +453,123 @@ impl Formatter {
         }
     }
 
-    wrapped_hook_setter!(pre, WrappedNotifyFunc, set_pre, dispatch_pre, Hook::FuncPre);
     wrapped_hook_setter!(
-        post,
-        WrappedNotifyFunc,
-        set_post,
-        dispatch_post,
-        Hook::FuncPost
+        pre_instruction,
+        WrappedGeneralFunc,
+        set_pre_instruction,
+        dispatch_pre_instruction,
+        Hook::PreInstruction
+    );
+    wrapped_hook_setter!(
+        post_instruction,
+        WrappedGeneralFunc,
+        set_post_instruction,
+        dispatch_post_instruction,
+        Hook::PostInstruction
+    );
+    wrapped_hook_setter!(
+        pre_operand,
+        WrappedOperandFunc,
+        set_pre_operand,
+        dispatch_pre_operand,
+        Hook::PreOperand
+    );
+    wrapped_hook_setter!(
+        post_operand,
+        WrappedOperandFunc,
+        set_post_operand,
+        dispatch_post_operand,
+        Hook::PostOperand
     );
     wrapped_hook_setter!(
         format_instruction,
-        WrappedFormatFunc,
+        WrappedGeneralFunc,
         set_format_instruction,
         dispatch_format_instruction,
-        Hook::FuncFormatInstruction
-    );
-    wrapped_hook_setter!(
-        print_prefixes,
-        WrappedFormatFunc,
-        set_print_prefixes,
-        dispatch_print_prefixes,
-        Hook::FuncPrintPrefixes
-    );
-    wrapped_hook_setter!(
-        print_mnemonic,
-        WrappedFormatFunc,
-        set_print_mnemonic,
-        dispatch_print_mnemonic,
-        Hook::FuncPrintMnemonic
+        Hook::FormatInstruction
     );
     wrapped_hook_setter!(
         format_operand_reg,
-        WrappedFormatOperandFunc,
+        WrappedOperandFunc,
         set_format_operand_reg,
         dispatch_format_operand_reg,
-        Hook::FuncFormatOperandReg
+        Hook::FormatOperandReg
     );
     wrapped_hook_setter!(
         format_operand_mem,
-        WrappedFormatOperandFunc,
+        WrappedOperandFunc,
         set_format_operand_mem,
         dispatch_format_operand_mem,
-        Hook::FuncFormatOperandMem
+        Hook::FormatOperandMem
     );
     wrapped_hook_setter!(
         format_operand_ptr,
-        WrappedFormatOperandFunc,
+        WrappedOperandFunc,
         set_format_operand_ptr,
         dispatch_format_operand_ptr,
-        Hook::FuncFormatOperandPtr
+        Hook::FormatOperandPtr
     );
     wrapped_hook_setter!(
         format_operand_imm,
-        WrappedFormatOperandFunc,
+        WrappedOperandFunc,
         set_format_operand_imm,
         dispatch_format_operand_imm,
-        Hook::FuncFormatOperandImm
+        Hook::FormatOperandImm
     );
     wrapped_hook_setter!(
-        print_operand_size,
-        WrappedFormatOperandFunc,
-        set_print_operand_size,
-        dispatch_print_operand_size,
-        Hook::FuncPrintOperandsize
+        print_mnemonic,
+        WrappedGeneralFunc,
+        set_print_mnemonic,
+        dispatch_print_mnemonic,
+        Hook::PrintMnemonic
     );
     wrapped_hook_setter!(
-        print_segment,
-        WrappedFormatOperandFunc,
-        set_print_segment,
-        dispatch_print_segment,
-        Hook::FuncPrintSegment
-    );
-    wrapped_hook_setter!(
-        print_decorator,
-        WrappedFormatDecoratorFunc,
-        set_print_decorator,
-        dispatch_print_decorator,
-        Hook::FuncPrintDecorator
+        print_register,
+        WrappedRegisterFunc,
+        set_print_register,
+        dispatch_print_register,
+        Hook::PrintRegister
     );
     wrapped_hook_setter!(
         print_address,
-        WrappedFormatAddressFunc,
+        WrappedAddressFunc,
         set_print_address,
         dispatch_print_address,
-        Hook::FuncPrintAddress
+        Hook::PrintAddress
     );
     wrapped_hook_setter!(
-        print_displacement,
-        WrappedFormatOperandFunc,
-        set_print_displacement,
-        dispatch_print_displacement,
-        Hook::FuncPrintDisplacement
+        print_disp,
+        WrappedOperandFunc,
+        set_print_disp,
+        dispatch_print_disp,
+        Hook::PrintDisp
     );
     wrapped_hook_setter!(
-        print_immediate,
-        WrappedFormatOperandFunc,
-        set_print_immediate,
-        dispatch_print_immediate,
-        Hook::FuncPrintImmediate
+        print_imm,
+        WrappedOperandFunc,
+        set_print_imm,
+        dispatch_print_imm,
+        Hook::PrintImm
+    );
+    wrapped_hook_setter!(
+        print_memsize,
+        WrappedOperandFunc,
+        set_print_memsize,
+        dispatch_print_memsize,
+        Hook::PrintMemsize
+    );
+    wrapped_hook_setter!(
+        print_prefixes,
+        WrappedGeneralFunc,
+        set_print_prefixes,
+        dispatch_print_prefixes,
+        Hook::PrintPrefixes
+    );
+    wrapped_hook_setter!(
+        print_decorator,
+        WrappedDecoratorFunc,
+        set_print_decorator,
+        dispatch_print_decorator,
+        Hook::PrintDecorator
     );
 }

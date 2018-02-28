@@ -17,7 +17,7 @@ fn main() {
         let insn = formatter.format_instruction(&mut instruction, 200, None);
         println!(
             "0x{:016X} {}",
-            ip - instruction.length as u64,
+            ip,
             insn.unwrap()
         );
     }
