@@ -1,3 +1,5 @@
+//! A completely stupid example for Zydis' formatter hook API.
+
 extern crate zydis;
 use zydis::gen::*;
 use zydis::*;
