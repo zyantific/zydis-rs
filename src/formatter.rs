@@ -30,73 +30,76 @@ pub enum Hook {
 }
 
 impl Hook {
-    pub fn to_id(&self) -> ZydisFormatterHookType {
-        use self::Hook::*;
-        (match *self {
-            PreInstruction(_) => ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION,
-            PostInstruction(_) => ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION,
-            PreOperand(_) => ZYDIS_FORMATTER_HOOK_PRE_OPERAND,
-            PostOperand(_) => ZYDIS_FORMATTER_HOOK_POST_OPERAND,
-            FormatInstruction(_) => ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION,
-            FormatOperandReg(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG,
-            FormatOperandMem(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM,
-            FormatOperandPtr(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR,
-            FormatOperandImm(_) => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM,
-            PrintMnemonic(_) => ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC,
-            PrintRegister(_) => ZYDIS_FORMATTER_HOOK_PRINT_REGISTER,
-            PrintAddress(_) => ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS,
-            PrintDisp(_) => ZYDIS_FORMATTER_HOOK_PRINT_DISP,
-            PrintImm(_) => ZYDIS_FORMATTER_HOOK_PRINT_IMM,
-            PrintMemsize(_) => ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE,
-            PrintPrefixes(_) => ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES,
-            PrintDecorator(_) => ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR,
-        }) as _
-    }
-
-    pub unsafe fn to_raw(&self) -> *const c_void {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    pub fn to_id(&self) -> ZydisFormatterHookTypes {
         use self::Hook::*;
         match *self {
-            PreInstruction(x) => mem::transmute(x),
-            PostInstruction(x) => mem::transmute(x),
-            PreOperand(x) => mem::transmute(x),
-            PostOperand(x) => mem::transmute(x),
-            FormatInstruction(x) => mem::transmute(x),
-            FormatOperandReg(x) => mem::transmute(x),
-            FormatOperandMem(x) => mem::transmute(x),
-            FormatOperandPtr(x) => mem::transmute(x),
-            FormatOperandImm(x) => mem::transmute(x),
-            PrintMnemonic(x) => mem::transmute(x),
-            PrintRegister(x) => mem::transmute(x),
-            PrintAddress(x) => mem::transmute(x),
-            PrintDisp(x) => mem::transmute(x),
-            PrintImm(x) => mem::transmute(x),
-            PrintMemsize(x) => mem::transmute(x),
-            PrintPrefixes(x) => mem::transmute(x),
-            PrintDecorator(x) => mem::transmute(x),
+            PreInstruction(_)    => ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION,
+            PostInstruction(_)   => ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION,
+            PreOperand(_)        => ZYDIS_FORMATTER_HOOK_PRE_OPERAND,
+            PostOperand(_)       => ZYDIS_FORMATTER_HOOK_POST_OPERAND,
+            FormatInstruction(_) => ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION,
+            FormatOperandReg(_)  => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG,
+            FormatOperandMem(_)  => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM,
+            FormatOperandPtr(_)  => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR,
+            FormatOperandImm(_)  => ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM,
+            PrintMnemonic(_)     => ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC,
+            PrintRegister(_)     => ZYDIS_FORMATTER_HOOK_PRINT_REGISTER,
+            PrintAddress(_)      => ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS,
+            PrintDisp(_)         => ZYDIS_FORMATTER_HOOK_PRINT_DISP,
+            PrintImm(_)          => ZYDIS_FORMATTER_HOOK_PRINT_IMM,
+            PrintMemsize(_)      => ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE,
+            PrintPrefixes(_)     => ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES,
+            PrintDecorator(_)    => ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR,
         }
     }
 
-    pub unsafe fn from_raw(id: ZydisFormatterHookType, cb: *const c_void) -> Hook {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
-        match id as _ {
-            ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION => PreInstruction(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION => PostInstruction(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRE_OPERAND => PreOperand(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_POST_OPERAND => PostOperand(mem::transmute(cb)),
+        match *self {
+            PreInstruction(x)    => mem::transmute(x),
+            PostInstruction(x)   => mem::transmute(x),
+            PreOperand(x)        => mem::transmute(x),
+            PostOperand(x)       => mem::transmute(x),
+            FormatInstruction(x) => mem::transmute(x),
+            FormatOperandReg(x)  => mem::transmute(x),
+            FormatOperandMem(x)  => mem::transmute(x),
+            FormatOperandPtr(x)  => mem::transmute(x),
+            FormatOperandImm(x)  => mem::transmute(x),
+            PrintMnemonic(x)     => mem::transmute(x),
+            PrintRegister(x)     => mem::transmute(x),
+            PrintAddress(x)      => mem::transmute(x),
+            PrintDisp(x)         => mem::transmute(x),
+            PrintImm(x)          => mem::transmute(x),
+            PrintMemsize(x)      => mem::transmute(x),
+            PrintPrefixes(x)     => mem::transmute(x),
+            PrintDecorator(x)    => mem::transmute(x),
+        }
+    }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    pub unsafe fn from_raw(id: ZydisFormatterHookTypes, cb: *const c_void) -> Hook {
+        use self::Hook::*;
+        match id {
+            ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION    => PreInstruction(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION   => PostInstruction(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRE_OPERAND        => PreOperand(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_POST_OPERAND       => PostOperand(mem::transmute(cb)),
             ZYDIS_FORMATTER_HOOK_FORMAT_INSTRUCTION => FormatInstruction(mem::transmute(cb)),
             ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_REG => FormatOperandReg(mem::transmute(cb)),
             ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_MEM => FormatOperandMem(mem::transmute(cb)),
             ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_PTR => FormatOperandPtr(mem::transmute(cb)),
             ZYDIS_FORMATTER_HOOK_FORMAT_OPERAND_IMM => FormatOperandImm(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC => PrintMnemonic(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_REGISTER => PrintRegister(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS => PrintAddress(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_DISP => PrintDisp(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_IMM => PrintImm(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE => PrintMemsize(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES => PrintPrefixes(mem::transmute(cb)),
-            ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR => PrintDecorator(mem::transmute(cb)),
-            _ => unreachable!(),
+            ZYDIS_FORMATTER_HOOK_PRINT_MNEMONIC     => PrintMnemonic(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_REGISTER     => PrintRegister(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_ADDRESS      => PrintAddress(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_DISP         => PrintDisp(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_IMM          => PrintImm(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_MEMSIZE      => PrintMemsize(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_PREFIXES     => PrintPrefixes(mem::transmute(cb)),
+            ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR    => PrintDecorator(mem::transmute(cb)),
+            _                                       => unreachable!(),
         }
     }
 }
@@ -133,8 +136,13 @@ impl ZydisString {
     }
 }
 
-pub type WrappedGeneralFunc =
-    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, Option<&mut Any>) -> ZydisResult<()>;
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub type WrappedGeneralFunc = Fn(
+    &Formatter,
+    &mut ZydisString,
+    &ZydisDecodedInstruction,
+    Option<&mut Any>
+) -> ZydisResult<()>;
 
 pub type WrappedOperandFunc = Fn(
     &Formatter,
@@ -144,13 +152,23 @@ pub type WrappedOperandFunc = Fn(
     Option<&mut Any>,
 ) -> ZydisResult<()>;
 
-pub type WrappedRegisterFunc =
-    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, &ZydisDecodedOperand, ZydisRegister, Option<&mut Any>)
-        -> ZydisResult<()>;
+pub type WrappedRegisterFunc = Fn(
+    &Formatter,
+    &mut ZydisString,
+    &ZydisDecodedInstruction,
+    &ZydisDecodedOperand,
+    ZydisRegister,
+    Option<&mut Any>,
+) -> ZydisResult<()>;
 
-pub type WrappedAddressFunc =
-    Fn(&Formatter, &mut ZydisString, &ZydisDecodedInstruction, &ZydisDecodedOperand, u64, Option<&mut Any>)
-        -> ZydisResult<()>;
+pub type WrappedAddressFunc = Fn(
+    &Formatter,
+    &mut ZydisString,
+    &ZydisDecodedInstruction,
+    &ZydisDecodedOperand,
+    u64,
+    Option<&mut Any>,
+) -> ZydisResult<()>;
 
 pub type WrappedDecoratorFunc = Fn(
     &Formatter,
@@ -194,7 +212,7 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            (match formatter.$field_name.as_ref().unwrap()(
+            match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -202,7 +220,7 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            }) as _
+            }
         }
     };
     (operand $field_name:ident, $func_name:ident) => {
@@ -214,7 +232,7 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            (match formatter.$field_name.as_ref().unwrap()(
+            match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -223,7 +241,7 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            }) as _
+            }
         }
     };
     (register $field_name:ident, $func_name:ident) => {
@@ -236,7 +254,7 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            (match formatter.$field_name.as_ref().unwrap()(
+            match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -246,7 +264,7 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            }) as _
+            }
         }
     };
     (address $field_name:ident, $func_name:ident) => {
@@ -259,7 +277,7 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            (match formatter.$field_name.as_ref().unwrap()(
+            match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -269,7 +287,7 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            }) as _
+            }
         }
     };
     (decorator $field_name:ident, $func_name:ident) => {
@@ -282,7 +300,7 @@ macro_rules! wrap_func{
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            (match formatter.$field_name.as_ref().unwrap()(
+            match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -292,7 +310,7 @@ macro_rules! wrap_func{
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,
-            }) as _
+            }
         }
     };
 }
