@@ -9,6 +9,7 @@ pub struct Decoder {
 }
 
 impl Decoder {
+    /// Creates a new `Decoder` with the given `machine_mode` and `address_width`.
     pub fn new(
         machine_mode: ZydisMachineModes,
         address_width: ZydisAddressWidths,
@@ -18,6 +19,16 @@ impl Decoder {
             check!(
                 ZydisDecoderInit(&mut decoder, machine_mode as _, address_width as _,),
                 Decoder { decoder }
+            )
+        }
+    }
+
+    /// Enables or disables (depending on the `value`) the given decoder `mode`.
+    pub fn enabled_mode(&mut self, mode: ZydisDecoderModes, value: bool) -> ZydisResult<()> {
+        unsafe {
+            check!(
+                ZydisDecoderEnableMode(&mut self.decoder, mode as _, value as _),
+                ()
             )
         }
     }
