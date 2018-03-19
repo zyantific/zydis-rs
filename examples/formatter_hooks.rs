@@ -45,8 +45,8 @@ fn real_main() -> ZydisResult<()> {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
     for (mut instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        let insn = formatter.format_instruction(&mut instruction, 200, Some(&mut 1337u64));
-        println!("0x{:016X} {}", ip, insn?);
+        let insn = formatter.format_instruction(&mut instruction, 200, Some(&mut 1337u64))?;
+        println!("0x{:016X} {}", ip, insn);
     }
 
     Ok(())
