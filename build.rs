@@ -10,7 +10,6 @@ use cc::Build;
 const ZYDIS_INCLUDE_PATH: &'static str = "zydis-c/include";
 const ZYDIS_SRC_PATH: &'static str = "zydis-c/src";
 
-
 fn build_library() {
     Build::new()
         .include(ZYDIS_INCLUDE_PATH)

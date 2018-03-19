@@ -16,11 +16,7 @@ impl Decoder {
         unsafe {
             let mut decoder = uninitialized();
             check!(
-                ZydisDecoderInit(
-                    &mut decoder,
-                    machine_mode as _,
-                    address_width as _,
-                ),
+                ZydisDecoderInit(&mut decoder, machine_mode as _, address_width as _,),
                 Decoder { decoder }
             )
         }
