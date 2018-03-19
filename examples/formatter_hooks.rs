@@ -5,6 +5,7 @@ use zydis::gen::*;
 use zydis::*;
 
 use std::any::Any;
+use std::ffi::CString;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -30,16 +31,27 @@ fn print_mnemonic(
     Ok(())
 }
 
-fn main() {
-    let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL).unwrap();
-    formatter
-        .set_print_mnemonic(Box::new(print_mnemonic))
-        .unwrap();
+fn real_main() -> ZydisResult<()> {
+    let s = CString::new("h").unwrap();
 
-    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
+    let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?
+        // clear old prefix
+        .set_property(FormatterProperty::HexPrefix(None))?
+        // set h as suffix
+        .set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
+
+    formatter.set_print_mnemonic(Box::new(print_mnemonic))?;
+
+    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
     for (mut instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         let insn = formatter.format_instruction(&mut instruction, 200, Some(&mut 1337u64));
-        println!("0x{:016X} {}", ip, insn.unwrap());
+        println!("0x{:016X} {}", ip, insn?);
     }
+
+    Ok(())
+}
+
+fn main() {
+    real_main().unwrap();
 }
