@@ -5,6 +5,7 @@ use status::ZydisResult;
 use std::any::Any;
 use std::mem;
 use std::ffi::CStr;
+use std::marker::PhantomData;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
 
@@ -333,10 +334,26 @@ wrap_func!(operand print_memsize, dispatch_print_memsize);
 wrap_func!(general print_prefixes, dispatch_print_prefixes);
 wrap_func!(decorator print_decorator, dispatch_print_decorator);
 
+#[derive(Clone)]
+pub enum FormatterProperty<'a> {
+    Uppercase(bool),
+    ForceMemseg(bool),
+    ForceMemsize(bool),
+    AddressFormat(ZydisAddressFormat),
+    DispFormat(ZydisDisplacementFormat),
+    ImmFormat(ZydisImmediateFormat),
+    HexUppercase(bool),
+    HexPrefix(Option<&'a CStr>),
+    HexSuffix(Option<&'a CStr>),
+    HexPaddingAddr(u8),
+    HexPaddingDisp(u8),
+    HexPaddingImm(u8),
+}
+
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the rust compiler
 // could reorder the fields if this wasn't #[repr(C)].
-pub struct Formatter {
+pub struct Formatter<'a> {
     formatter: ZydisFormatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc>>,
@@ -356,9 +373,11 @@ pub struct Formatter {
     print_memsize: Option<Box<WrappedOperandFunc>>,
     print_prefixes: Option<Box<WrappedGeneralFunc>>,
     print_decorator: Option<Box<WrappedDecoratorFunc>>,
+
+    _p: PhantomData<&'a ()>,
 }
 
-impl Formatter {
+impl<'a> Formatter<'a> {
     /// Creates a new formatter instance.
     pub fn new(style: ZydisFormatterStyles) -> ZydisResult<Self> {
         unsafe {
@@ -384,6 +403,42 @@ impl Formatter {
                     print_memsize: None,
                     print_prefixes: None,
                     print_decorator: None,
+
+                    _p: PhantomData,
+                }
+            )
+        }
+    }
+
+    /// Sets the given FormatterProperty on this formatter instance.
+    pub fn set_property<'b>(mut self, prop: FormatterProperty<'b>) -> ZydisResult<Formatter<'b>>
+    where
+        'a: 'b,
+    {
+        use FormatterProperty::*;
+        let (property, value) = match prop {
+            Uppercase(v) => (ZYDIS_FORMATTER_PROP_UPPERCASE, v as usize),
+            ForceMemseg(v) => (ZYDIS_FORMATTER_PROP_FORCE_MEMSEG, v as usize),
+            ForceMemsize(v) => (ZYDIS_FORMATTER_PROP_FORCE_MEMSIZE, v as usize),
+            AddressFormat(v) => (ZYDIS_FORMATTER_PROP_ADDR_FORMAT, v as usize),
+            DispFormat(v) => (ZYDIS_FORMATTER_PROP_DISP_FORMAT, v as usize),
+            ImmFormat(v) => (ZYDIS_FORMATTER_PROP_IMM_FORMAT, v as usize),
+            HexUppercase(v) => (ZYDIS_FORMATTER_PROP_HEX_UPPERCASE, v as usize),
+            HexPrefix(Some(v)) => (ZYDIS_FORMATTER_PROP_HEX_PREFIX, v.as_ptr() as usize),
+            HexPrefix(_) => (ZYDIS_FORMATTER_PROP_HEX_PREFIX, 0),
+            HexSuffix(Some(v)) => (ZYDIS_FORMATTER_PROP_HEX_SUFFIX, v.as_ptr() as usize),
+            HexSuffix(_) => (ZYDIS_FORMATTER_PROP_HEX_SUFFIX, 0),
+            HexPaddingAddr(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_ADDR, v as usize),
+            HexPaddingDisp(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_DISP, v as usize),
+            HexPaddingImm(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_IMM, v as usize),
+        };
+
+        unsafe {
+            check!(
+                ZydisFormatterSetProperty(&mut self.formatter, property as _, value),
+                Formatter {
+                    _p: PhantomData,
+                    ..self
                 }
             )
         }
