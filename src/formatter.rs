@@ -59,23 +59,18 @@ impl Hook {
     pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
         match *self {
-            PreInstruction(x)    => mem::transmute(x),
-            PostInstruction(x)   => mem::transmute(x),
-            PreOperand(x)        => mem::transmute(x),
-            PostOperand(x)       => mem::transmute(x),
-            FormatInstruction(x) => mem::transmute(x),
-            FormatOperandReg(x)  => mem::transmute(x),
-            FormatOperandMem(x)  => mem::transmute(x),
-            FormatOperandPtr(x)  => mem::transmute(x),
-            FormatOperandImm(x)  => mem::transmute(x),
-            PrintMnemonic(x)     => mem::transmute(x),
-            PrintRegister(x)     => mem::transmute(x),
-            PrintAddress(x)      => mem::transmute(x),
-            PrintDisp(x)         => mem::transmute(x),
-            PrintImm(x)          => mem::transmute(x),
-            PrintMemsize(x)      => mem::transmute(x),
-            PrintPrefixes(x)     => mem::transmute(x),
-            PrintDecorator(x)    => mem::transmute(x),
+            PreInstruction(x) | PostInstruction(x) | PrintPrefixes(x) | FormatInstruction(x)
+            | PrintMnemonic(x) => 
+                mem::transmute(x),
+
+            PreOperand(x) | PostOperand(x) | FormatOperandReg(x) | FormatOperandMem(x)
+            | FormatOperandPtr(x) | FormatOperandImm(x) | PrintDisp(x) | PrintImm(x) =>
+                mem::transmute(x),
+
+            PrintRegister(x)  => mem::transmute(x),
+            PrintAddress(x)   => mem::transmute(x),
+            PrintMemsize(x)   => mem::transmute(x),
+            PrintDecorator(x) => mem::transmute(x),
         }
     }
 
@@ -108,9 +103,9 @@ impl Hook {
 impl ZydisString {
     pub fn new(buffer: *mut c_char, capacity: usize) -> Self {
         Self {
-            buffer: buffer,
+            buffer,
             length: 0,
-            capacity: capacity,
+            capacity,
         }
     }
 
