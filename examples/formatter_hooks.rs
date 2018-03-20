@@ -34,11 +34,11 @@ fn print_mnemonic(
 fn real_main() -> ZydisResult<()> {
     let s = CString::new("h").unwrap();
 
-    let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?
-        // clear old prefix
-        .set_property(FormatterProperty::HexPrefix(None))?
-        // set h as suffix
-        .set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
+    let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
+    // clear old prefix
+    formatter.set_property(FormatterProperty::HexPrefix(None))?;
+    // set h as suffix
+    formatter.set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
 
     formatter.set_print_mnemonic(Box::new(print_mnemonic))?;
 

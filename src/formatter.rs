@@ -406,10 +406,7 @@ impl<'a> Formatter<'a> {
     }
 
     /// Sets the given FormatterProperty on this formatter instance.
-    pub fn set_property<'b>(mut self, prop: FormatterProperty<'b>) -> ZydisResult<Formatter<'b>>
-    where
-        'a: 'b,
-    {
+    pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> ZydisResult<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
             Uppercase(v) => (ZYDIS_FORMATTER_PROP_UPPERCASE, v as usize),
@@ -431,10 +428,7 @@ impl<'a> Formatter<'a> {
         unsafe {
             check!(
                 ZydisFormatterSetProperty(&mut self.formatter, property as _, value),
-                Formatter {
-                    _p: PhantomData,
-                    ..self
-                }
+                ()
             )
         }
     }
