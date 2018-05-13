@@ -3,9 +3,9 @@
 use gen::*;
 use status::ZydisResult;
 use std::any::Any;
-use std::mem;
 use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::mem;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
 
@@ -34,7 +34,7 @@ impl Hook {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     pub fn to_id(&self) -> ZydisFormatterHookTypes {
         use self::Hook::*;
-        match *self {
+        match self {
             PreInstruction(_)    => ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION,
             PostInstruction(_)   => ZYDIS_FORMATTER_HOOK_POST_INSTRUCTION,
             PreOperand(_)        => ZYDIS_FORMATTER_HOOK_PRE_OPERAND,
@@ -58,6 +58,8 @@ impl Hook {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
+        // Note: do not remove the `*` at `*self`, Rust 1.26 will segfault
+        // since we don't give explicit types for mem::transmute.
         match *self {
             PreInstruction(x) | PostInstruction(x) | PrintPrefixes(x) | FormatInstruction(x)
             | PrintMnemonic(x) => 
@@ -196,10 +198,10 @@ macro_rules! get_user_data {
         } else {
             Some(*($user_data as *mut &mut Any))
         }
-    }
+    };
 }
 
-macro_rules! wrap_func{
+macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
@@ -212,7 +214,7 @@ macro_rules! wrap_func{
                 formatter,
                 &mut *string,
                 &*instruction,
-                get_user_data!(user_data)
+                get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
                 Err(e) => e,

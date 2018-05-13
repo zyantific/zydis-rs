@@ -9,7 +9,7 @@ static CODE: &'static [u8] = &[
     0xDA, 0x02, 0x00u8,
 ];
 
-fn real_main() -> ZydisResult<()> {
+fn main() -> ZydisResult<()> {
     let formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
@@ -19,8 +19,4 @@ fn real_main() -> ZydisResult<()> {
     }
 
     Ok(())
-}
-
-fn main() {
-    real_main().unwrap();
 }

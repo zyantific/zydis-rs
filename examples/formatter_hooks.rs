@@ -31,7 +31,7 @@ fn print_mnemonic(
     Ok(())
 }
 
-fn real_main() -> ZydisResult<()> {
+fn main() -> ZydisResult<()> {
     let s = CString::new("h").unwrap();
 
     let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
@@ -50,8 +50,4 @@ fn real_main() -> ZydisResult<()> {
     }
 
     Ok(())
-}
-
-fn main() {
-    real_main().unwrap();
 }

@@ -13,8 +13,8 @@ static CODE: &'static [u8] = &[
     0xDA, 0x02, 0x00u8,
 ];
 
-fn main() {
-    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
+fn main() -> ZydisResult<()> {
+    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
     for (insn, ip) in decoder.instruction_iterator(CODE, 0) {
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
@@ -54,4 +54,6 @@ fn main() {
 
         println!();
     }
+
+    Ok(())
 }
