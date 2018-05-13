@@ -188,7 +188,7 @@ macro_rules! wrapped_hook_setter{
             self.$field_name = Some(new_func);
             self.set_raw_hook($constructor(Some($dispatch_func)))
         }
-    }
+    };
 }
 
 macro_rules! get_user_data {
