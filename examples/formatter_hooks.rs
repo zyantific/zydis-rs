@@ -59,24 +59,24 @@ fn print_mnemonic(
                             .u as usize
                     };
 
-                    if instruction.mnemonic == ZYDIS_MNEMONIC_CMPPS as u16 && condition_code < 8 {
-                        write!(buffer, "cmp{}ps", CONDITION_CODES[condition_code]).unwrap();
-                        return Ok(());
-                    } else if instruction.mnemonic == ZYDIS_MNEMONIC_CMPPD as u16
-                        && condition_code < 8
-                    {
-                        write!(buffer, "cmp{}pd", CONDITION_CODES[condition_code]).unwrap();
-                        return Ok(());
-                    } else if instruction.mnemonic == ZYDIS_MNEMONIC_VCMPPS as u16
-                        && condition_code < 0x20
-                    {
-                        write!(buffer, "vcmp{}ps", CONDITION_CODES[condition_code]).unwrap();
-                        return Ok(());
-                    } else if instruction.mnemonic == ZYDIS_MNEMONIC_VCMPPD as u16
-                        && condition_code < 0x20
-                    {
-                        write!(buffer, "vcmp{}pd", CONDITION_CODES[condition_code]).unwrap();
-                        return Ok(());
+                    match instruction.mnemonic as u32 {
+                        ZYDIS_MNEMONIC_CMPPS if condition_code < 8 => {
+                            write!(buffer, "cmp{}ps", CONDITION_CODES[condition_code]).unwrap();
+                            return Ok(());
+                        }
+                        ZYDIS_MNEMONIC_CMPPD if condition_code < 8 => {
+                            write!(buffer, "cmp{}pd", CONDITION_CODES[condition_code]).unwrap();
+                            return Ok(());
+                        }
+                        ZYDIS_MNEMONIC_VCMPPS if condition_code < 0x20 => {
+                            write!(buffer, "vcmp{}ps", CONDITION_CODES[condition_code]).unwrap();
+                            return Ok(());
+                        }
+                        ZYDIS_MNEMONIC_VCMPPD if condition_code < 0x20 => {
+                            write!(buffer, "vcmp{}pd", CONDITION_CODES[condition_code]).unwrap();
+                            return Ok(());
+                        }
+                        _ => {}
                     }
                 }
 
