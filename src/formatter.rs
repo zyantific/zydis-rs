@@ -4,6 +4,7 @@ use gen::*;
 use status::ZydisResult;
 use std::any::Any;
 use std::ffi::CStr;
+use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::os::raw::{c_char, c_void};
@@ -131,6 +132,12 @@ impl ZydisString {
                 ()
             )
         }
+    }
+}
+
+impl fmt::Write for ZydisString {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.append(s).map_err(|_| fmt::Error)
     }
 }
 
@@ -347,6 +354,10 @@ pub enum FormatterProperty<'a> {
     HexPaddingImm(u8),
 }
 
+pub fn user_data_to_c_void(x: &mut &mut Any) -> *mut c_void {
+    (x as *mut &mut Any) as *mut c_void
+}
+
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the rust compiler
 // could reorder the fields if this wasn't #[repr(C)].
@@ -489,7 +500,7 @@ impl<'a> Formatter<'a> {
                     buffer.len(),
                     match user_data {
                         None => ptr::null_mut(),
-                        Some(mut x) => (&mut x as *mut &mut Any) as *mut _,
+                        Some(mut x) => user_data_to_c_void(&mut x),
                     }
                 ),
                 ()
