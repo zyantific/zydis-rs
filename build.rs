@@ -31,15 +31,26 @@ fn build_library() {
 }
 
 fn build_bindings(out_path: PathBuf) {
-    let bindings = Builder::default()
-        //.rust_target()
+    let host = env::var("HOST").unwrap();
+    let target = env::var("TARGET").unwrap();
+
+    let mut builder = Builder::default()
         .header(format!("{}/Zydis/Zydis.h", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
-        .clang_arg("-Isrc")
-        .clang_arg(format!("--target={}", env::var("TARGET").unwrap().as_str()))
+        .clang_arg("-Isrc");
+
+    if target != host {
+        // For some reason we get strange problems with the sysroot if we always add this line and
+        // we're not cross compiling. "stddef.h" is not being found in that case, for what ever
+        // reason (at least on a linux host).
+        //
+        // Thus we condtionally set this argument if we're cross compiling.
+        builder = builder.clang_arg(format!("--target={}", target.as_str()))
+    }
+
+    let bindings = builder
         .emit_builtins()
-        //.constified_enum_module("Zydis.*")
         .layout_tests(true)
         .prepend_enum_name(false)
         .generate()
