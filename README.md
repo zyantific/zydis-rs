@@ -14,7 +14,7 @@ Or, probably more common, add a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-zydis = "0.0.3"
+zydis = "0.0.4"
 ```
 
 ## Example
