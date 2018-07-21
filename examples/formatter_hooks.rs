@@ -49,8 +49,9 @@ fn print_mnemonic(
             }) => {
                 *omit_immediate = true;
 
-                if instruction.operands[(instruction.operandCount - 1) as usize].type_
-                    == ZYDIS_OPERAND_TYPE_IMMEDIATE as u8
+                if instruction.operandCount > 0
+                    && instruction.operands[(instruction.operandCount - 1) as usize].type_
+                        == ZYDIS_OPERAND_TYPE_IMMEDIATE as u8
                 {
                     let condition_code = unsafe {
                         instruction.operands[instruction.operandCount as usize]
