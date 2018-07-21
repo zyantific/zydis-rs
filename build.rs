@@ -37,6 +37,7 @@ fn build_bindings(out_path: PathBuf) {
         .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
         .clang_arg("-Isrc")
+        .clang_arg(format!("--target={}", env::var("TARGET").unwrap().as_str()))
         .emit_builtins()
         //.constified_enum_module("Zydis.*")
         .layout_tests(true)
