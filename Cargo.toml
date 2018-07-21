@@ -15,4 +15,4 @@ build       = true
 
 [build-dependencies]
 cc          = "1.0"
-bindgen     = "0.32"
+bindgen     = "0.37"
