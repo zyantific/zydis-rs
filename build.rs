@@ -38,7 +38,9 @@ fn build_bindings(out_path: PathBuf) {
         .header(format!("{}/Zydis/Zydis.h", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
-        .clang_arg("-Isrc");
+        .clang_arg("-Isrc")
+        // Seems to be broken, layout tests are failing because of this type.
+        .blacklist_type("max_align_t");
 
     if target != host {
         // For some reason we get strange problems with the sysroot if we always add this line and
