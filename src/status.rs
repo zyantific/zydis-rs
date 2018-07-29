@@ -9,7 +9,7 @@ pub type ZydisResult<T> = Result<T, ZydisStatus>;
 macro_rules! check {
     ($expression:expr, $ok:expr) => {
         match $expression as _ {
-            ZYDIS_STATUS_SUCCESS => Ok($ok),
+            x if x == ZYDIS_STATUS_SUCCESS => Ok($ok),
             e => Err(e),
         }
     };
@@ -19,8 +19,8 @@ macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
         match $expression as _ {
-            ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
-            ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
+            x if x == ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
+            x if x == ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
             e => Err(e),
         }
     };
