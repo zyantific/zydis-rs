@@ -142,46 +142,46 @@ impl fmt::Write for ZydisString {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub type WrappedGeneralFunc = Fn(
+pub type WrappedGeneralFunc = dyn Fn(
     &Formatter,
     &mut ZydisString,
     &ZydisDecodedInstruction,
-    Option<&mut Any>
+    Option<&mut dyn Any>
 ) -> ZydisResult<()>;
 
-pub type WrappedOperandFunc = Fn(
+pub type WrappedOperandFunc = dyn Fn(
     &Formatter,
     &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
-    Option<&mut Any>,
+    Option<&mut dyn Any>,
 ) -> ZydisResult<()>;
 
-pub type WrappedRegisterFunc = Fn(
+pub type WrappedRegisterFunc = dyn Fn(
     &Formatter,
     &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     ZydisRegister,
-    Option<&mut Any>,
+    Option<&mut dyn Any>,
 ) -> ZydisResult<()>;
 
-pub type WrappedAddressFunc = Fn(
+pub type WrappedAddressFunc = dyn Fn(
     &Formatter,
     &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     u64,
-    Option<&mut Any>,
+    Option<&mut dyn Any>,
 ) -> ZydisResult<()>;
 
-pub type WrappedDecoratorFunc = Fn(
+pub type WrappedDecoratorFunc = dyn Fn(
     &Formatter,
     &mut ZydisString,
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     ZydisDecoratorType,
-    Option<&mut Any>,
+    Option<&mut dyn Any>,
 ) -> ZydisResult<()>;
 
 macro_rules! wrapped_hook_setter{
@@ -203,7 +203,7 @@ macro_rules! get_user_data {
         if $user_data.is_null() {
             None
         } else {
-            Some(*($user_data as *mut &mut Any))
+            Some(*($user_data as *mut &mut dyn Any))
         }
     };
 }
@@ -354,8 +354,8 @@ pub enum FormatterProperty<'a> {
     HexPaddingImm(u8),
 }
 
-pub fn user_data_to_c_void(x: &mut &mut Any) -> *mut c_void {
-    (x as *mut &mut Any) as *mut c_void
+pub fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
+    (x as *mut &mut dyn Any) as *mut c_void
 }
 
 #[repr(C)]
@@ -469,7 +469,7 @@ impl<'a> Formatter<'a> {
         &self,
         instruction: &ZydisDecodedInstruction,
         size: usize,
-        user_data: Option<&mut Any>,
+        user_data: Option<&mut dyn Any>,
     ) -> ZydisResult<String> {
         let mut buffer = vec![0u8; size];
         self.format_instruction_raw(instruction, &mut buffer, user_data)
@@ -489,7 +489,7 @@ impl<'a> Formatter<'a> {
         &self,
         instruction: &ZydisDecodedInstruction,
         buffer: &mut [u8],
-        user_data: Option<&mut Any>,
+        user_data: Option<&mut dyn Any>,
     ) -> ZydisResult<()> {
         unsafe {
             check!(

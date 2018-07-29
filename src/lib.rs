@@ -1,5 +1,7 @@
 //! The official Rust bindings for the Zyan Disassembler Engine.
 
+#![deny(bare_trait_objects)]
+
 pub mod gen;
 #[macro_use]
 pub mod status;

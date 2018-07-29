@@ -1,5 +1,7 @@
 //! A completely stupid example for Zydis' formatter hook API.
 
+#![deny(bare_trait_objects)]
+
 #[macro_use]
 extern crate zydis;
 
@@ -42,7 +44,7 @@ fn print_mnemonic(
     formatter: &Formatter,
     buffer: &mut ZydisString,
     instruction: &ZydisDecodedInstruction,
-    user_data: Option<&mut Any>,
+    user_data: Option<&mut dyn Any>,
 ) -> ZydisResult<()> {
     match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
         Some(&mut UserData {
@@ -98,7 +100,7 @@ fn format_operand_imm(
     buffer: &mut ZydisString,
     instruction: &ZydisDecodedInstruction,
     operand: &ZydisDecodedOperand,
-    user_data: Option<&mut Any>,
+    user_data: Option<&mut dyn Any>,
 ) -> ZydisResult<()> {
     match user_data {
         Some(mut x) => match x.downcast_ref::<UserData>() {
