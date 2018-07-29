@@ -34,68 +34,61 @@ struct UserData {
     omit_immediate: bool,
 }
 
+fn user_err<T>(_: T) -> ZydisStatusCodes {
+    ZYDIS_STATUS_USER
+}
+
 fn print_mnemonic(
     formatter: &Formatter,
     buffer: &mut ZydisString,
     instruction: &ZydisDecodedInstruction,
     user_data: Option<&mut Any>,
 ) -> ZydisResult<()> {
-    match user_data {
-        Some(x) => match x.downcast_mut::<UserData>() {
-            Some(&mut UserData {
-                ref mut omit_immediate,
-                orig_print_mnemonic: Hook::PrintMnemonic(Some(orig_print_mnemonic)),
-                ..
-            }) => {
-                *omit_immediate = true;
+    match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
+        Some(&mut UserData {
+            ref mut omit_immediate,
+            orig_print_mnemonic: Hook::PrintMnemonic(Some(orig_print_mnemonic)),
+            ..
+        }) => {
+            *omit_immediate = true;
 
-                if instruction.operandCount > 0
-                    && instruction.operands[(instruction.operandCount - 1) as usize].type_
-                        == ZYDIS_OPERAND_TYPE_IMMEDIATE as u8
-                {
-                    let condition_code = unsafe {
-                        instruction.operands[instruction.operandCount as usize]
-                            .imm
-                            .value
-                            .u as usize
-                    };
+            let count = instruction.operandCount as usize;
 
-                    match instruction.mnemonic as u32 {
-                        ZYDIS_MNEMONIC_CMPPS if condition_code < 8 => {
-                            write!(buffer, "cmp{}ps", CONDITION_CODES[condition_code]).unwrap();
-                            return Ok(());
-                        }
-                        ZYDIS_MNEMONIC_CMPPD if condition_code < 8 => {
-                            write!(buffer, "cmp{}pd", CONDITION_CODES[condition_code]).unwrap();
-                            return Ok(());
-                        }
-                        ZYDIS_MNEMONIC_VCMPPS if condition_code < 0x20 => {
-                            write!(buffer, "vcmp{}ps", CONDITION_CODES[condition_code]).unwrap();
-                            return Ok(());
-                        }
-                        ZYDIS_MNEMONIC_VCMPPD if condition_code < 0x20 => {
-                            write!(buffer, "vcmp{}pd", CONDITION_CODES[condition_code]).unwrap();
-                            return Ok(());
-                        }
-                        _ => {}
+            if count > 0
+                && instruction.operands[count - 1].type_ == ZYDIS_OPERAND_TYPE_IMMEDIATE as u8
+            {
+                let cc = unsafe { instruction.operands[count].imm.value.u as usize };
+
+                match instruction.mnemonic as u32 {
+                    ZYDIS_MNEMONIC_CMPPS if cc < 8 => {
+                        return write!(buffer, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
                     }
-                }
-
-                *omit_immediate = false;
-                unsafe {
-                    check!(
-                        orig_print_mnemonic(
-                            mem::transmute(formatter),
-                            buffer,
-                            instruction,
-                            ptr::null_mut(),
-                        ),
-                        ()
-                    )
+                    ZYDIS_MNEMONIC_CMPPD if cc < 8 => {
+                        return write!(buffer, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                    }
+                    ZYDIS_MNEMONIC_VCMPPS if cc < 0x20 => {
+                        return write!(buffer, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
+                    }
+                    ZYDIS_MNEMONIC_VCMPPD if cc < 0x20 => {
+                        return write!(buffer, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                    }
+                    _ => {}
                 }
             }
-            _ => Ok(()),
-        },
+
+            *omit_immediate = false;
+            unsafe {
+                check!(
+                    orig_print_mnemonic(
+                        mem::transmute(formatter),
+                        buffer,
+                        instruction,
+                        ptr::null_mut(),
+                    ),
+                    ()
+                )
+            }
+        }
         _ => Ok(()),
     }
 }
