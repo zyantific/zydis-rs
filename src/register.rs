@@ -1,7 +1,8 @@
 //! Register helper functions.
 
-use gen::*;
 use std::ffi::CStr;
+
+use gen::*;
 
 /// Extensions for `ZydisRegister`
 pub trait ZydisRegisterMethods {

@@ -1,8 +1,9 @@
 //! Binary instruction decoding.
 
-use gen::*;
-use status::ZydisResult;
 use std::mem::uninitialized;
+
+use gen::*;
+use status::{Error, Result};
 
 pub struct Decoder {
     decoder: ZydisDecoder,
@@ -13,7 +14,7 @@ impl Decoder {
     pub fn new(
         machine_mode: ZydisMachineModes,
         address_width: ZydisAddressWidths,
-    ) -> ZydisResult<Decoder> {
+    ) -> Result<Decoder> {
         unsafe {
             let mut decoder = uninitialized();
             check!(
@@ -24,7 +25,7 @@ impl Decoder {
     }
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`.
-    pub fn enable_mode(&mut self, mode: ZydisDecoderModes, value: bool) -> ZydisResult<()> {
+    pub fn enable_mode(&mut self, mode: ZydisDecoderModes, value: bool) -> Result<()> {
         unsafe {
             check!(
                 ZydisDecoderEnableMode(&mut self.decoder, mode as _, value as _),
@@ -52,7 +53,7 @@ impl Decoder {
         &self,
         buffer: &[u8],
         instruction_pointer: u64,
-    ) -> ZydisResult<Option<ZydisDecodedInstruction>> {
+    ) -> Result<Option<ZydisDecodedInstruction>> {
         unsafe {
             let mut info: ZydisDecodedInstruction = uninitialized();
             check_option!(

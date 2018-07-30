@@ -13,7 +13,7 @@ static CODE: &'static [u8] = &[
     0xDA, 0x02, 0x00u8,
 ];
 
-fn main() -> ZydisResult<()> {
+fn main() -> Result<()> {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
     for (insn, ip) in decoder.instruction_iterator(CODE, 0) {

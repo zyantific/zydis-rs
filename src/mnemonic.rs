@@ -1,7 +1,8 @@
 //! Mnemonic helper functions.
 
-use gen::*;
 use std::ffi::CStr;
+
+use gen::*;
 
 /// Extensions for `ZydisMnemonic`
 pub trait ZydisMnemonicMethods {

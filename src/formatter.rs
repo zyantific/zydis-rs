@@ -1,14 +1,17 @@
 //! Textual instruction formatting routines.
 
+use std::{
+    any::Any,
+    ffi::CStr,
+    fmt,
+    marker::PhantomData,
+    mem,
+    os::raw::{c_char, c_void},
+    ptr,
+};
+
 use gen::*;
-use status::ZydisResult;
-use std::any::Any;
-use std::ffi::CStr;
-use std::fmt;
-use std::marker::PhantomData;
-use std::mem;
-use std::os::raw::{c_char, c_void};
-use std::ptr;
+use status::{Error, Result};
 
 #[derive(Clone)]
 pub enum Hook {
@@ -63,7 +66,7 @@ impl Hook {
         // since we don't give explicit types for mem::transmute.
         match *self {
             PreInstruction(x) | PostInstruction(x) | PrintPrefixes(x) | FormatInstruction(x)
-            | PrintMnemonic(x) => 
+            | PrintMnemonic(x) =>
                 mem::transmute(x),
 
             PreOperand(x) | PostOperand(x) | FormatOperandReg(x) | FormatOperandMem(x)
@@ -117,7 +120,7 @@ impl ZydisString {
     /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't converted to any
     /// other encoding. They're simply copied, byte by byte, to the buffer. Therefore, the
     /// buffer should be interpreted as UTF-8 when later being printed.
-    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> ZydisResult<()> {
+    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
         let bytes = s.as_ref().as_bytes();
         unsafe {
             check!(
@@ -136,7 +139,7 @@ impl ZydisString {
 }
 
 impl fmt::Write for ZydisString {
-    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
         self.append(s).map_err(|_| fmt::Error)
     }
 }
@@ -147,7 +150,7 @@ pub type WrappedGeneralFunc = dyn Fn(
     &mut ZydisString,
     &ZydisDecodedInstruction,
     Option<&mut dyn Any>
-) -> ZydisResult<()>;
+) -> Result<()>;
 
 pub type WrappedOperandFunc = dyn Fn(
     &Formatter,
@@ -155,7 +158,7 @@ pub type WrappedOperandFunc = dyn Fn(
     &ZydisDecodedInstruction,
     &ZydisDecodedOperand,
     Option<&mut dyn Any>,
-) -> ZydisResult<()>;
+) -> Result<()>;
 
 pub type WrappedRegisterFunc = dyn Fn(
     &Formatter,
@@ -164,7 +167,7 @@ pub type WrappedRegisterFunc = dyn Fn(
     &ZydisDecodedOperand,
     ZydisRegister,
     Option<&mut dyn Any>,
-) -> ZydisResult<()>;
+) -> Result<()>;
 
 pub type WrappedAddressFunc = dyn Fn(
     &Formatter,
@@ -173,7 +176,7 @@ pub type WrappedAddressFunc = dyn Fn(
     &ZydisDecodedOperand,
     u64,
     Option<&mut dyn Any>,
-) -> ZydisResult<()>;
+) -> Result<()>;
 
 pub type WrappedDecoratorFunc = dyn Fn(
     &Formatter,
@@ -182,7 +185,7 @@ pub type WrappedDecoratorFunc = dyn Fn(
     &ZydisDecodedOperand,
     ZydisDecoratorType,
     Option<&mut dyn Any>,
-) -> ZydisResult<()>;
+) -> Result<()>;
 
 macro_rules! wrapped_hook_setter{
     ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
@@ -191,7 +194,7 @@ macro_rules! wrapped_hook_setter{
         ///
         /// This function accepts a wrapped version of the raw hook.
         /// It returns the previous set *raw* hook.
-        pub fn $func_name(&mut self, new_func: Box<$field_type>) -> ZydisResult<Hook> {
+        pub fn $func_name(&mut self, new_func: Box<$field_type>) -> Result<Hook> {
             self.$field_name = Some(new_func);
             self.set_raw_hook($constructor(Some($dispatch_func)))
         }
@@ -224,7 +227,7 @@ macro_rules! wrap_func {
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
+                Err(e) => e.get_code(),
             }
         }
     };
@@ -245,7 +248,7 @@ macro_rules! wrap_func {
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
+                Err(e) => e.get_code(),
             }
         }
     };
@@ -268,7 +271,7 @@ macro_rules! wrap_func {
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
+                Err(e) => e.get_code(),
             }
         }
     };
@@ -291,7 +294,7 @@ macro_rules! wrap_func {
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
+                Err(e) => e.get_code(),
             }
         }
     };
@@ -314,7 +317,7 @@ macro_rules! wrap_func {
                 get_user_data!(user_data),
             ) {
                 Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e,
+                Err(e) => e.get_code(),
             }
         }
     };
@@ -387,7 +390,7 @@ pub struct Formatter<'a> {
 
 impl<'a> Formatter<'a> {
     /// Creates a new formatter instance.
-    pub fn new(style: ZydisFormatterStyles) -> ZydisResult<Self> {
+    pub fn new(style: ZydisFormatterStyles) -> Result<Self> {
         unsafe {
             let mut formatter = mem::uninitialized();
             check!(
@@ -419,7 +422,7 @@ impl<'a> Formatter<'a> {
     }
 
     /// Sets the given FormatterProperty on this formatter instance.
-    pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> ZydisResult<()> {
+    pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
             Uppercase(v) => (ZYDIS_FORMATTER_PROP_UPPERCASE, v as usize),
@@ -470,7 +473,7 @@ impl<'a> Formatter<'a> {
         instruction: &ZydisDecodedInstruction,
         size: usize,
         user_data: Option<&mut dyn Any>,
-    ) -> ZydisResult<String> {
+    ) -> Result<String> {
         let mut buffer = vec![0u8; size];
         self.format_instruction_raw(instruction, &mut buffer, user_data)
             .map(|_| {
@@ -490,7 +493,7 @@ impl<'a> Formatter<'a> {
         instruction: &ZydisDecodedInstruction,
         buffer: &mut [u8],
         user_data: Option<&mut dyn Any>,
-    ) -> ZydisResult<()> {
+    ) -> Result<()> {
         unsafe {
             check!(
                 ZydisFormatterFormatInstructionEx(
@@ -516,7 +519,7 @@ impl<'a> Formatter<'a> {
     ///
     /// Be careful when accessing the `user_data` parameter in the raw hooks.
     /// It's type is `*mut &mut Any`.
-    pub fn set_raw_hook(&mut self, hook: Hook) -> ZydisResult<Hook> {
+    pub fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
         unsafe {
             let mut cb = hook.to_raw();
             let hook_id = hook.to_id();

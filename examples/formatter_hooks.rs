@@ -5,14 +5,14 @@
 #[macro_use]
 extern crate zydis;
 
-use zydis::gen::*;
-use zydis::*;
-
 use std::any::Any;
 use std::ffi::CString;
 use std::fmt::Write;
 use std::mem;
 use std::ptr;
+
+use zydis::gen::*;
+use zydis::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -36,8 +36,8 @@ struct UserData {
     omit_immediate: bool,
 }
 
-fn user_err<T>(_: T) -> ZydisStatusCodes {
-    ZYDIS_STATUS_USER
+fn user_err<T>(_: T) -> Error {
+    ZYDIS_STATUS_USER.into()
 }
 
 fn print_mnemonic(
@@ -45,7 +45,7 @@ fn print_mnemonic(
     buffer: &mut ZydisString,
     instruction: &ZydisDecodedInstruction,
     user_data: Option<&mut dyn Any>,
-) -> ZydisResult<()> {
+) -> Result<()> {
     match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
         Some(&mut UserData {
             ref mut omit_immediate,
@@ -101,7 +101,7 @@ fn format_operand_imm(
     instruction: &ZydisDecodedInstruction,
     operand: &ZydisDecodedOperand,
     user_data: Option<&mut dyn Any>,
-) -> ZydisResult<()> {
+) -> Result<()> {
     match user_data {
         Some(mut x) => match x.downcast_ref::<UserData>() {
             Some(&UserData {
@@ -110,7 +110,7 @@ fn format_operand_imm(
                 ..
             }) => {
                 if omit_immediate {
-                    Err(ZYDIS_STATUS_SKIP_OPERAND)
+                    Err(ZYDIS_STATUS_SKIP_OPERAND.into())
                 } else {
                     unsafe {
                         check!(
@@ -132,7 +132,7 @@ fn format_operand_imm(
     }
 }
 
-fn main() -> ZydisResult<()> {
+fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
     let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
