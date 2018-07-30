@@ -47,21 +47,21 @@ impl error::Error for ZydisError {
 
 pub fn status_description(status: ZydisStatus) -> &'static str {
     match status {
-        x if x == ZYDIS_STATUS_SUCCESS => "no error",
-        x if x == ZYDIS_STATUS_INVALID_PARAMETER => "An invalid parameter was passed to a function.",
-        x if x == ZYDIS_STATUS_INVALID_OPERATION => "An attempt was made to perform an invalid operation.",
-        x if x == ZYDIS_STATUS_INSUFFICIENT_BUFFER_SIZE => "A buffer passed to a function was too small to complete the requested operation.",
-        x if x == ZYDIS_STATUS_NO_MORE_DATA => "An attempt was made to read data from an input data-source that has no more data available.",
-        x if x == ZYDIS_STATUS_DECODING_ERROR => "An general error occured while decoding the current instruction. The instruction might be undfined.",
-        x if x == ZYDIS_STATUS_INSTRUCTION_TOO_LONG => "The instruction exceeded the maximum length of 15 bytes.",
-        x if x == ZYDIS_STATUS_BAD_REGISTER => "The instruction encoded an invalid register.",
-        x if x == ZYDIS_STATUS_ILLEGAL_LOCK => "A lock-prefix (F0) was found while decoding an instruction that does not support locking.",
-        x if x == ZYDIS_STATUS_ILLEGAL_LEGACY_PFX => "A legacy-prefix (F2, F3, 66) was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
-        x if x == ZYDIS_STATUS_ILLEGAL_REX => "A rex-prefix was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
-        x if x == ZYDIS_STATUS_INVALID_MAP => "An invalid opcode-map value was found while decoding a XOP/VEX/EVEX/MVEX-prefix.",
-        x if x == ZYDIS_STATUS_MALFORMED_EVEX => "An error occured while decoding the EVEX-prefix.",
-        x if x == ZYDIS_STATUS_MALFORMED_MVEX => "An error occured while decoding the MVEX-prefix.",
-        x if x == ZYDIS_STATUS_INVALID_MASK => "An invalid write-mask was specified for an EVEX/MVEX instruction.",
+        ZYDIS_STATUS_SUCCESS => "no error",
+        ZYDIS_STATUS_INVALID_PARAMETER => "An invalid parameter was passed to a function.",
+        ZYDIS_STATUS_INVALID_OPERATION => "An attempt was made to perform an invalid operation.",
+        ZYDIS_STATUS_INSUFFICIENT_BUFFER_SIZE => "A buffer passed to a function was too small to complete the requested operation.",
+        ZYDIS_STATUS_NO_MORE_DATA => "An attempt was made to read data from an input data-source that has no more data available.",
+        ZYDIS_STATUS_DECODING_ERROR => "An general error occured while decoding the current instruction. The instruction might be undfined.",
+        ZYDIS_STATUS_INSTRUCTION_TOO_LONG => "The instruction exceeded the maximum length of 15 bytes.",
+        ZYDIS_STATUS_BAD_REGISTER => "The instruction encoded an invalid register.",
+        ZYDIS_STATUS_ILLEGAL_LOCK => "A lock-prefix (F0) was found while decoding an instruction that does not support locking.",
+        ZYDIS_STATUS_ILLEGAL_LEGACY_PFX => "A legacy-prefix (F2, F3, 66) was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
+        ZYDIS_STATUS_ILLEGAL_REX => "A rex-prefix was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
+        ZYDIS_STATUS_INVALID_MAP => "An invalid opcode-map value was found while decoding a XOP/VEX/EVEX/MVEX-prefix.",
+        ZYDIS_STATUS_MALFORMED_EVEX => "An error occured while decoding the EVEX-prefix.",
+        ZYDIS_STATUS_MALFORMED_MVEX => "An error occured while decoding the MVEX-prefix.",
+        ZYDIS_STATUS_INVALID_MASK => "An invalid write-mask was specified for an EVEX/MVEX instruction.",
         _ => "unknown/user defined error"
     }
 }
@@ -70,8 +70,8 @@ pub fn status_description(status: ZydisStatus) -> &'static str {
 macro_rules! check {
     ($expression:expr, $ok:expr) => {
         match $expression as ZydisStatusCodes {
-            x if x == ZYDIS_STATUS_SUCCESS => Ok($ok),
-            e => Err(ZydisError::from(e)),
+            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok($ok),
+            e => Err($crate::status::ZydisError::from(e)),
         }
     };
 }
@@ -80,9 +80,9 @@ macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
         match $expression as ZydisStatusCodes {
-            x if x == ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
-            x if x == ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
-            e => Err(ZydisError::from(e)),
+            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
+            $crate::gen::ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
+            e => Err($crate::status::ZydisError::from(e)),
         }
     };
 }
