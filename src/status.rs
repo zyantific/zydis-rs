@@ -24,7 +24,7 @@ impl ZydisError {
         Self { x }
     }
 
-    pub fn get_code(&self) -> ZydisStatusCodes {
+    pub fn get_code(self) -> ZydisStatusCodes {
         self.x
     }
 }
