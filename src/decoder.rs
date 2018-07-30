@@ -3,7 +3,7 @@
 use std::mem::uninitialized;
 
 use gen::*;
-use status::{Error, Result};
+use status::{Result, ZydisError};
 
 pub struct Decoder {
     decoder: ZydisDecoder,

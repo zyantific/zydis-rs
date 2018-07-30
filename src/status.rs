@@ -5,22 +5,22 @@ use std::{error, fmt, result};
 use gen::*;
 
 // A Zydis result, holding either a result or a failure code.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = result::Result<T, ZydisError>;
 
 /// A type that implements std::error::Error and thus is useable with the failure crate.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Error {
+pub struct ZydisError {
     x: ZydisStatusCodes,
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for ZydisError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", status_description(self.x))
     }
 }
 
-impl Error {
-    pub fn new(x: ZydisStatusCodes) -> Error {
+impl ZydisError {
+    pub fn new(x: ZydisStatusCodes) -> ZydisError {
         Self { x }
     }
 
@@ -29,13 +29,13 @@ impl Error {
     }
 }
 
-impl From<ZydisStatusCodes> for Error {
+impl From<ZydisStatusCodes> for ZydisError {
     fn from(x: ZydisStatusCodes) -> Self {
         Self { x }
     }
 }
 
-impl error::Error for Error {
+impl error::Error for ZydisError {
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
@@ -71,7 +71,7 @@ macro_rules! check {
     ($expression:expr, $ok:expr) => {
         match $expression as ZydisStatusCodes {
             x if x == ZYDIS_STATUS_SUCCESS => Ok($ok),
-            e => Err(Error::from(e)),
+            e => Err(ZydisError::from(e)),
         }
     };
 }
@@ -82,7 +82,7 @@ macro_rules! check_option {
         match $expression as ZydisStatusCodes {
             x if x == ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
             x if x == ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
-            e => Err(Error::from(e)),
+            e => Err(ZydisError::from(e)),
         }
     };
 }

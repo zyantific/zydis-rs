@@ -11,7 +11,7 @@ use std::{
 };
 
 use gen::*;
-use status::{Error, Result};
+use status::{Result, ZydisError};
 
 #[derive(Clone)]
 pub enum Hook {

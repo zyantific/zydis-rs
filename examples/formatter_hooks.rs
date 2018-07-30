@@ -36,7 +36,7 @@ struct UserData {
     omit_immediate: bool,
 }
 
-fn user_err<T>(_: T) -> Error {
+fn user_err<T>(_: T) -> ZydisError {
     ZYDIS_STATUS_USER.into()
 }
 

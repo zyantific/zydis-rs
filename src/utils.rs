@@ -3,7 +3,7 @@
 use std::mem::uninitialized;
 
 use gen::*;
-use status::{Error, Result};
+use status::{Result, ZydisError};
 
 impl ZydisDecodedInstruction {
     pub fn calc_absolute_target_addr(&self, operand: &ZydisDecodedOperand) -> Result<u64> {
