@@ -14,5 +14,11 @@ repository  = "https://github.com/zyantific/zydis-rs/"
 build       = true
 
 [build-dependencies]
-cc          = "1.0"
 bindgen     = "0.37"
+cmake       = "0.1"
+
+[features]
+no_libc = []
+no_std = []
+
+default = []

@@ -1,33 +1,30 @@
 extern crate bindgen;
-extern crate cc;
+extern crate cmake;
 
 use std::env;
 use std::path::PathBuf;
 
-use bindgen::Builder;
-use cc::Build;
+use bindgen::{Builder, EnumVariation};
 
 const ZYDIS_INCLUDE_PATH: &'static str = "zydis-c/include";
 const ZYDIS_SRC_PATH: &'static str = "zydis-c/src";
+const ZYDIS_ZYCORE_PATH: &'static str = "zydis-c/dependencies/zycore/include";
 
 fn build_library() {
-    Build::new()
-        .include(ZYDIS_INCLUDE_PATH)
-        .include(ZYDIS_SRC_PATH)
-        .include("src")
-        .files(vec![
-            format!("{}/MetaInfo.c", ZYDIS_SRC_PATH),
-            format!("{}/Mnemonic.c", ZYDIS_SRC_PATH),
-            format!("{}/Register.c", ZYDIS_SRC_PATH),
-            format!("{}/SharedData.c", ZYDIS_SRC_PATH),
-            format!("{}/String.c", ZYDIS_SRC_PATH),
-            format!("{}/Utils.c", ZYDIS_SRC_PATH),
-            format!("{}/Zydis.c", ZYDIS_SRC_PATH),
-            format!("{}/Decoder.c", ZYDIS_SRC_PATH),
-            format!("{}/DecoderData.c", ZYDIS_SRC_PATH),
-            format!("{}/Formatter.c", ZYDIS_SRC_PATH),
-        ])
-        .compile("libzydis.a");
+    let mut config = cmake::Config::new("zydis-c");
+
+    config
+        .define("ZYDIS_BUILD_EXAMPLES", "OFF")
+        .define("ZYDIS_BUILD_TOOLS", "OFF");
+
+    if cfg!(feature = "no_libc") {
+        config.define("ZYDIS_NO_LIBC", "ON");
+    }
+
+    let dst = config.build();
+
+    println!("cargo:rustc-link-search=native={}", dst.display());
+    println!("cargo:rustc-link-lib=static=zydis");
 }
 
 fn build_bindings(out_path: PathBuf) {
@@ -38,9 +35,11 @@ fn build_bindings(out_path: PathBuf) {
         .header(format!("{}/Zydis/Zydis.h", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
+        .clang_arg(format!("-I{}", ZYDIS_ZYCORE_PATH))
         .clang_arg("-Isrc")
-        // Seems to be broken, layout tests are failing because of this type.
-        .blacklist_type("max_align_t");
+        .default_enum_style(EnumVariation::Consts)
+        .whitelist_type("Zydis.*")
+        .whitelist_function("Zydis.*");
 
     if target != host {
         // For some reason we get strange problems with the sysroot if we always add this line and
