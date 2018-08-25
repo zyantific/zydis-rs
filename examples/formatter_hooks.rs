@@ -5,13 +5,8 @@
 #[macro_use]
 extern crate zydis;
 
-use std::any::Any;
-use std::ffi::CString;
-use std::fmt::Write;
-use std::mem;
-use std::ptr;
+use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::gen::*;
 use zydis::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -36,16 +31,17 @@ struct UserData {
     omit_immediate: bool,
 }
 
-fn user_err<T>(_: T) -> ZydisError {
-    ZYDIS_STATUS_USER.into()
+fn user_err<T>(_: T) -> Error {
+    Status::User.into()
 }
 
 fn print_mnemonic(
     formatter: &Formatter,
-    buffer: &mut ZydisString,
-    instruction: &ZydisDecodedInstruction,
+    buffer: &mut ZyanString,
+    ctx: &mut FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
+    let instruction = unsafe { &*ctx.instruction };
     match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
         Some(&mut UserData {
             ref mut omit_immediate,
@@ -54,11 +50,9 @@ fn print_mnemonic(
         }) => {
             *omit_immediate = true;
 
-            let count = instruction.operandCount as usize;
+            let count = instruction.operand_count as usize;
 
-            if count > 0
-                && instruction.operands[count - 1].type_ == ZYDIS_OPERAND_TYPE_IMMEDIATE as u8
-            {
+            if count > 0 && instruction.operands[count - 1].type_ == ZYDIS_OPERAND_TYPE_IMMEDIATE {
                 let cc = unsafe { instruction.operands[count].imm.value.u as usize };
 
                 match instruction.mnemonic as u32 {
@@ -81,12 +75,7 @@ fn print_mnemonic(
             *omit_immediate = false;
             unsafe {
                 check!(
-                    orig_print_mnemonic(
-                        mem::transmute(formatter),
-                        buffer,
-                        instruction,
-                        ptr::null_mut(),
-                    ),
+                    orig_print_mnemonic(mem::transmute(formatter), buffer, ctx,),
                     ()
                 )
             }
@@ -97,30 +86,23 @@ fn print_mnemonic(
 
 fn format_operand_imm(
     formatter: &Formatter,
-    buffer: &mut ZydisString,
-    instruction: &ZydisDecodedInstruction,
-    operand: &ZydisDecodedOperand,
+    buffer: &mut ZyanString,
+    ctx: &mut FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
     match user_data {
-        Some(mut x) => match x.downcast_ref::<UserData>() {
+        Some(x) => match x.downcast_ref::<UserData>() {
             Some(&UserData {
                 omit_immediate,
                 orig_format_operand: Hook::FormatOperandImm(Some(orig_format_operand)),
                 ..
             }) => {
                 if omit_immediate {
-                    Err(ZYDIS_STATUS_SKIP_OPERAND.into())
+                    Err(Status::SkipToken.into())
                 } else {
                     unsafe {
                         check!(
-                            orig_format_operand(
-                                mem::transmute(formatter),
-                                buffer,
-                                instruction,
-                                operand,
-                                user_data_to_c_void(&mut x),
-                            ),
+                            orig_format_operand(mem::transmute(formatter), buffer, ctx,),
                             ()
                         )
                     }
@@ -153,7 +135,7 @@ fn main() -> Result<()> {
     let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
 
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        let insn = formatter.format_instruction(&instruction, 200, Some(&mut user_data))?;
+        let insn = formatter.format_instruction(&instruction, 200, ip, Some(&mut user_data))?;
         println!("0x{:016X} {}", ip, insn);
     }
 

@@ -1,41 +1,51 @@
 //! Status code utilities.
 
-use std::{error, fmt, result};
+use core::{fmt, result};
+
+use std::error;
 
 use gen::*;
 
-// A Zydis result, holding either a result or a failure code.
-pub type Result<T> = result::Result<T, ZydisError>;
+/// A Result, holding either a value or a failure code.
+pub type Result<T> = result::Result<T, Error>;
 
-/// A type that implements std::error::Error and thus is useable with the failure crate.
+/// A type that implements std::error::Error and thus is useable with the
+/// failure crate.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct ZydisError {
-    x: ZydisStatusCodes,
+pub struct Error {
+    x: Status,
 }
 
-impl fmt::Display for ZydisError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", status_description(self.x))
     }
 }
 
-impl ZydisError {
-    pub fn new(x: ZydisStatusCodes) -> ZydisError {
+impl Error {
+    pub fn new(x: Status) -> Error {
         Self { x }
     }
 
-    pub fn get_code(self) -> ZydisStatusCodes {
+    pub fn get_code(self) -> Status {
         self.x
     }
 }
 
-impl From<ZydisStatusCodes> for ZydisError {
-    fn from(x: ZydisStatusCodes) -> Self {
+impl From<ZyanStatus> for Error {
+    fn from(x: ZyanStatus) -> Self {
+        Self { x: x.into() }
+    }
+}
+
+impl From<Status> for Error {
+    fn from(x: Status) -> Self {
         Self { x }
     }
 }
 
-impl error::Error for ZydisError {
+#[cfg(not(no_std))]
+impl error::Error for Error {
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
@@ -45,33 +55,58 @@ impl error::Error for ZydisError {
     }
 }
 
-pub fn status_description(status: ZydisStatus) -> &'static str {
+pub fn status_description(status: Status) -> &'static str {
     match status {
-        ZYDIS_STATUS_SUCCESS => "no error",
-        ZYDIS_STATUS_INVALID_PARAMETER => "An invalid parameter was passed to a function.",
-        ZYDIS_STATUS_INVALID_OPERATION => "An attempt was made to perform an invalid operation.",
-        ZYDIS_STATUS_INSUFFICIENT_BUFFER_SIZE => "A buffer passed to a function was too small to complete the requested operation.",
-        ZYDIS_STATUS_NO_MORE_DATA => "An attempt was made to read data from an input data-source that has no more data available.",
-        ZYDIS_STATUS_DECODING_ERROR => "An general error occured while decoding the current instruction. The instruction might be undfined.",
-        ZYDIS_STATUS_INSTRUCTION_TOO_LONG => "The instruction exceeded the maximum length of 15 bytes.",
-        ZYDIS_STATUS_BAD_REGISTER => "The instruction encoded an invalid register.",
-        ZYDIS_STATUS_ILLEGAL_LOCK => "A lock-prefix (F0) was found while decoding an instruction that does not support locking.",
-        ZYDIS_STATUS_ILLEGAL_LEGACY_PFX => "A legacy-prefix (F2, F3, 66) was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
-        ZYDIS_STATUS_ILLEGAL_REX => "A rex-prefix was found while decoding a XOP/VEX/EVEX/MVEX instruction.",
-        ZYDIS_STATUS_INVALID_MAP => "An invalid opcode-map value was found while decoding a XOP/VEX/EVEX/MVEX-prefix.",
-        ZYDIS_STATUS_MALFORMED_EVEX => "An error occured while decoding the EVEX-prefix.",
-        ZYDIS_STATUS_MALFORMED_MVEX => "An error occured while decoding the MVEX-prefix.",
-        ZYDIS_STATUS_INVALID_MASK => "An invalid write-mask was specified for an EVEX/MVEX instruction.",
-        _ => "unknown/user defined error"
+        Status::Success => "no error",
+        Status::Failed => "A operation failed.",
+        Status::InvalidArgument => "An invalid parameter was passed to a function.",
+        Status::InvalidOperation => "An attempt was made to perform an invalid operation.",
+        Status::InsufficientBufferSize => {
+            "A buffer passed to a function was too small to complete the requested operation."
+        }
+        Status::OutOfBounds => "An index was out of bounds.",
+        Status::NotFound => "The requested entity was not found.",
+        Status::OutOfMemory => "Insufficient memory to perform the operation.",
+        Status::BadSystemcall => "An error occured during a system call.",
+        Status::NoMoreData => {
+            "An attempt was made to read data from an input data-source that has no more data \
+             available."
+        }
+        Status::DecodingError => {
+            "An general error occured while decoding the current instruction. The instruction \
+             might be undfined."
+        }
+        Status::InstructionTooLong => "The instruction exceeded the maximum length of 15 bytes.",
+        Status::BadRegister => "The instruction encoded an invalid register.",
+        Status::IllegalLock => {
+            "A lock-prefix (F0) was found while decoding an instruction that does not support \
+             locking."
+        }
+        Status::IllegalLegacyPfx => {
+            "A legacy-prefix (F2, F3, 66) was found while decoding a XOP/VEX/EVEX/MVEX instruction."
+        }
+        Status::IllegalRex => {
+            "A rex-prefix was found while decoding a XOP/VEX/EVEX/MVEX instruction."
+        }
+        Status::InvalidMap => {
+            "An invalid opcode-map value was found while decoding a XOP/VEX/EVEX/MVEX-prefix."
+        }
+        Status::MalformedEvex => "An error occured while decoding the EVEX-prefix.",
+        Status::MalformedMvex => "An error occured while decoding the MVEX-prefix.",
+        Status::InvalidMask => "An invalid write-mask was specified for an EVEX/MVEX instruction.",
+        Status::True | Status::False => "true/false not an error",
+        Status::SkipToken => "skip this token",
+        Status::User => "user error",
+        _ => "unknown error",
     }
 }
 
 #[macro_export]
 macro_rules! check {
     ($expression:expr, $ok:expr) => {
-        match $expression as ZydisStatusCodes {
-            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok($ok),
-            e => Err($crate::status::ZydisError::from(e)),
+        match $expression.into() {
+            $crate::gen::Status::Success => Ok($ok),
+            e => Err($crate::status::Error::from(e)),
         }
     };
 }
@@ -79,10 +114,10 @@ macro_rules! check {
 macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
-        match $expression as ZydisStatusCodes {
-            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
-            $crate::gen::ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
-            e => Err($crate::status::ZydisError::from(e)),
+        match $expression.into() {
+            $crate::gen::Status::Success => Ok(Some($ok)),
+            $crate::gen::Status::NoMoreData => Ok(None),
+            e => Err($crate::status::Error::from(e)),
         }
     };
 }

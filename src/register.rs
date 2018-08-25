@@ -4,15 +4,15 @@ use std::ffi::CStr;
 
 use gen::*;
 
-/// Extensions for `ZydisRegister`
-pub trait ZydisRegisterMethods {
+/// Extensions for `Register`
+pub trait RegisterMethods {
     /// Returns the ID of the specified register.
     ///
     /// Returns `None` if the register is invalid.
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterMethods;
+    /// use zydis::register::RegisterMethods;
     /// let id = zydis::gen::ZYDIS_REGISTER_RAX.get_id();
     /// assert_eq!(id, Some(0));
     /// ```
@@ -22,17 +22,17 @@ pub trait ZydisRegisterMethods {
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterMethods;
+    /// use zydis::register::RegisterMethods;
     /// let ecx_class = zydis::gen::ZYDIS_REGISTER_ECX.get_class();
     /// assert_eq!(ecx_class, zydis::gen::ZYDIS_REGCLASS_GPR32);
     /// ```
-    fn get_class(self) -> ZydisRegisterClasses;
+    fn get_class(self) -> ZydisRegisterClass;
 
     /// Returns the textual representation for a register.
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterMethods;
+    /// use zydis::register::RegisterMethods;
     /// let reg_str = zydis::gen::ZYDIS_REGISTER_EAX.get_string();
     /// assert_eq!(reg_str.unwrap(), "eax");
     /// ```
@@ -42,7 +42,7 @@ pub trait ZydisRegisterMethods {
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterMethods;
+    /// use zydis::register::RegisterMethods;
     /// let dr0_width = zydis::gen::ZYDIS_REGISTER_DR0.get_width();
     /// assert_eq!(dr0_width, 32);
     /// ```
@@ -52,14 +52,14 @@ pub trait ZydisRegisterMethods {
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterMethods;
+    /// use zydis::register::RegisterMethods;
     /// let dr0_width = zydis::gen::ZYDIS_REGISTER_DR0.get_width64();
     /// assert_eq!(dr0_width, 64);
     /// ```
     fn get_width64(self) -> ZydisRegisterWidth;
 }
 
-impl ZydisRegisterMethods for ZydisRegisters {
+impl RegisterMethods for Register {
     fn get_id(self) -> Option<i16> {
         unsafe {
             match ZydisRegisterGetId(self as _) {
@@ -69,7 +69,7 @@ impl ZydisRegisterMethods for ZydisRegisters {
         }
     }
 
-    fn get_class(self) -> ZydisRegisterClasses {
+    fn get_class(self) -> ZydisRegisterClass {
         unsafe { ZydisRegisterGetClass(self as _) as _ }
     }
 
@@ -86,21 +86,21 @@ impl ZydisRegisterMethods for ZydisRegisters {
     }
 }
 
-/// Extensions for `ZydisRegisterClassesExtensions`.
-pub trait ZydisRegisterClassesExtensions {
+/// Extensions for `RegisterClass`.
+pub trait RegisterClassExtensions {
     /// Returns the register specified by `class` and `id`.
     ///
     /// # Examples
     /// ```
-    /// use zydis::register::ZydisRegisterClassesExtensions;
+    /// use zydis::register::ZydisRegisterClassExtensions;
     /// let eax = zydis::gen::ZYDIS_REGCLASS_GPR32.encode(0);
     /// assert_eq!(eax, zydis::gen::ZYDIS_REGISTER_EAX);
     /// ```
-    fn encode(self, id: u8) -> ZydisRegisters;
+    fn encode(self, id: u8) -> ZydisRegister;
 }
 
-impl ZydisRegisterClassesExtensions for ZydisRegisterClasses {
-    fn encode(self, id: u8) -> ZydisRegisters {
+impl RegisterClassExtensions for RegisterClass {
+    fn encode(self, id: u8) -> ZydisRegister {
         unsafe { ZydisRegisterEncode(self as _, id) as _ }
     }
 }

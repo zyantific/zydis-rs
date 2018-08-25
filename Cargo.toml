@@ -16,9 +16,3 @@ build       = true
 [build-dependencies]
 bindgen     = "0.37"
 cmake       = "0.1"
-
-[features]
-no_libc = []
-no_std = []
-
-default = []

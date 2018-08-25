@@ -3,8 +3,7 @@
 //! of branch instructions).
 
 extern crate zydis;
-use zydis::gen::*;
-use zydis::*;
+use zydis::{gen::*, *};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -21,15 +20,15 @@ fn main() -> Result<()> {
         let mut mask = 0u16;
 
         // Walk operands.
-        for op_idx in 0..insn.operandCount as usize {
+        for op_idx in 0..insn.operand_count as usize {
             let op = &insn.operands[op_idx];
 
             // Obtain offsets for relevant operands, skip others.
-            let (dyn_offs, dyn_len) = match op.type_ as ZydisOperandTypes {
-                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.hasDisplacement == 1 => {
+            let (dyn_offs, dyn_len) = match op.type_ as ZydisOperandType {
+                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.has_displacement == 1 => {
                     (insn.raw.disp.offset, insn.raw.disp.size)
                 }
-                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.isRelative == 1 => {
+                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.is_relative == 1 => {
                     (insn.raw.imm[op_idx].offset, insn.raw.imm[op_idx].size)
                 }
                 _ => continue,

@@ -1,6 +1,6 @@
 //! Binary instruction decoding.
 
-use std::mem::uninitialized;
+use core::mem::uninitialized;
 
 use gen::*;
 use status::Result;
@@ -10,25 +10,23 @@ pub struct Decoder {
 }
 
 impl Decoder {
-    /// Creates a new `Decoder` with the given `machine_mode` and `address_width`.
-    pub fn new(
-        machine_mode: ZydisMachineModes,
-        address_width: ZydisAddressWidths,
-    ) -> Result<Decoder> {
+    /// Creates a new `Decoder` with the given `machine_mode` and
+    /// `address_width`.
+    pub fn new(machine_mode: MachineMode, address_width: AddressWidth) -> Result<Decoder> {
         unsafe {
             let mut decoder = uninitialized();
             check!(
-                ZydisDecoderInit(&mut decoder, machine_mode as _, address_width as _,),
+                ZydisDecoderInit(&mut decoder, machine_mode, address_width),
                 Decoder { decoder }
             )
         }
     }
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`.
-    pub fn enable_mode(&mut self, mode: ZydisDecoderModes, value: bool) -> Result<()> {
+    pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
         unsafe {
             check!(
-                ZydisDecoderEnableMode(&mut self.decoder, mode as _, value as _),
+                ZydisDecoderEnableMode(&mut self.decoder, mode, value as _),
                 ()
             )
         }
@@ -42,29 +40,21 @@ impl Decoder {
     /// ```
     /// use zydis::gen::*;
     /// static INT3: &'static [u8] = &[0xCCu8];
-    /// let decoder = zydis::Decoder::new(
-    ///     ZYDIS_MACHINE_MODE_LONG_64,
-    ///     ZYDIS_ADDRESS_WIDTH_64
-    /// ).unwrap();
-    /// let info = decoder.decode(INT3, 0x00400000).unwrap().unwrap();
-    /// assert_eq!(info.mnemonic as ZydisMnemonics, ZYDIS_MNEMONIC_INT3);
+    /// let decoder = zydis::Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64).unwrap();
+    /// let info = decoder.decode(INT3).unwrap().unwrap();
+    /// assert_eq!(info.mnemonic, ZYDIS_MNEMONIC_INT3);
     /// ```
-    pub fn decode(
-        &self,
-        buffer: &[u8],
-        instruction_pointer: u64,
-    ) -> Result<Option<ZydisDecodedInstruction>> {
+    pub fn decode(&self, buffer: &[u8]) -> Result<Option<Instruction>> {
         unsafe {
-            let mut info: ZydisDecodedInstruction = uninitialized();
+            let mut insn: ZydisDecodedInstruction = uninitialized();
             check_option!(
                 ZydisDecoderDecodeBuffer(
                     &self.decoder,
                     buffer.as_ptr() as _,
                     buffer.len(),
-                    instruction_pointer,
-                    &mut info
+                    &mut insn
                 ),
-                info
+                insn
             )
         }
     }
@@ -90,14 +80,14 @@ pub struct InstructionIterator<'a, 'b> {
 }
 
 impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
-    type Item = (ZydisDecodedInstruction, u64);
+    type Item = (Instruction, u64);
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.decoder.decode(self.buffer, self.ip) {
+        match self.decoder.decode(self.buffer) {
             Ok(Some(insn)) => {
                 self.buffer = &self.buffer[insn.length as usize..];
                 let item = Some((insn, self.ip));
-                self.ip += insn.length as u64;
+                self.ip += u64::from(insn.length);
                 item
             }
             _ => None,

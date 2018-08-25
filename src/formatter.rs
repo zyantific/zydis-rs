@@ -1,14 +1,8 @@
 //! Textual instruction formatting routines.
 
-use std::{
-    any::Any,
-    ffi::CStr,
-    fmt,
-    marker::PhantomData,
-    mem,
-    os::raw::{c_char, c_void},
-    ptr,
-};
+use core::{any::Any, fmt, marker::PhantomData, mem, ptr};
+
+use std::{ffi::CStr, os::raw::c_void};
 
 use gen::*;
 use status::Result;
@@ -17,26 +11,26 @@ use status::Result;
 pub enum Hook {
     PreInstruction(ZydisFormatterFunc),
     PostInstruction(ZydisFormatterFunc),
-    PreOperand(ZydisFormatterOperandFunc),
-    PostOperand(ZydisFormatterOperandFunc),
+    PreOperand(ZydisFormatterFunc),
+    PostOperand(ZydisFormatterFunc),
     FormatInstruction(ZydisFormatterFunc),
-    FormatOperandReg(ZydisFormatterOperandFunc),
-    FormatOperandMem(ZydisFormatterOperandFunc),
-    FormatOperandPtr(ZydisFormatterOperandFunc),
-    FormatOperandImm(ZydisFormatterOperandFunc),
+    FormatOperandReg(ZydisFormatterFunc),
+    FormatOperandMem(ZydisFormatterFunc),
+    FormatOperandPtr(ZydisFormatterFunc),
+    FormatOperandImm(ZydisFormatterFunc),
     PrintMnemonic(ZydisFormatterFunc),
     PrintRegister(ZydisFormatterRegisterFunc),
     PrintAddress(ZydisFormatterAddressFunc),
-    PrintDisp(ZydisFormatterOperandFunc),
-    PrintImm(ZydisFormatterOperandFunc),
-    PrintMemsize(ZydisFormatterOperandFunc),
+    PrintDisp(ZydisFormatterFunc),
+    PrintImm(ZydisFormatterFunc),
+    PrintMemsize(ZydisFormatterFunc),
     PrintPrefixes(ZydisFormatterFunc),
     PrintDecorator(ZydisFormatterDecoratorFunc),
 }
 
 impl Hook {
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub fn to_id(&self) -> ZydisFormatterHookTypes {
+    pub fn to_id(&self) -> ZydisFormatterHookType {
         use self::Hook::*;
         match self {
             PreInstruction(_)    => ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION,
@@ -81,7 +75,7 @@ impl Hook {
     }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub unsafe fn from_raw(id: ZydisFormatterHookTypes, cb: *const c_void) -> Hook {
+    pub unsafe fn from_raw(id: ZydisFormatterHookType, cb: *const c_void) -> Hook {
         use self::Hook::*;
         match id {
             ZYDIS_FORMATTER_HOOK_PRE_INSTRUCTION    => PreInstruction(mem::transmute(cb)),
@@ -106,39 +100,53 @@ impl Hook {
     }
 }
 
-impl ZydisString {
-    pub fn new(buffer: *mut c_char, capacity: usize) -> Self {
-        Self {
-            buffer,
-            length: 0,
-            capacity,
+impl ZyanString {
+    pub fn new(buffer: *mut u8, capacity: usize) -> Result<Self> {
+        unsafe {
+            let mut string = mem::uninitialized();
+            check!(
+                ZyanStringInitCustomBuffer(&mut string, buffer as *mut i8, capacity),
+                ()
+            )?;
+            Ok(string)
         }
     }
 
     /// Appends the given string `s` to this buffer.
     ///
-    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't converted to any
-    /// other encoding. They're simply copied, byte by byte, to the buffer. Therefore, the
-    /// buffer should be interpreted as UTF-8 when later being printed.
+    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't
+    /// converted to any other encoding. They're simply copied, byte by
+    /// byte, to the buffer. Therefore, the buffer should be interpreted as
+    /// UTF-8 when later being printed.
     pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
-        let bytes = s.as_ref().as_bytes();
         unsafe {
-            check!(
-                ZydisStringAppendStatic(
-                    self,
-                    &ZydisStaticString {
-                        buffer: bytes.as_ptr() as _,
-                        length: bytes.len() as _,
-                    },
-                    ZYDIS_LETTER_CASE_DEFAULT as _,
-                ),
-                ()
-            )
+            unreachable!();
+            //let bytes = s.as_ref().as_bytes();
+            //let mut source = mem::uninitialize();
+            //check!(
+            //    // TODO: HERE
+            //    ZyanStringAppend(self, source)
+            //    ZyanStringAppendStatic(
+            //        self,
+            //        &ZydisStaticString {
+            //            buffer: bytes.as_ptr() as _,
+            //            length: bytes.len() as _,
+            //        },
+            //        ZYDIS_LETTER_CASE_DEFAULT as _,
+            //    ),
+            //    ()
+            //)
         }
     }
 }
 
-impl fmt::Write for ZydisString {
+//impl Drop for ZyanString {
+//    fn drop(&mut self) {
+//        unsafe { ZyanStringDestroy(self) }
+//    }
+//}
+
+impl fmt::Write for ZyanString {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.append(s).map_err(|_| fmt::Error)
     }
@@ -147,45 +155,27 @@ impl fmt::Write for ZydisString {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type WrappedGeneralFunc = dyn Fn(
     &Formatter,
-    &mut ZydisString,
-    &ZydisDecodedInstruction,
+    &mut ZyanString,
+    &mut FormatterContext,
     Option<&mut dyn Any>
 ) -> Result<()>;
 
-pub type WrappedOperandFunc = dyn Fn(
-    &Formatter,
-    &mut ZydisString,
-    &ZydisDecodedInstruction,
-    &ZydisDecodedOperand,
-    Option<&mut dyn Any>,
-) -> Result<()>;
+pub type WrappedRegisterFunc =
+    dyn Fn(&Formatter, &mut ZyanString, &mut FormatterContext, Register, Option<&mut dyn Any>)
+        -> Result<()>;
 
-pub type WrappedRegisterFunc = dyn Fn(
-    &Formatter,
-    &mut ZydisString,
-    &ZydisDecodedInstruction,
-    &ZydisDecodedOperand,
-    ZydisRegister,
-    Option<&mut dyn Any>,
-) -> Result<()>;
-
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub type WrappedAddressFunc = dyn Fn(
     &Formatter,
-    &mut ZydisString,
-    &ZydisDecodedInstruction,
-    &ZydisDecodedOperand,
+    &mut ZyanString,
+    &mut FormatterContext,
     u64,
     Option<&mut dyn Any>,
 ) -> Result<()>;
 
-pub type WrappedDecoratorFunc = dyn Fn(
-    &Formatter,
-    &mut ZydisString,
-    &ZydisDecodedInstruction,
-    &ZydisDecodedOperand,
-    ZydisDecoratorType,
-    Option<&mut dyn Any>,
-) -> Result<()>;
+pub type WrappedDecoratorFunc =
+    dyn Fn(&Formatter, &mut ZyanString, &mut FormatterContext, DecoratorType, Option<&mut dyn Any>)
+        -> Result<()>;
 
 macro_rules! wrapped_hook_setter{
     ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
@@ -201,123 +191,87 @@ macro_rules! wrapped_hook_setter{
     };
 }
 
-macro_rules! get_user_data {
-    ($user_data:expr) => {
-        if $user_data.is_null() {
-            None
-        } else {
-            Some(*($user_data as *mut &mut dyn Any))
-        }
-    };
+unsafe fn get_user_data<'a>(user_data: *mut c_void) -> Option<&'a mut dyn Any> {
+    if user_data.is_null() {
+        None
+    } else {
+        Some(*(user_data as *mut &mut dyn Any))
+    }
 }
 
 macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZydisString,
-            instruction: *const ZydisDecodedInstruction,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
+            string: *mut ZyanString,
+            ctx: *mut FormatterContext,
+        ) -> ZyanStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
-                formatter,
-                &mut *string,
-                &*instruction,
-                get_user_data!(user_data),
-            ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e.get_code(),
-            }
-        }
-    };
-    (operand $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            string: *mut ZydisString,
-            instruction: *const ZydisDecodedInstruction,
-            operand: *const ZydisDecodedOperand,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
-            let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
-                formatter,
-                &mut *string,
-                &*instruction,
-                &*operand,
-                get_user_data!(user_data),
-            ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e.get_code(),
+            let ctx = &mut *ctx;
+            let usr = get_user_data(ctx.user_data);
+            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *string, ctx, usr) {
+                Ok(_) => Status::Success.into(),
+                Err(e) => e.get_code().into(),
             }
         }
     };
     (register $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZydisString,
-            instruction: *const ZydisDecodedInstruction,
-            operand: *const ZydisDecodedOperand,
-            reg: ZydisRegister,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
+            string: *mut ZyanString,
+            ctx: *mut FormatterContext,
+            reg: Register,
+        ) -> ZyanStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
-                formatter,
-                &mut *string,
-                &*instruction,
-                &*operand,
-                reg,
-                get_user_data!(user_data),
-            ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e.get_code(),
+            let ctx = &mut *ctx;
+            let usr = get_user_data(ctx.user_data);
+            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *string, ctx, reg, usr) {
+                Ok(_) => Status::Success.into(),
+                Err(e) => e.get_code().into(),
             }
         }
     };
     (address $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZydisString,
-            instruction: *const ZydisDecodedInstruction,
-            operand: *const ZydisDecodedOperand,
+            string: *mut ZyanString,
+            ctx: *mut FormatterContext,
             address: u64,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
+        ) -> ZyanStatus {
             let formatter = &*(formatter as *const Formatter);
+            let ctx = &mut *ctx;
+            let usr = get_user_data(ctx.user_data);
             match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
-                &*instruction,
-                &*operand,
+                ctx,
                 address,
-                get_user_data!(user_data),
+                usr,
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e.get_code(),
+                Ok(_) => Status::Success.into(),
+                Err(e) => e.get_code().into(),
             }
         }
     };
     (decorator $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZydisString,
-            instruction: *const ZydisDecodedInstruction,
-            operand: *const ZydisDecodedOperand,
-            decorator: ZydisDecoratorType,
-            user_data: *mut c_void,
-        ) -> ZydisStatus {
+            string: *mut ZyanString,
+            ctx: *mut FormatterContext,
+            decorator: DecoratorType,
+        ) -> ZyanStatus {
             let formatter = &*(formatter as *const Formatter);
+            let ctx = &mut *ctx;
+            let usr = get_user_data(ctx.user_data);
             match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
-                &*instruction,
-                &*operand,
+                ctx,
                 decorator,
-                get_user_data!(user_data),
+                usr,
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
-                Err(e) => e.get_code(),
+                Ok(_) => Status::Success.into(),
+                Err(e) => e.get_code().into(),
             }
         }
     };
@@ -325,20 +279,20 @@ macro_rules! wrap_func {
 
 wrap_func!(general pre_instruction, dispatch_pre_instruction);
 wrap_func!(general post_instruction, dispatch_post_instruction);
-wrap_func!(operand pre_operand, dispatch_pre_operand);
-wrap_func!(operand post_operand, dispatch_post_operand);
+wrap_func!(general pre_operand, dispatch_pre_operand);
+wrap_func!(general post_operand, dispatch_post_operand);
 wrap_func!(general format_instruction, dispatch_format_instruction);
-wrap_func!(operand format_operand_reg, dispatch_format_operand_reg);
-wrap_func!(operand format_operand_mem, dispatch_format_operand_mem);
-wrap_func!(operand format_operand_ptr, dispatch_format_operand_ptr);
-wrap_func!(operand format_operand_imm, dispatch_format_operand_imm);
+wrap_func!(general format_operand_reg, dispatch_format_operand_reg);
+wrap_func!(general format_operand_mem, dispatch_format_operand_mem);
+wrap_func!(general format_operand_ptr, dispatch_format_operand_ptr);
+wrap_func!(general format_operand_imm, dispatch_format_operand_imm);
 wrap_func!(general print_mnemonic, dispatch_print_mnemonic);
+wrap_func!(general print_disp, dispatch_print_disp);
+wrap_func!(general print_imm, dispatch_print_imm);
+wrap_func!(general print_memsize, dispatch_print_memsize);
+wrap_func!(general print_prefixes, dispatch_print_prefixes);
 wrap_func!(register print_register, dispatch_print_register);
 wrap_func!(address print_address, dispatch_print_address);
-wrap_func!(operand print_disp, dispatch_print_disp);
-wrap_func!(operand print_imm, dispatch_print_imm);
-wrap_func!(operand print_memsize, dispatch_print_memsize);
-wrap_func!(general print_prefixes, dispatch_print_prefixes);
 wrap_func!(decorator print_decorator, dispatch_print_decorator);
 
 #[derive(Clone)]
@@ -346,9 +300,9 @@ pub enum FormatterProperty<'a> {
     Uppercase(bool),
     ForceMemseg(bool),
     ForceMemsize(bool),
-    AddressFormat(ZydisAddressFormat),
-    DispFormat(ZydisDisplacementFormat),
-    ImmFormat(ZydisImmediateFormat),
+    AddressFormat(AddressFormat),
+    DispFormat(DisplacementFormat),
+    ImmFormat(ImmediateFormat),
     HexUppercase(bool),
     HexPrefix(Option<&'a CStr>),
     HexSuffix(Option<&'a CStr>),
@@ -362,26 +316,26 @@ pub fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
 }
 
 #[repr(C)]
-// needed, since we cast a *const ZydisFormatter to a *const Formatter and the rust compiler
-// could reorder the fields if this wasn't #[repr(C)].
+// needed, since we cast a *const ZydisFormatter to a *const Formatter and the
+// rust compiler could reorder the fields if this wasn't #[repr(C)].
 pub struct Formatter<'a> {
     formatter: ZydisFormatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc>>,
     post_instruction: Option<Box<WrappedGeneralFunc>>,
-    pre_operand: Option<Box<WrappedOperandFunc>>,
-    post_operand: Option<Box<WrappedOperandFunc>>,
+    pre_operand: Option<Box<WrappedGeneralFunc>>,
+    post_operand: Option<Box<WrappedGeneralFunc>>,
     format_instruction: Option<Box<WrappedGeneralFunc>>,
-    format_operand_reg: Option<Box<WrappedOperandFunc>>,
-    format_operand_mem: Option<Box<WrappedOperandFunc>>,
-    format_operand_ptr: Option<Box<WrappedOperandFunc>>,
-    format_operand_imm: Option<Box<WrappedOperandFunc>>,
+    format_operand_reg: Option<Box<WrappedGeneralFunc>>,
+    format_operand_mem: Option<Box<WrappedGeneralFunc>>,
+    format_operand_ptr: Option<Box<WrappedGeneralFunc>>,
+    format_operand_imm: Option<Box<WrappedGeneralFunc>>,
     print_mnemonic: Option<Box<WrappedGeneralFunc>>,
     print_register: Option<Box<WrappedRegisterFunc>>,
     print_address: Option<Box<WrappedAddressFunc>>,
-    print_disp: Option<Box<WrappedOperandFunc>>,
-    print_imm: Option<Box<WrappedOperandFunc>>,
-    print_memsize: Option<Box<WrappedOperandFunc>>,
+    print_disp: Option<Box<WrappedGeneralFunc>>,
+    print_imm: Option<Box<WrappedGeneralFunc>>,
+    print_memsize: Option<Box<WrappedGeneralFunc>>,
     print_prefixes: Option<Box<WrappedGeneralFunc>>,
     print_decorator: Option<Box<WrappedDecoratorFunc>>,
 
@@ -389,8 +343,144 @@ pub struct Formatter<'a> {
 }
 
 impl<'a> Formatter<'a> {
+    wrapped_hook_setter!(
+        pre_instruction,
+        WrappedGeneralFunc,
+        set_pre_instruction,
+        dispatch_pre_instruction,
+        Hook::PreInstruction
+    );
+
+    wrapped_hook_setter!(
+        post_instruction,
+        WrappedGeneralFunc,
+        set_post_instruction,
+        dispatch_post_instruction,
+        Hook::PostInstruction
+    );
+
+    wrapped_hook_setter!(
+        pre_operand,
+        WrappedGeneralFunc,
+        set_pre_operand,
+        dispatch_pre_operand,
+        Hook::PreOperand
+    );
+
+    wrapped_hook_setter!(
+        post_operand,
+        WrappedGeneralFunc,
+        set_post_operand,
+        dispatch_post_operand,
+        Hook::PostOperand
+    );
+
+    wrapped_hook_setter!(
+        format_instruction,
+        WrappedGeneralFunc,
+        set_format_instruction,
+        dispatch_format_instruction,
+        Hook::FormatInstruction
+    );
+
+    wrapped_hook_setter!(
+        format_operand_reg,
+        WrappedGeneralFunc,
+        set_format_operand_reg,
+        dispatch_format_operand_reg,
+        Hook::FormatOperandReg
+    );
+
+    wrapped_hook_setter!(
+        format_operand_mem,
+        WrappedGeneralFunc,
+        set_format_operand_mem,
+        dispatch_format_operand_mem,
+        Hook::FormatOperandMem
+    );
+
+    wrapped_hook_setter!(
+        format_operand_ptr,
+        WrappedGeneralFunc,
+        set_format_operand_ptr,
+        dispatch_format_operand_ptr,
+        Hook::FormatOperandPtr
+    );
+
+    wrapped_hook_setter!(
+        format_operand_imm,
+        WrappedGeneralFunc,
+        set_format_operand_imm,
+        dispatch_format_operand_imm,
+        Hook::FormatOperandImm
+    );
+
+    wrapped_hook_setter!(
+        print_mnemonic,
+        WrappedGeneralFunc,
+        set_print_mnemonic,
+        dispatch_print_mnemonic,
+        Hook::PrintMnemonic
+    );
+
+    wrapped_hook_setter!(
+        print_register,
+        WrappedRegisterFunc,
+        set_print_register,
+        dispatch_print_register,
+        Hook::PrintRegister
+    );
+
+    wrapped_hook_setter!(
+        print_address,
+        WrappedAddressFunc,
+        set_print_address,
+        dispatch_print_address,
+        Hook::PrintAddress
+    );
+
+    wrapped_hook_setter!(
+        print_disp,
+        WrappedGeneralFunc,
+        set_print_disp,
+        dispatch_print_disp,
+        Hook::PrintDisp
+    );
+
+    wrapped_hook_setter!(
+        print_imm,
+        WrappedGeneralFunc,
+        set_print_imm,
+        dispatch_print_imm,
+        Hook::PrintImm
+    );
+
+    wrapped_hook_setter!(
+        print_memsize,
+        WrappedGeneralFunc,
+        set_print_memsize,
+        dispatch_print_memsize,
+        Hook::PrintMemsize
+    );
+
+    wrapped_hook_setter!(
+        print_prefixes,
+        WrappedGeneralFunc,
+        set_print_prefixes,
+        dispatch_print_prefixes,
+        Hook::PrintPrefixes
+    );
+
+    wrapped_hook_setter!(
+        print_decorator,
+        WrappedDecoratorFunc,
+        set_print_decorator,
+        dispatch_print_decorator,
+        Hook::PrintDecorator
+    );
+
     /// Creates a new formatter instance.
-    pub fn new(style: ZydisFormatterStyles) -> Result<Self> {
+    pub fn new(style: FormatterStyle) -> Result<Self> {
         unsafe {
             let mut formatter = mem::uninitialized();
             check!(
@@ -438,7 +528,7 @@ impl<'a> Formatter<'a> {
             HexSuffix(_) => (ZYDIS_FORMATTER_PROP_HEX_SUFFIX, 0),
             HexPaddingAddr(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_ADDR, v as usize),
             HexPaddingDisp(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_DISP, v as usize),
-            HexPaddingImm(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_IMM, v as usize),
+            HexPaddingImm(v) => (ZydisFormatterProp::HexPaddingImm, v as usize),
         };
 
         unsafe {
@@ -455,27 +545,27 @@ impl<'a> Formatter<'a> {
     /// # Examples
     ///
     /// ```
-    /// let formatter = zydis::Formatter::new(
-    ///     zydis::gen::ZYDIS_FORMATTER_STYLE_INTEL
-    /// ).unwrap();
+    /// let formatter = zydis::Formatter::new(zydis::gen::ZYDIS_FORMATTER_STYLE_INTEL).unwrap();
     /// let dec = zydis::Decoder::new(
     ///     zydis::gen::ZYDIS_MACHINE_MODE_LONG_64,
-    ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64
+    ///     zydis::gen::ZYDIS_ADDRESS_WIDTH_64,
     /// ).unwrap();
     ///
     /// static INT3: &'static [u8] = &[0xCCu8];
-    /// let info = dec.decode(INT3, 0).unwrap().unwrap();
-    /// let fmt = formatter.format_instruction(&info, 200, None).unwrap();
+    /// let info = dec.decode(INT3).unwrap().unwrap();
+    /// let fmt = formatter.format_instruction(&info, 200, 0, None).unwrap();
     /// assert_eq!(fmt, "int3");
     /// ```
     pub fn format_instruction(
         &self,
-        instruction: &ZydisDecodedInstruction,
+        instruction: &Instruction,
         size: usize,
+        ip: u64,
         user_data: Option<&mut dyn Any>,
     ) -> Result<String> {
+        // TODO: Make this a mutable string!
         let mut buffer = vec![0u8; size];
-        self.format_instruction_raw(instruction, &mut buffer, user_data)
+        self.format_instruction_raw(instruction, &mut buffer, ip, user_data)
             .map(|_| {
                 unsafe { CStr::from_ptr(buffer.as_ptr() as _) }
                     .to_string_lossy()
@@ -490,8 +580,9 @@ impl<'a> Formatter<'a> {
     /// Formatter hooks.
     pub fn format_instruction_raw(
         &self,
-        instruction: &ZydisDecodedInstruction,
+        instruction: &Instruction,
         buffer: &mut [u8],
+        ip: u64,
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
@@ -501,6 +592,7 @@ impl<'a> Formatter<'a> {
                     instruction,
                     buffer.as_ptr() as _,
                     buffer.len(),
+                    ip,
                     match user_data {
                         None => ptr::null_mut(),
                         Some(mut x) => user_data_to_c_void(&mut x),
@@ -511,7 +603,8 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    /// Sets a raw hook, allowing for customizations along the formatting process.
+    /// Sets a raw hook, allowing for customizations along the formatting
+    /// process.
     ///
     /// This is the raw C style version of the formatter hook mechanism. No
     /// wrapping occurs, your callback will receive raw pointers. You might want
@@ -530,124 +623,4 @@ impl<'a> Formatter<'a> {
             )
         }
     }
-
-    wrapped_hook_setter!(
-        pre_instruction,
-        WrappedGeneralFunc,
-        set_pre_instruction,
-        dispatch_pre_instruction,
-        Hook::PreInstruction
-    );
-    wrapped_hook_setter!(
-        post_instruction,
-        WrappedGeneralFunc,
-        set_post_instruction,
-        dispatch_post_instruction,
-        Hook::PostInstruction
-    );
-    wrapped_hook_setter!(
-        pre_operand,
-        WrappedOperandFunc,
-        set_pre_operand,
-        dispatch_pre_operand,
-        Hook::PreOperand
-    );
-    wrapped_hook_setter!(
-        post_operand,
-        WrappedOperandFunc,
-        set_post_operand,
-        dispatch_post_operand,
-        Hook::PostOperand
-    );
-    wrapped_hook_setter!(
-        format_instruction,
-        WrappedGeneralFunc,
-        set_format_instruction,
-        dispatch_format_instruction,
-        Hook::FormatInstruction
-    );
-    wrapped_hook_setter!(
-        format_operand_reg,
-        WrappedOperandFunc,
-        set_format_operand_reg,
-        dispatch_format_operand_reg,
-        Hook::FormatOperandReg
-    );
-    wrapped_hook_setter!(
-        format_operand_mem,
-        WrappedOperandFunc,
-        set_format_operand_mem,
-        dispatch_format_operand_mem,
-        Hook::FormatOperandMem
-    );
-    wrapped_hook_setter!(
-        format_operand_ptr,
-        WrappedOperandFunc,
-        set_format_operand_ptr,
-        dispatch_format_operand_ptr,
-        Hook::FormatOperandPtr
-    );
-    wrapped_hook_setter!(
-        format_operand_imm,
-        WrappedOperandFunc,
-        set_format_operand_imm,
-        dispatch_format_operand_imm,
-        Hook::FormatOperandImm
-    );
-    wrapped_hook_setter!(
-        print_mnemonic,
-        WrappedGeneralFunc,
-        set_print_mnemonic,
-        dispatch_print_mnemonic,
-        Hook::PrintMnemonic
-    );
-    wrapped_hook_setter!(
-        print_register,
-        WrappedRegisterFunc,
-        set_print_register,
-        dispatch_print_register,
-        Hook::PrintRegister
-    );
-    wrapped_hook_setter!(
-        print_address,
-        WrappedAddressFunc,
-        set_print_address,
-        dispatch_print_address,
-        Hook::PrintAddress
-    );
-    wrapped_hook_setter!(
-        print_disp,
-        WrappedOperandFunc,
-        set_print_disp,
-        dispatch_print_disp,
-        Hook::PrintDisp
-    );
-    wrapped_hook_setter!(
-        print_imm,
-        WrappedOperandFunc,
-        set_print_imm,
-        dispatch_print_imm,
-        Hook::PrintImm
-    );
-    wrapped_hook_setter!(
-        print_memsize,
-        WrappedOperandFunc,
-        set_print_memsize,
-        dispatch_print_memsize,
-        Hook::PrintMemsize
-    );
-    wrapped_hook_setter!(
-        print_prefixes,
-        WrappedGeneralFunc,
-        set_print_prefixes,
-        dispatch_print_prefixes,
-        Hook::PrintPrefixes
-    );
-    wrapped_hook_setter!(
-        print_decorator,
-        WrappedDecoratorFunc,
-        set_print_decorator,
-        dispatch_print_decorator,
-        Hook::PrintDecorator
-    );
 }
