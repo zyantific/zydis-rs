@@ -1,5 +1,8 @@
 extern crate zydis;
-use zydis::{gen::*, *};
+use zydis::{
+    gen::{ZYDIS_ADDRESS_WIDTH_64, ZYDIS_FORMATTER_STYLE_INTEL, ZYDIS_MACHINE_MODE_LONG_64},
+    *,
+};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[

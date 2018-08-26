@@ -7,7 +7,14 @@ extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::*;
+use zydis::{
+    gen::{
+        ZYDIS_ADDRESS_WIDTH_64, ZYDIS_FORMATTER_STYLE_INTEL, ZYDIS_MACHINE_MODE_LONG_64,
+        ZYDIS_MNEMONIC_CMPPD, ZYDIS_MNEMONIC_CMPPS, ZYDIS_MNEMONIC_VCMPPD, ZYDIS_MNEMONIC_VCMPPS,
+        ZYDIS_OPERAND_TYPE_IMMEDIATE,
+    },
+    *,
+};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[

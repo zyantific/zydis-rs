@@ -528,7 +528,7 @@ impl<'a> Formatter<'a> {
             HexSuffix(_) => (ZYDIS_FORMATTER_PROP_HEX_SUFFIX, 0),
             HexPaddingAddr(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_ADDR, v as usize),
             HexPaddingDisp(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_DISP, v as usize),
-            HexPaddingImm(v) => (ZydisFormatterProp::HexPaddingImm, v as usize),
+            HexPaddingImm(v) => (ZYDIS_FORMATTER_PROP_HEX_PADDING_IMM, v as usize),
         };
 
         unsafe {

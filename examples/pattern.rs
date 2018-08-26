@@ -3,7 +3,13 @@
 //! of branch instructions).
 
 extern crate zydis;
-use zydis::{gen::*, *};
+use zydis::{
+    gen::{
+        ZYDIS_ADDRESS_WIDTH_64, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_OPERAND_TYPE_IMMEDIATE,
+        ZYDIS_OPERAND_TYPE_MEMORY,
+    },
+    *,
+};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -24,7 +30,7 @@ fn main() -> Result<()> {
             let op = &insn.operands[op_idx];
 
             // Obtain offsets for relevant operands, skip others.
-            let (dyn_offs, dyn_len) = match op.type_ as ZydisOperandType {
+            let (dyn_offs, dyn_len) = match op.type_ {
                 ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.has_displacement == 1 => {
                     (insn.raw.disp.offset, insn.raw.disp.size)
                 }
