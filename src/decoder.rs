@@ -24,12 +24,7 @@ impl Decoder {
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`.
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
-        unsafe {
-            check!(
-                ZydisDecoderEnableMode(&mut self.decoder, mode, value as _),
-                ()
-            )
-        }
+        unsafe { check!(ZydisDecoderEnableMode(&mut self.decoder, mode, value as _)) }
     }
 
     /// Decodes a binary instruction to `ZydisDecodedInstruction`, taking

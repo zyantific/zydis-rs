@@ -4,7 +4,7 @@
 
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
-use core::{convert::From, mem};
+use core::{convert::From, fmt, mem};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
@@ -72,5 +72,43 @@ impl ZydisDecodedInstruction {
             let mut flags = mem::uninitialized();
             check!(ZydisGetAccessedFlagsWritten(self, &mut flags), flags)
         }
+    }
+}
+
+impl ZyanString {
+    pub fn new(buffer: *mut u8, capacity: usize) -> Result<Self> {
+        unsafe {
+            let mut string = mem::uninitialized();
+            check!(ZyanStringInitCustomBuffer(
+                &mut string,
+                buffer as *mut i8,
+                capacity
+            ))?;
+            Ok(string)
+        }
+    }
+
+    /// Appends the given string `s` to this buffer.
+    ///
+    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't
+    /// converted to any other encoding. They're simply copied, byte by
+    /// byte, to the buffer. Therefore, the buffer should be interpreted as
+    /// UTF-8 when later being printed.
+    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
+        unsafe {
+            let bytes = s.as_ref().as_bytes();
+            let mut source = mem::uninitialized();
+            check!(ZyanStringViewInitEx(
+                &mut source,
+                bytes.as_ptr() as *const i8,
+                bytes.len()
+            )).and_then(|_| check!(ZyanStringAppend(self, &source)))
+        }
+    }
+}
+
+impl fmt::Write for ZyanString {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.append(s).map_err(|_| fmt::Error)
     }
 }

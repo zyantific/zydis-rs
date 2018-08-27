@@ -19,7 +19,12 @@ fn build_library() {
     let dst = config.build();
 
     println!("cargo:rustc-link-search=native={}/build", dst.display());
+    println!(
+        "cargo:rustc-link-search=native={}/build/dependencies/zycore",
+        dst.display()
+    );
     println!("cargo:rustc-link-lib=static=Zydis");
+    println!("cargo:rustc-link-lib=static=Zycore");
 }
 
 fn build_bindings(out_path: PathBuf) {

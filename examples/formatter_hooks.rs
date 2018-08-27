@@ -80,12 +80,7 @@ fn print_mnemonic(
             }
 
             *omit_immediate = false;
-            unsafe {
-                check!(
-                    orig_print_mnemonic(mem::transmute(formatter), buffer, ctx,),
-                    ()
-                )
-            }
+            unsafe { check!(orig_print_mnemonic(mem::transmute(formatter), buffer, ctx)) }
         }
         _ => Ok(()),
     }
@@ -107,12 +102,7 @@ fn format_operand_imm(
                 if omit_immediate {
                     Err(Status::SkipToken.into())
                 } else {
-                    unsafe {
-                        check!(
-                            orig_format_operand(mem::transmute(formatter), buffer, ctx,),
-                            ()
-                        )
-                    }
+                    unsafe { check!(orig_format_operand(mem::transmute(formatter), buffer, ctx)) }
                 }
             }
             _ => Ok(()),

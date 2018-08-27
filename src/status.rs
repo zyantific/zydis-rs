@@ -103,6 +103,9 @@ pub fn status_description(status: Status) -> &'static str {
 
 #[macro_export]
 macro_rules! check {
+    ($expression:expr) => {
+        check!($expression, ())
+    };
     ($expression:expr, $ok:expr) => {
         match $expression.into() {
             $crate::gen::Status::Success => Ok($ok),

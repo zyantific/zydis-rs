@@ -1,6 +1,6 @@
 //! Textual instruction formatting routines.
 
-use core::{any::Any, fmt, marker::PhantomData, mem, ptr};
+use core::{any::Any, marker::PhantomData, mem, ptr};
 
 use std::{ffi::CStr, os::raw::c_void};
 
@@ -97,58 +97,6 @@ impl Hook {
             ZYDIS_FORMATTER_HOOK_PRINT_DECORATOR    => PrintDecorator(mem::transmute(cb)),
             _                                       => unreachable!(),
         }
-    }
-}
-
-impl ZyanString {
-    pub fn new(buffer: *mut u8, capacity: usize) -> Result<Self> {
-        unsafe {
-            let mut string = mem::uninitialized();
-            check!(
-                ZyanStringInitCustomBuffer(&mut string, buffer as *mut i8, capacity),
-                ()
-            )?;
-            Ok(string)
-        }
-    }
-
-    /// Appends the given string `s` to this buffer.
-    ///
-    /// Warning: The actual Rust `&str`ings are encoded in UTF-8 and aren't
-    /// converted to any other encoding. They're simply copied, byte by
-    /// byte, to the buffer. Therefore, the buffer should be interpreted as
-    /// UTF-8 when later being printed.
-    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
-        unsafe {
-            unreachable!();
-            //let bytes = s.as_ref().as_bytes();
-            //let mut source = mem::uninitialize();
-            //check!(
-            //    // TODO: HERE
-            //    ZyanStringAppend(self, source)
-            //    ZyanStringAppendStatic(
-            //        self,
-            //        &ZydisStaticString {
-            //            buffer: bytes.as_ptr() as _,
-            //            length: bytes.len() as _,
-            //        },
-            //        ZYDIS_LETTER_CASE_DEFAULT as _,
-            //    ),
-            //    ()
-            //)
-        }
-    }
-}
-
-//impl Drop for ZyanString {
-//    fn drop(&mut self) {
-//        unsafe { ZyanStringDestroy(self) }
-//    }
-//}
-
-impl fmt::Write for ZyanString {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.append(s).map_err(|_| fmt::Error)
     }
 }
 
@@ -532,10 +480,11 @@ impl<'a> Formatter<'a> {
         };
 
         unsafe {
-            check!(
-                ZydisFormatterSetProperty(&mut self.formatter, property as _, value),
-                ()
-            )
+            check!(ZydisFormatterSetProperty(
+                &mut self.formatter,
+                property as _,
+                value
+            ))
         }
     }
 
@@ -586,20 +535,17 @@ impl<'a> Formatter<'a> {
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
-            check!(
-                ZydisFormatterFormatInstructionEx(
-                    &self.formatter,
-                    instruction,
-                    buffer.as_ptr() as _,
-                    buffer.len(),
-                    ip,
-                    match user_data {
-                        None => ptr::null_mut(),
-                        Some(mut x) => user_data_to_c_void(&mut x),
-                    }
-                ),
-                ()
-            )
+            check!(ZydisFormatterFormatInstructionEx(
+                &self.formatter,
+                instruction,
+                buffer.as_ptr() as _,
+                buffer.len(),
+                ip,
+                match user_data {
+                    None => ptr::null_mut(),
+                    Some(mut x) => user_data_to_c_void(&mut x),
+                }
+            ))
         }
     }
 
