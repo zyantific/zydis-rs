@@ -220,15 +220,15 @@ macro_rules! wrap_func {
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
+            ZydisStatus::from(match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
                 get_user_data!(user_data),
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Ok(_) => ZydisStatusCodes::ZYDIS_STATUS_SUCCESS,
                 Err(e) => e.get_code(),
-            }
+            })
         }
     };
     (operand $field_name:ident, $func_name:ident) => {
@@ -240,16 +240,16 @@ macro_rules! wrap_func {
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
+            ZydisStatus::from(match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
                 &*operand,
                 get_user_data!(user_data),
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Ok(_) => ZydisStatusCodes::ZYDIS_STATUS_SUCCESS,
                 Err(e) => e.get_code(),
-            }
+            })
         }
     };
     (register $field_name:ident, $func_name:ident) => {
@@ -262,7 +262,7 @@ macro_rules! wrap_func {
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
+            ZydisStatus::from(match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -270,9 +270,9 @@ macro_rules! wrap_func {
                 reg,
                 get_user_data!(user_data),
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Ok(_) => ZydisStatusCodes::ZYDIS_STATUS_SUCCESS,
                 Err(e) => e.get_code(),
-            }
+            })
         }
     };
     (address $field_name:ident, $func_name:ident) => {
@@ -285,7 +285,7 @@ macro_rules! wrap_func {
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
+            ZydisStatus::from(match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -293,9 +293,9 @@ macro_rules! wrap_func {
                 address,
                 get_user_data!(user_data),
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Ok(_) => ZydisStatusCodes::ZYDIS_STATUS_SUCCESS,
                 Err(e) => e.get_code(),
-            }
+            })
         }
     };
     (decorator $field_name:ident, $func_name:ident) => {
@@ -308,7 +308,7 @@ macro_rules! wrap_func {
             user_data: *mut c_void,
         ) -> ZydisStatus {
             let formatter = &*(formatter as *const Formatter);
-            match formatter.$field_name.as_ref().unwrap()(
+            ZydisStatus::from(match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *string,
                 &*instruction,
@@ -316,9 +316,9 @@ macro_rules! wrap_func {
                 decorator,
                 get_user_data!(user_data),
             ) {
-                Ok(_) => ZYDIS_STATUS_SUCCESS,
+                Ok(_) => ZydisStatusCodes::ZYDIS_STATUS_SUCCESS,
                 Err(e) => e.get_code(),
-            }
+            })
         }
     };
 }

@@ -1,6 +1,6 @@
 //! Status code utilities.
 
-use std::{error, fmt, result};
+use std::{error, fmt, result, mem};
 
 use gen::*;
 
@@ -45,7 +45,20 @@ impl error::Error for ZydisError {
     }
 }
 
-pub fn status_description(status: ZydisStatus) -> &'static str {
+impl From<ZydisStatus> for ZydisStatusCodes {
+    fn from(x: ZydisStatus) -> Self {
+        unsafe { mem::transmute(x) }
+    }
+}
+
+impl From<ZydisStatusCodes> for ZydisStatus {
+    fn from(x: ZydisStatusCodes) -> Self {
+        unsafe { mem::transmute(x) }
+    }
+}
+
+pub fn status_description(status: ZydisStatusCodes) -> &'static str {
+    use self::ZydisStatusCodes::*;
     match status {
         ZYDIS_STATUS_SUCCESS => "no error",
         ZYDIS_STATUS_INVALID_PARAMETER => "An invalid parameter was passed to a function.",
@@ -69,8 +82,8 @@ pub fn status_description(status: ZydisStatus) -> &'static str {
 #[macro_export]
 macro_rules! check {
     ($expression:expr, $ok:expr) => {
-        match $expression as ZydisStatusCodes {
-            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok($ok),
+        match ZydisStatusCodes::from($expression) {
+            $crate::gen::ZydisStatusCodes::ZYDIS_STATUS_SUCCESS => Ok($ok),
             e => Err($crate::status::ZydisError::from(e)),
         }
     };
@@ -79,9 +92,9 @@ macro_rules! check {
 macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
-        match $expression as ZydisStatusCodes {
-            $crate::gen::ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
-            $crate::gen::ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
+        match ZydisStatusCodes::from($expression) {
+            $crate::gen::ZydisStatusCodes::ZYDIS_STATUS_SUCCESS => Ok(Some($ok)),
+            $crate::gen::ZydisStatusCodes::ZYDIS_STATUS_NO_MORE_DATA => Ok(None),
             e => Err($crate::status::ZydisError::from(e)),
         }
     };
