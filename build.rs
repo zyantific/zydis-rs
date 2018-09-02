@@ -39,6 +39,7 @@ fn build_bindings(out_path: PathBuf) {
         .clang_arg(format!("-I{}", ZYDIS_INCLUDE_PATH))
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
         .clang_arg("-Isrc")
+        .rustified_enum("ZydisStatusCodes")
         // Seems to be broken, layout tests are failing because of this type.
         .blacklist_type("max_align_t");
 
