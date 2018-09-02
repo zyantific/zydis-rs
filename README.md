@@ -3,6 +3,9 @@ Zydis Rust Bindings
 
 Rust language bindings for the [Zydis library](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler.
 
+## Contributing
+Please make sure that all your PRs are based of the [future branch](https://github.com/zyantific/zydis-rs/tree/future), which tracks the changes for the upcoming zydis version 3 and also has some other improvements. This ensures that your efforts will not be wasted, in case something similar has already been implemented on that branch. Also it would be nice to just make a issue explaining what you want to implement or improve, to get opinions from the maintainers and make sure something equivalent doesn't already exist.
+
 ## Building
 Please make sure your system meets [all requirements](https://rust-lang-nursery.github.io/rust-bindgen/requirements.html) to be able to use `bindgen`. Then, just invoke:
 
