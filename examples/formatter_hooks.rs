@@ -60,7 +60,7 @@ fn print_mnemonic(
             let count = instruction.operand_count as usize;
 
             if count > 0 && instruction.operands[count - 1].type_ == ZYDIS_OPERAND_TYPE_IMMEDIATE {
-                let cc = unsafe { instruction.operands[count].imm.value.u as usize };
+                let cc = unsafe { instruction.operands[count - 1].imm.value.u as usize };
 
                 match instruction.mnemonic as u32 {
                     ZYDIS_MNEMONIC_CMPPS if cc < 8 => {
