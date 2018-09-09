@@ -1,5 +1,6 @@
+/// Defines the `InstructionCategory` enum
 #[repr(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u8)]
+#[repr(C)]
 pub enum InstructionCategory {
     INVALID,
     ADOX_ADCX,

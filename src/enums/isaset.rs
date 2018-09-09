@@ -1,5 +1,6 @@
+/// Defines the `ISASet` enum
 #[repr(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u8)]
+#[repr(C)]
 pub enum ISASet {
     INVALID,
     ADOX_ADCX,

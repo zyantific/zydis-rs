@@ -1,5 +1,6 @@
+/// Defines the `ISAExt` enum
 #[repr(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u8)]
+#[repr(C)]
 pub enum ISAExt {
     INVALID,
     ADOX_ADCX,
