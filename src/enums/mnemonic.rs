@@ -1,5 +1,5 @@
 /// Defines the `Mnemonic` enum
-#[repr(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Mnemonic {
     INVALID,
