@@ -4,7 +4,7 @@ Zydis Rust Bindings
 Rust language bindings for the [Zydis library](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler.
 
 ## Building
-Please make sure your system meets [all requirements](https://rust-lang-nursery.github.io/rust-bindgen/requirements.html) to be able to use `bindgen`. Then, just invoke:
+Please make sure you have at least Rust 1.28 installed. Then, just invoke:
 
 ```
 cargo build

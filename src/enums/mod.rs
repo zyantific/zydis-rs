@@ -522,6 +522,7 @@ pub enum PrefixType {
 pub const PREFIX_TYPE_MAX_VALUE: PrefixType = PrefixType::MANDATORY;
 
 bitflags! {
+    #[repr(transparent)]
     struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;
         const HAS_SIB                   = 1 << 1;
