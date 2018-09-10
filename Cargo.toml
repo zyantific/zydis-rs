@@ -11,8 +11,5 @@ license     = "MIT"
 keywords    = ["disassembler", "x86", "amd64", "decoder"]
 repository  = "https://github.com/zyantific/zydis-rs/"
 
-build       = true
-
-[build-dependencies]
-bindgen     = "0.37"
-cmake       = "0.1"
+[dependencies]
+bitflags = "1.0"

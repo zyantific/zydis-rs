@@ -5,7 +5,12 @@
 extern crate core;
 
 #[macro_use]
+extern crate bitflags;
+
+#[macro_use]
 pub mod status;
+
+pub mod ffi;
 
 pub mod decoder;
 pub mod enums;
