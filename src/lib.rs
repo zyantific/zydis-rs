@@ -8,6 +8,7 @@ extern crate core;
 pub mod status;
 
 pub mod decoder;
+pub mod enums;
 pub mod formatter;
 pub mod gen;
 pub mod mnemonic;

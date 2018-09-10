@@ -39,11 +39,13 @@ fn build_bindings(out_path: PathBuf) {
         .clang_arg(format!("-I{}", ZYDIS_SRC_PATH))
         .clang_arg(format!("-I{}", ZYCORE_PATH))
         .clang_arg("-Isrc")
-        .default_enum_style(EnumVariation::Consts)
-        .rustified_enum("Status")
+        .default_enum_style(EnumVariation::Rust)
         .whitelist_type("Status")
         .whitelist_type("Zyan.*")
         .whitelist_type("Zydis.*")
+        // All enums end in _, we can disable them here since we're
+        // defining them ourselves so that they're nicer to use.
+        .blacklist_type("Zydis.*_")
         .whitelist_function("Zyan.*")
         .whitelist_function("Zydis.*");
 
