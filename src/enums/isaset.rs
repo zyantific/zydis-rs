@@ -152,7 +152,11 @@ pub enum ISASet {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES,
-
-    MaxValue = XSAVES
+    XSAVES
 }
+
+/// The last value of the `ISASet` enum
+pub const ISA_SET_MAX_VALUE: ISASet = ISASet::XSAVES;
+
+/// The number of values in the `ISASet` enum
+pub const ISA_SET_COUNT: usize = 151;

@@ -72,7 +72,11 @@ pub enum ISAExt {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES,
-
-    MaxValue = XSAVES
+    XSAVES
 }
+
+/// The last value of the `ISAExt` enum
+pub const ISA_EXT_MAX_VALUE: ISAExt = ISAExt::XSAVES;
+
+/// The number of values in the `ISAExt` enum
+pub const ISA_EXT_COUNT: usize = 71;

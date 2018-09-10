@@ -96,7 +96,11 @@ pub enum InstructionCategory {
     X87_ALU,
     XOP,
     XSAVE,
-    XSAVEOPT,
-
-    MaxValue = XSAVEOPT
+    XSAVEOPT
 }
+
+/// The last value of the `InstructionCategory` enum
+pub const CATEGORY_MAX_VALUE: InstructionCategory = InstructionCategory::XSAVEOPT;
+
+/// The number of values in the `InstructionCategory` enum
+pub const CATEGORY_COUNT: usize = 95;

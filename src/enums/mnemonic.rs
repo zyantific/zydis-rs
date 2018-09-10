@@ -1590,7 +1590,11 @@ pub enum Mnemonic {
     XSAVES,
     XSAVES64,
     XSETBV,
-    XTEST,
-
-    MaxValue = XTEST
+    XTEST
 }
+
+/// The last value of the `Mnemonic` enum
+pub const MNEMONIC_MAX_VALUE: Mnemonic = Mnemonic::XTEST;
+
+/// The number of values in the `Mnemonic` enum
+pub const MNEMONIC_COUNT: usize = 1589;

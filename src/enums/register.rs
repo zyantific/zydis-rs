@@ -278,7 +278,11 @@ pub enum Register {
     // Uncategorized
     MXCSR,
     PKRU,
-    XCR0,
-
-    MaxValue = XCR0
+    XCR0
 }
+
+/// The last value of the `Register` enum
+pub const REGISTER_MAX_VALUE: Register = Register::XCR0;
+
+/// The number of values in the `Register` enum
+pub const REGISTER_COUNT: usize = 257;
