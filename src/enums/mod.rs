@@ -1,14 +1,120 @@
+//! Contains definition for all enums used in zydis and some utility functions
+//! on them.
+
+// It is really not nice to write stuff like `Avx512Bitalg` instead of `AVX512_BITALG`, thus we
+// sometimes use UPPERCASE where it makes sense.
+#![allow(non_camel_case_types)]
+
 pub mod instructioncategory;
 pub mod isaext;
 pub mod isaset;
 pub mod mnemonic;
 pub mod register;
 
-pub use instructioncategory::*;
-pub use isaext::*;
-pub use isaset::*;
-pub use mnemonic::*;
-pub use register::*;
+pub use self::{instructioncategory::*, isaext::*, isaset::*, mnemonic::*, register::*};
+
+use super::ffi;
+
+impl Mnemonic {
+    /// Returns a string corresponding to this mnemonic.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::Mnemonic;
+    /// let str = Mnemonic::CMOVP.get_string().unwrap();
+    /// assert_eq!("cmovp", str);
+    /// ```
+    pub fn get_string(self) -> Option<&'static str> {
+        unsafe { check_string!(ffi::ZydisMnemonicGetString(self)) }
+    }
+}
+
+impl Register {
+    /// Returns the ID of this register.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::Register;
+    /// assert_eq!(0, Register::RAX.get_id());
+    /// ```
+    pub fn get_id(self) -> u8 {
+        unsafe {
+            match ffi::ZydisRegisterGetId(self) {
+                x if x < 0 || x > 255 => panic!(
+                    "should not be reachable, register enum is wrong or user casted wrong value \
+                     to register enum"
+                ),
+                x => x as u8,
+            }
+        }
+    }
+
+    /// Returns the register-class of this register.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::{Register, RegisterClass};
+    ///
+    /// let class = Register::ECX.get_class();
+    /// assert_eq!(RegisterClass::GPR32, class);
+    /// ```
+    pub fn get_class(self) -> RegisterClass {
+        unsafe { ffi::ZydisRegisterGetClass(self) }
+    }
+
+    /// Returns the textual representation of this register.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::Register;
+    ///
+    /// let str = Register::EAX.get_string().unwrap();
+    /// assert_eq!("eax", str);
+    /// ```
+    pub fn get_string(self) -> Option<&'static str> {
+        unsafe { check_string!(ffi::ZydisRegisterGetString(self)) }
+    }
+
+    /// Returns the width of this register, in bits.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::Register;
+    ///
+    /// let width = Register::DR0.get_width();
+    /// assert_eq!(32, width);
+    /// ```
+    pub fn get_width(self) -> ffi::RegisterWidth {
+        unsafe { ffi::ZydisRegisterGetWidth(self) }
+    }
+
+    /// Returns the width of this register in 64-bit mode, in bits.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::Register;
+    ///
+    /// let width = Register::DR0.get_width64();
+    /// assert_eq!(64, width);
+    /// ```
+    pub fn get_width64(self) -> ffi::RegisterWidth {
+        unsafe { ffi::ZydisRegisterGetWidth64(self) }
+    }
+}
+
+impl RegisterClass {
+    /// Returns the register specified by this register class and `id`.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::{Register, RegisterClass};
+    /// let eax = RegisterClass::GPR32.encode(0);
+    /// assert_eq!(Register::EAX, eax);
+    /// ```
+    pub fn encode(self, id: u8) -> Register {
+        unsafe { ffi::ZydisRegisterEncode(self, id) }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -82,81 +188,89 @@ pub const REGISTER_CLASS_MAX_VALUE: RegisterClass = RegisterClass::BOUND;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum FormatterStyle {
-    INTEL,
-    INTEL_MASM,
+    ATT,
+    Intel,
+    IntelMasm,
 }
 
-pub const FORMATTER_STYLE_MAX_VALUE: FormatterStyle = FormatterStyle::INTEL_MASM;
+pub const FORMATTER_STYLE_MAX_VALUE: FormatterStyle = FormatterStyle::IntelMasm;
 
-/// We wrap this in a nicer rust enum already, use that instead.
+/// We wrap this in a nicer rust enum `FormatterProperty` already, use that
+/// instead.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ZydisFormatterProperty {
     UPPERCASE,
-    FORCE_MEMSEG,
-    FORCE_MEMSIZE,
-    ADDR_FORMAT,
-    DISP_FORMAT,
-    IMM_FORMAT,
+    FORCE_SIZE,
+    FORCE_SEGMENT,
+    DETAILED_PREFIXES,
+    ADDR_BASE,
+    ADDR_SIGNEDNESS,
+    ADDR_PADDING_ABSOLUTE,
+    ADDR_PADDING_RELATIVE,
+    DISP_BASE,
+    DISP_SIGNEDNESS,
+    DISP_PADDING,
+    IMM_BASE,
+    IMM_SIGNEDNESS,
+    IMM_PADDING,
+    DEC_PREFIX,
+    DEC_SUFFIX,
     HEX_UPPERCASE,
     HEX_PREFIX,
     HEX_SUFFIX,
-    HEX_PADDING_ADDR,
-    HEX_PADDING_DISP,
-    HEX_PADDING_IMM,
 }
 
-pub const FORMATTER_PROPERTY_MAX_VALUE: ZydisFormatterProperty =
-    ZydisFormatterProperty::HEX_PADDING_IMM;
+pub const FORMATTER_PROPERTY_MAX_VALUE: ZydisFormatterProperty = ZydisFormatterProperty::HEX_SUFFIX;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
-pub enum AddressFormat {
-    ABSOLUTE,
-    RELATIVE_UNSIGNED,
-    RELATIVE_SIGNED,
-    RELATIVE_ASSEMBLER,
+pub enum NumericBase {
+    Decimal,
+    Hex,
 }
 
-pub const ADDRESS_FORMAT_MAX_VALUE: AddressFormat = AddressFormat::RELATIVE_ASSEMBLER;
+pub const NUMERIC_BASE_MAX_VALUE: NumericBase = NumericBase::Hex;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
-pub enum DisplacementFormat {
-    HEX_SIGNED,
-    HEX_UNSIGNED,
+pub enum Signedness {
+    Auto,
+    Signed,
+    Unsigned,
 }
 
-pub const DISPLACEMENT_FORMAT_MAX_VALUE: DisplacementFormat = DisplacementFormat::HEX_UNSIGNED;
+pub const SIGNEDNESS_MAX_VALUE: Signedness = Signedness::Unsigned;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
-pub enum ImmediateFormat {
-    HEX_AUTO,
-    HEX_SIGNED,
-    HEX_UNSIGNED,
+pub enum Padding {
+    Disabled,
+    Auto = -1,
 }
 
-pub const IMMEDIATE_FORMAT_MAX_VALUE: ImmediateFormat = ImmediateFormat::HEX_UNSIGNED;
+pub const PADDING_MAX_VALUE: Padding = Padding::Auto;
 
+/// Use `formatter::Hook` instead.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum HookType {
     PRE_INSTRUCTION,
     POST_INSTRUCTION,
+    FORMAT_INSTRUCTION,
     PRE_OPERAND,
     POST_OPERAND,
-    FORMAT_INSTRUCTION,
     FORMAT_OPERAND_REG,
     FORMAT_OPERAND_MEM,
     FORMAT_OPERAND_PTR,
     FORMAT_OPERAND_IMM,
     PRINT_MNEMONIC,
     PRINT_REGISTER,
-    PRINT_ADDRESS,
+    PRINT_ADDRESS_ABS,
+    PRINT_ADDRESS_REL,
     PRINT_DISP,
     PRINT_IMM,
-    PRINT_MEMSIZE,
+    PRINT_SIZE,
     PRINT_PREFIXES,
     PRINT_DECORATOR,
 }
@@ -165,7 +279,7 @@ pub const HOOK_TYPE_MAX_VALUE: HookType = HookType::PRINT_DECORATOR;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
-pub enum DecoratorType {
+pub enum Decorator {
     INVALID,
     MASK,
     BC,
@@ -176,20 +290,20 @@ pub enum DecoratorType {
     EH,
 }
 
-pub const DECORATOR_TYPE_MAX_VALUE: DecoratorType = DecoratorType::EH;
+pub const DECORATOR_MAX_VALUE: Decorator = Decorator::EH;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum MachineMode {
-    LONG_64,
-    LONG_COMPAT_32,
-    LONG_COMPAT_16,
-    LEGACY_32,
-    LEGACY_16,
-    REAL_16,
+    Long64,
+    LongCompat32,
+    LongCompat16,
+    Legacy32,
+    Legacy16,
+    Real16,
 }
 
-pub const MACHINE_MODE_MAX_VALUE: MachineMode = MachineMode::REAL_16;
+pub const MACHINE_MODE_MAX_VALUE: MachineMode = MachineMode::Real16;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -221,14 +335,14 @@ pub const ELEMENT_TYPE_MAX_VALUE: ElementType = ElementType::CC;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandType {
-    UNUSED,
-    REGISTER,
-    MEMORY,
-    POINTER,
-    IMMEDIATE,
+    Unused,
+    Register,
+    Memory,
+    Pointer,
+    Immediate,
 }
 
-pub const OPERAND_TYPE_MAX_VALUE: OperandType = OperandType::IMMEDIATE;
+pub const OPERAND_TYPE_MAX_VALUE: OperandType = OperandType::Immediate;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -274,13 +388,13 @@ pub const OPERAND_ENCODING_MAX_VALUE: OperandEncoding = OperandEncoding::JIMM16_
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandVisibility {
-    INVALID,
-    EXPLICIT,
-    IMPLICIT,
-    HIDDEN,
+    Invalid,
+    Explicit,
+    Implicit,
+    Hidden,
 }
 
-pub const OPERAND_VISIBILITY_MAX_VALUE: OperandVisibility = OperandVisibility::HIDDEN;
+pub const OPERAND_VISIBILITY_MAX_VALUE: OperandVisibility = OperandVisibility::Hidden;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -440,15 +554,15 @@ pub const EXCEPTION_CLASS_MAX_VALUE: ExceptionClass = ExceptionClass::K21;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum MaskMode {
-    INVALID,
-    DISABLED,
-    MERGING,
-    ZEROING,
-    CONTROL,
-    CONTROL_ZEROING,
+    Invalid,
+    Disabled,
+    Merging,
+    Zeroing,
+    Control,
+    ControlZeroing,
 }
 
-pub const MASK_MODE_MAX_VALUE: MaskMode = MaskMode::CONTROL_ZEROING;
+pub const MASK_MODE_MAX_VALUE: MaskMode = MaskMode::ControlZeroing;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -523,7 +637,7 @@ pub const PREFIX_TYPE_MAX_VALUE: PrefixType = PrefixType::MANDATORY;
 
 bitflags! {
     #[repr(transparent)]
-    struct InstructionAttributes: u64 {
+    pub struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;
         const HAS_SIB                   = 1 << 1;
         const HAS_REX                   = 1 << 2;
@@ -564,12 +678,13 @@ bitflags! {
         const HAS_SEGMENT_ES            = 1 << 31;
         const HAS_SEGMENT_FS            = 1 << 32;
         const HAS_SEGMENT_GS            = 1 << 33;
-        const HAS_SEGMENT               = HAS_SEGMENT_CS
-            | HAS_SEGMENT_SS
-            | HAS_SEGMENT_DS
-            | HAS_SEGMENT_ES
-            | HAS_SEGMENT_FS
-            | HAS_SEGMENT_GS;
+        const HAS_SEGMENT               =
+              InstructionAttributes::HAS_SEGMENT_CS.bits
+            | InstructionAttributes::HAS_SEGMENT_SS.bits
+            | InstructionAttributes::HAS_SEGMENT_DS.bits
+            | InstructionAttributes::HAS_SEGMENT_ES.bits
+            | InstructionAttributes::HAS_SEGMENT_FS.bits
+            | InstructionAttributes::HAS_SEGMENT_GS.bits;
         const HAS_OPERANDSIZE           = 1 << 34;
         const HAS_ADDRESSIZE            = 1 << 35;
     }

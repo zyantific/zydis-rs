@@ -1,8 +1,6 @@
 extern crate zydis;
-use zydis::{
-    gen::{ZYDIS_ADDRESS_WIDTH_64, ZYDIS_FORMATTER_STYLE_INTEL, ZYDIS_MACHINE_MODE_LONG_64},
-    *,
-};
+
+use zydis::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -12,8 +10,8 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
-    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
+    let formatter = Formatter::new(FormatterStyle::Intel)?;
+    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         let insn = formatter.format_instruction(&instruction, 200, ip, None)?;

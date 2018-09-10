@@ -7,14 +7,7 @@ extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::{
-    gen::{
-        ZYDIS_ADDRESS_WIDTH_64, ZYDIS_FORMATTER_STYLE_INTEL, ZYDIS_MACHINE_MODE_LONG_64,
-        ZYDIS_MNEMONIC_CMPPD, ZYDIS_MNEMONIC_CMPPS, ZYDIS_MNEMONIC_VCMPPD, ZYDIS_MNEMONIC_VCMPPS,
-        ZYDIS_OPERAND_TYPE_IMMEDIATE,
-    },
-    *,
-};
+use zydis::{ffi::ZyanString, *};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -32,14 +25,15 @@ static CONDITION_CODES: &'static [&'static str] = &[
     "ord_s", "eq_us", "nge_uq", "ngt_uq", "false_os", "neg_os", "ge_oq", "gt_oq", "true_us",
 ];
 
+// Used with .map_err
+fn user_err<T>(_: T) -> Status {
+    Status::User
+}
+
 struct UserData {
     orig_print_mnemonic: Hook,
     orig_format_operand: Hook,
     omit_immediate: bool,
-}
-
-fn user_err<T>(_: T) -> Error {
-    Status::User.into()
 }
 
 fn print_mnemonic(
@@ -59,20 +53,20 @@ fn print_mnemonic(
 
             let count = instruction.operand_count as usize;
 
-            if count > 0 && instruction.operands[count - 1].type_ == ZYDIS_OPERAND_TYPE_IMMEDIATE {
-                let cc = unsafe { instruction.operands[count - 1].imm.value.u as usize };
+            if count > 0 && instruction.operands[count - 1].ty == OperandType::Immediate {
+                let cc = instruction.operands[count - 1].imm.value as usize;
 
-                match instruction.mnemonic as u32 {
-                    ZYDIS_MNEMONIC_CMPPS if cc < 8 => {
+                match instruction.mnemonic {
+                    Mnemonic::CMPPS if cc < 8 => {
                         return write!(buffer, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
                     }
-                    ZYDIS_MNEMONIC_CMPPD if cc < 8 => {
+                    Mnemonic::CMPPD if cc < 8 => {
                         return write!(buffer, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
                     }
-                    ZYDIS_MNEMONIC_VCMPPS if cc < 0x20 => {
+                    Mnemonic::VCMPPS if cc < 0x20 => {
                         return write!(buffer, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
                     }
-                    ZYDIS_MNEMONIC_VCMPPD if cc < 0x20 => {
+                    Mnemonic::VCMPPD if cc < 0x20 => {
                         return write!(buffer, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
                     }
                     _ => {}
@@ -100,7 +94,7 @@ fn format_operand_imm(
                 ..
             }) => {
                 if omit_immediate {
-                    Err(Status::SkipToken.into())
+                    Err(Status::SkipToken)
                 } else {
                     unsafe { check!(orig_format_operand(mem::transmute(formatter), buffer, ctx)) }
                 }
@@ -114,7 +108,7 @@ fn format_operand_imm(
 fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
-    let mut formatter = Formatter::new(ZYDIS_FORMATTER_STYLE_INTEL)?;
+    let mut formatter = Formatter::new(FormatterStyle::Intel)?;
     // clear old prefix
     formatter.set_property(FormatterProperty::HexPrefix(None))?;
     // set h as suffix
@@ -129,7 +123,7 @@ fn main() -> Result<()> {
         omit_immediate: false,
     };
 
-    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
+    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         let insn = formatter.format_instruction(&instruction, 200, ip, Some(&mut user_data))?;

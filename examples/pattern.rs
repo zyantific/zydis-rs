@@ -3,13 +3,8 @@
 //! of branch instructions).
 
 extern crate zydis;
-use zydis::{
-    gen::{
-        ZYDIS_ADDRESS_WIDTH_64, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_OPERAND_TYPE_IMMEDIATE,
-        ZYDIS_OPERAND_TYPE_MEMORY,
-    },
-    *,
-};
+
+use zydis::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -19,7 +14,7 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64)?;
+    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
     for (insn, ip) in decoder.instruction_iterator(CODE, 0) {
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
@@ -30,11 +25,11 @@ fn main() -> Result<()> {
             let op = &insn.operands[op_idx];
 
             // Obtain offsets for relevant operands, skip others.
-            let (dyn_offs, dyn_len) = match op.type_ {
-                ZYDIS_OPERAND_TYPE_MEMORY if op.mem.disp.has_displacement == 1 => {
-                    (insn.raw.disp.offset, insn.raw.disp.size)
+            let (dyn_offs, dyn_len) = match op.ty {
+                OperandType::Memory if op.mem.has_displacement => {
+                    (insn.raw.disp_offset, insn.raw.disp_size)
                 }
-                ZYDIS_OPERAND_TYPE_IMMEDIATE if op.imm.is_relative == 1 => {
+                OperandType::Immediate if op.imm.is_relative => {
                     (insn.raw.imm[op_idx].offset, insn.raw.imm[op_idx].size)
                 }
                 _ => continue,
