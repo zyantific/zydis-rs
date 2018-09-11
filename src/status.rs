@@ -80,9 +80,14 @@ impl Status {
         (self as usize) & 0xFFFFF
     }
 
-    /// Returns the module if of this status.
+    /// Returns the module of this status.
     pub fn module(self) -> usize {
         (self as usize >> 20) & 0x7FF
+    }
+
+    /// Whether this status code is an error.
+    pub fn is_error(self) -> bool {
+        (self as usize >> 31) == 1
     }
 
     /// Returns a human readable description of this status code.
