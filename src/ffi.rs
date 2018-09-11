@@ -1,7 +1,7 @@
 //! Provides type aliases, struct definitions and the unsafe function
 //! declrations.
 
-use core::{fmt, mem};
+use core::{fmt, mem, ptr};
 
 // TODO: use libc maybe, or wait for this to move into core?
 use std::os::raw::{c_char, c_void};
@@ -14,31 +14,118 @@ use super::{
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type FormatterFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
-    *mut ZyanString,
+    *mut FormatterBuffer,
     *mut FormatterContext) -> Status>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type FormatterAddressFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
-    *mut ZyanString,
+    *mut FormatterBuffer,
     *mut FormatterContext,
     u64) -> Status>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type FormatterDecoratorFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
-    *mut ZyanString,
+    *mut FormatterBuffer,
     *mut FormatterContext,
     Decorator) -> Status>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type FormatterRegisterFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
-    *mut ZyanString,
+    *mut FormatterBuffer,
     *mut FormatterContext,
     Register) -> Status>;
 
 pub type RegisterWidth = u16;
+
+#[derive(Debug)]
+#[repr(C, packed)]
+pub struct FormatterToken {
+    ty: Token,
+    next: u8,
+}
+
+impl FormatterToken {
+    /// Returns the value and type of this token.
+    // TODO: How about not returning a *mut c_char here.
+    pub fn get_value(&self) -> Result<(Token, *mut c_char)> {
+        unsafe {
+            let mut ty = mem::uninitialized();
+            let mut val = mem::uninitialized();
+            check!(
+                ZydisFormatterTokenGetValue(self, &mut ty, &mut val),
+                (ty, val)
+            )
+        }
+    }
+
+    /// Returns the next token.
+    pub fn next(&self) -> Result<FormatterToken> {
+        unsafe {
+            let mut res = self as *const FormatterToken;
+            check!(ZydisFormatterTokenNext(&mut res))?;
+
+            if res.is_null() {
+                Err(Status::User)
+            } else {
+                Ok(ptr::read(res))
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct FormatterBuffer {
+    is_token_list: bool,
+    capacity: usize,
+    string: ZyanString,
+}
+
+impl FormatterBuffer {
+    /// Returns the `ZyanString` associated with this buffer.
+    ///
+    /// The returned string always refers to the literal value of the most
+    /// recently added token and remains valid after calling `append` or
+    /// `restore`.
+    pub fn get_string<'a>(&'a mut self) -> Result<&'a mut ZyanString> {
+        unsafe {
+            let mut str = mem::uninitialized();
+            check!(ZydisFormatterBufferGetString(self, &mut str))?;
+
+            if str.is_null() {
+                Err(Status::User)
+            } else {
+                Ok(&mut *str)
+            }
+        }
+    }
+
+    /// Appends a new token to this buffer.
+    pub fn append(&mut self, token: Token) -> Result<()> {
+        unsafe { check!(ZydisFormatterBufferAppend(self, token)) }
+    }
+
+    /// Returns a snapshot of the buffer-state.
+    pub fn remember(&self) -> Result<FormatterBufferState> {
+        unsafe {
+            let mut res = mem::uninitialized();
+            check!(ZydisFormatterBufferRemember(self, &mut res), res)
+        }
+    }
+
+    /// Restores a previously saved buffer-state.
+    pub fn restore(&mut self, state: FormatterBufferState) -> Result<()> {
+        unsafe { check!(ZydisFormatterBufferRestore(self, state)) }
+    }
+}
+
+/// Opaque type representing a `FormatterBuffer` state.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct FormatterBufferState(usize);
 
 /// The string type used in zydis.
 #[derive(Debug)]
@@ -100,7 +187,7 @@ impl ZyanStringView {
     pub fn new(buffer: &[u8]) -> Result<Self> {
         unsafe {
             let mut view = mem::uninitialized();
-            check!(ZyanStringViewInitEx(
+            check!(ZyanStringViewInsideViewEx(
                 &mut view,
                 buffer.as_ptr() as *const i8,
                 buffer.len()
@@ -356,6 +443,14 @@ impl DecodedInstruction {
         unsafe {
             let mut flags = mem::uninitialized();
             check!(ZydisGetAccessedFlagsWritten(self, &mut flags), flags)
+        }
+    }
+
+    /// Returns offsets and sizes of all logical instruction segments.
+    pub fn get_segments(&self) -> Result<InstructionSegments> {
+        unsafe {
+            let mut segments = mem::uninitialized();
+            check!(ZydisGetInstructionSegments(self, &mut segments), segments)
         }
     }
 }
@@ -645,6 +740,7 @@ struct ZydisFormatterStringData {
 #[repr(C)]
 pub struct FormatterContext {
     // TODO: Can we do some things with Option<NonNull<T>> here for nicer usage?
+    // But how would we enforce constness then?
     /// The instruction being formatted.
     pub instruction: *const DecodedInstruction,
     /// The current operand being formatted.
@@ -808,6 +904,50 @@ extern "C" {
         user_data: *mut c_void,
     ) -> Status;
 
+    pub fn ZydisFormatterTokenizeInstruction(
+        formatter: *const ZydisFormatter,
+        instruction: *const DecodedInstruction,
+        buffer: *mut c_void,
+        length: usize,
+        runtime_address: u64,
+        token: *mut *const FormatterToken,
+    ) -> Status;
+
+    pub fn ZydisFormatterTokenizeInstructionEx(
+        formatter: *const ZydisFormatter,
+        instruction: *const DecodedInstruction,
+        buffer: *mut c_void,
+        length: usize,
+        runtime_address: u64,
+        token: *mut *const FormatterToken,
+        user_data: *mut c_void,
+    ) -> Status;
+
+    pub fn ZydisFormatterTokenGetValue(
+        token: *const FormatterToken,
+        ty: *mut Token,
+        value: *mut *mut c_char,
+    ) -> Status;
+
+    pub fn ZydisFormatterTokenNext(token: *mut *const FormatterToken) -> Status;
+
+    pub fn ZydisFormatterBufferGetString(
+        buffer: *mut FormatterBuffer,
+        string: *mut *mut ZyanString,
+    ) -> Status;
+
+    pub fn ZydisFormatterBufferAppend(buffer: *mut FormatterBuffer, ty: Token) -> Status;
+
+    pub fn ZydisFormatterBufferRemember(
+        buffer: *const FormatterBuffer,
+        state: *mut FormatterBufferState,
+    ) -> Status;
+
+    pub fn ZydisFormatterBufferRestore(
+        buffer: *mut FormatterBuffer,
+        state: FormatterBufferState,
+    ) -> Status;
+
     // Zycore functions
 
     pub fn ZyanStringInitCustomBuffer(
@@ -820,7 +960,7 @@ extern "C" {
 
     pub fn ZyanStringDestroy(string: *mut ZyanString) -> Status;
 
-    pub fn ZyanStringViewInitEx(
+    pub fn ZyanStringViewInsideViewEx(
         view: *mut ZyanStringView,
         buffer: *const c_char,
         length: usize,

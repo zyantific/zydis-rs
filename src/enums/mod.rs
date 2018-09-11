@@ -635,6 +635,28 @@ pub enum PrefixType {
 
 pub const PREFIX_TYPE_MAX_VALUE: PrefixType = PrefixType::MANDATORY;
 
+/// The type of a formatter token.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct Token(pub u8);
+
+pub const TOKEN_INVALID: Token = Token(0x0);
+pub const TOKEN_WHITESPACE: Token = Token(0x1);
+pub const TOKEN_DELIMITER: Token = Token(0x2);
+pub const TOKEN_PARENTHESIS_OPEN: Token = Token(0x3);
+pub const TOKEN_PARENTHESIS_CLOSE: Token = Token(0x4);
+pub const TOKEN_PREFIX: Token = Token(0x5);
+pub const TOKEN_MNEMONIC: Token = Token(0x6);
+pub const TOKEN_REGISTER: Token = Token(0x7);
+pub const TOKEN_ADDRESS_ABS: Token = Token(0x8);
+pub const TOKEN_ADDRESS_REL: Token = Token(0x9);
+pub const TOKEN_DISPLACEMENT: Token = Token(0xA);
+pub const TOKEN_IMMEDIATE: Token = Token(0xB);
+pub const TOKEN_TYPECAST: Token = Token(0xC);
+pub const TOKEN_DECORATOR: Token = Token(0xD);
+/// The base for user defined tokens.
+pub const TOKEN_USER: Token = Token(0x80);
+
 bitflags! {
     #[repr(transparent)]
     pub struct InstructionAttributes: u64 {

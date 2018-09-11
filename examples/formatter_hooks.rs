@@ -7,7 +7,7 @@ extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::{ffi::ZyanString, *};
+use zydis::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 static CODE: &'static [u8] = &[
@@ -38,7 +38,7 @@ struct UserData {
 
 fn print_mnemonic(
     formatter: &Formatter,
-    buffer: &mut ZyanString,
+    buffer: &mut FormatterBuffer,
     ctx: &mut FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
@@ -55,19 +55,20 @@ fn print_mnemonic(
 
             if count > 0 && instruction.operands[count - 1].ty == OperandType::Immediate {
                 let cc = instruction.operands[count - 1].imm.value as usize;
+                let string = buffer.get_string()?;
 
                 match instruction.mnemonic {
                     Mnemonic::CMPPS if cc < 8 => {
-                        return write!(buffer, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
+                        return write!(string, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
                     }
                     Mnemonic::CMPPD if cc < 8 => {
-                        return write!(buffer, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                        return write!(string, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
                     }
                     Mnemonic::VCMPPS if cc < 0x20 => {
-                        return write!(buffer, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
+                        return write!(string, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
                     }
                     Mnemonic::VCMPPD if cc < 0x20 => {
-                        return write!(buffer, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                        return write!(string, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
                     }
                     _ => {}
                 }
@@ -82,7 +83,7 @@ fn print_mnemonic(
 
 fn format_operand_imm(
     formatter: &Formatter,
-    buffer: &mut ZyanString,
+    buffer: &mut FormatterBuffer,
     ctx: &mut FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
@@ -125,9 +126,12 @@ fn main() -> Result<()> {
 
     let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
+    let mut buffer = [0u8; 200];
+    let buffer = OutputBuffer::new(&mut buffer[..]);
+
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        let insn = formatter.format_instruction(&instruction, 200, ip, Some(&mut user_data))?;
-        println!("0x{:016X} {}", ip, insn);
+        formatter.format_instruction(&instruction, &buffer, Some(ip), Some(&mut user_data))?;
+        println!("0x{:016X} {}", ip, buffer);
     }
 
     Ok(())

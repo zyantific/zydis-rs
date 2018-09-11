@@ -18,22 +18,22 @@ macro_rules! make_status {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 // TODO: Once stable
 //#[non_exhaustive]
 #[repr(C)]
 pub enum Status {
     Success                = make_status!(0, ZYAN_MODULE_ZYCORE, 0x00),
-    Failed                 = make_status!(0, ZYAN_MODULE_ZYCORE, 0x01),
+    Failed                 = make_status!(1, ZYAN_MODULE_ZYCORE, 0x01),
     True                   = make_status!(0, ZYAN_MODULE_ZYCORE, 0x02),
     False                  = make_status!(0, ZYAN_MODULE_ZYCORE, 0x03),
-    InvalidArgument        = make_status!(0, ZYAN_MODULE_ZYCORE, 0x04),
-    InvalidOperation       = make_status!(0, ZYAN_MODULE_ZYCORE, 0x05),
-    NotFound               = make_status!(0, ZYAN_MODULE_ZYCORE, 0x06),
-    OutOfRange             = make_status!(0, ZYAN_MODULE_ZYCORE, 0x07),
-    InsufficientBufferSize = make_status!(0, ZYAN_MODULE_ZYCORE, 0x08),
-    NotEnoughMemory        = make_status!(0, ZYAN_MODULE_ZYCORE, 0x09),
-    BadSystemcall          = make_status!(0, ZYAN_MODULE_ZYCORE, 0x0A),
+    InvalidArgument        = make_status!(1, ZYAN_MODULE_ZYCORE, 0x04),
+    InvalidOperation       = make_status!(1, ZYAN_MODULE_ZYCORE, 0x05),
+    NotFound               = make_status!(1, ZYAN_MODULE_ZYCORE, 0x06),
+    OutOfRange             = make_status!(1, ZYAN_MODULE_ZYCORE, 0x07),
+    InsufficientBufferSize = make_status!(1, ZYAN_MODULE_ZYCORE, 0x08),
+    NotEnoughMemory        = make_status!(1, ZYAN_MODULE_ZYCORE, 0x09),
+    BadSystemcall          = make_status!(1, ZYAN_MODULE_ZYCORE, 0x0A),
 
     // Zydis
     NoMoreData             = make_status!(1, ZYAN_MODULE_ZYDIS, 0x00),
@@ -64,6 +64,8 @@ pub enum Status {
 
     /// Use this for custom errors that don't fit for any of the other errors.
     User = make_status!(1, ZYAN_MODULE_USER, 0x00),
+    /// The given bytes were not UTF8 encoded.
+    NotUTF8 = make_status!(1, ZYAN_MODULE_USER, 0x01),
 
     // TODO: For now ...
     // Don't use this, it is used so that you always have a `_` in all match patterns, because
@@ -131,8 +133,15 @@ impl Status {
             Status::True | Status::False => "true/false not an error",
             Status::SkipToken => "skip this token",
             Status::User => "user error",
+            Status::NotUTF8 => "invalid utf8 data was passed to rust",
             _ => "unknown error",
         }
+    }
+}
+
+impl fmt::Debug for Status {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description())
     }
 }
 

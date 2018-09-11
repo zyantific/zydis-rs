@@ -1,6 +1,6 @@
 //! Textual instruction formatting routines.
 
-use core::{any::Any, marker::PhantomData, mem, ptr};
+use core::{any::Any, fmt, marker::PhantomData, mem, ptr};
 
 use std::{ffi::CStr, os::raw::c_void};
 
@@ -108,27 +108,37 @@ impl Hook {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type WrappedGeneralFunc = dyn Fn(
     &Formatter,
-    &mut ZyanString,
+    &mut FormatterBuffer,
     &mut FormatterContext,
     Option<&mut dyn Any>
 ) -> Result<()>;
 
-pub type WrappedRegisterFunc =
-    dyn Fn(&Formatter, &mut ZyanString, &mut FormatterContext, Register, Option<&mut dyn Any>)
-        -> Result<()>;
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub type WrappedRegisterFunc = dyn Fn(
+    &Formatter,
+    &mut FormatterBuffer,
+    &mut FormatterContext,
+    Register,
+    Option<&mut dyn Any>
+) -> Result<()>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub type WrappedAddressFunc = dyn Fn(
     &Formatter,
-    &mut ZyanString,
+    &mut FormatterBuffer,
     &mut FormatterContext,
     u64,
     Option<&mut dyn Any>,
 ) -> Result<()>;
 
-pub type WrappedDecoratorFunc =
-    dyn Fn(&Formatter, &mut ZyanString, &mut FormatterContext, Decorator, Option<&mut dyn Any>)
-        -> Result<()>;
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub type WrappedDecoratorFunc = dyn Fn(
+    &Formatter,
+    &mut FormatterBuffer,
+    &mut FormatterContext,
+    Decorator,
+    Option<&mut dyn Any>
+) -> Result<()>;
 
 macro_rules! wrapped_hook_setter{
     ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
@@ -156,13 +166,13 @@ macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZyanString,
+            buffer: *mut FormatterBuffer,
             ctx: *mut FormatterContext,
         ) -> Status {
             let formatter = &*(formatter as *const Formatter);
             let ctx = &mut *ctx;
             let usr = get_user_data(ctx.user_data);
-            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *string, ctx, usr) {
+            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *buffer, ctx, usr) {
                 Ok(_) => Status::Success,
                 Err(e) => e,
             }
@@ -171,14 +181,14 @@ macro_rules! wrap_func {
     (register $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZyanString,
+            buffer: *mut FormatterBuffer,
             ctx: *mut FormatterContext,
             reg: Register,
         ) -> Status {
             let formatter = &*(formatter as *const Formatter);
             let ctx = &mut *ctx;
             let usr = get_user_data(ctx.user_data);
-            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *string, ctx, reg, usr) {
+            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *buffer, ctx, reg, usr) {
                 Ok(_) => Status::Success,
                 Err(e) => e,
             }
@@ -187,7 +197,7 @@ macro_rules! wrap_func {
     (address $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZyanString,
+            buffer: *mut FormatterBuffer,
             ctx: *mut FormatterContext,
             address: u64,
         ) -> Status {
@@ -196,7 +206,7 @@ macro_rules! wrap_func {
             let usr = get_user_data(ctx.user_data);
             match formatter.$field_name.as_ref().unwrap()(
                 formatter,
-                &mut *string,
+                &mut *buffer,
                 ctx,
                 address,
                 usr,
@@ -209,7 +219,7 @@ macro_rules! wrap_func {
     (decorator $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
-            string: *mut ZyanString,
+            buffer: *mut FormatterBuffer,
             ctx: *mut FormatterContext,
             decorator: Decorator,
         ) -> Status {
@@ -218,7 +228,7 @@ macro_rules! wrap_func {
             let usr = get_user_data(ctx.user_data);
             match formatter.$field_name.as_ref().unwrap()(
                 formatter,
-                &mut *string,
+                &mut *buffer,
                 ctx,
                 decorator,
                 usr,
@@ -274,6 +284,40 @@ pub enum FormatterProperty<'a> {
 
 pub fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
     (x as *mut &mut dyn Any) as *mut c_void
+}
+
+fn ip_to_runtime_addr(ip: Option<u64>) -> u64 {
+    match ip {
+        None => (-1i64) as u64,
+        Some(ip) => ip,
+    }
+}
+
+/// A convenience typed when using the `format.*` or `tokenize.*` functions.
+#[derive(Debug)]
+pub struct OutputBuffer<'a> {
+    buffer: &'a mut [u8],
+}
+
+impl<'a> OutputBuffer<'a> {
+    /// Creates a new `OutputBuffer` using the given `buffer` for storage.
+    pub fn new(buffer: &'a mut [u8]) -> Self {
+        Self { buffer }
+    }
+
+    /// Gets a string from this buffer.
+    pub fn as_str(&self) -> Result<&'a str> {
+        unsafe { CStr::from_ptr(self.buffer.as_ptr() as *const i8) }
+            .to_str()
+            .map_err(|_| Status::NotUTF8)
+    }
+}
+
+impl<'a> fmt::Display for OutputBuffer<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let str = self.as_str().map_err(|_| fmt::Error)?;
+        write!(f, "{}", str)
+    }
 }
 
 #[repr(C)]
@@ -521,63 +565,114 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    /// Formats the given instruction, returning a string. `size` is the size
-    /// allocated (in bytes) for the string that holds the result.
+    /// Formats the given `instruction`, using the given `buffer` for storage.
+    ///
+    /// The `ip` may be `None`, in which case relative address formatting is
+    /// used. Otherwise absolute addresses are used.
+    ///
+    /// `user_data` may contain any data you wish to pass on to the
+    /// Formatter hooks.
     ///
     /// # Examples
-    ///
     /// ```
-    /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode};
+    /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode, OutputBuffer};
     /// static INT3: &'static [u8] = &[0xCCu8];
+    ///
+    /// let mut buffer = vec![0; 200];
+    /// let buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::Intel).unwrap();
     /// let dec = Decoder::new(MachineMode::Long64, AddressWidth::_64).unwrap();
     ///
     /// let info = dec.decode(INT3).unwrap().unwrap();
-    /// let fmt = formatter.format_instruction(&info, 200, 0, None).unwrap();
-    /// assert_eq!(fmt, "int3");
+    /// formatter
+    ///     .format_instruction(&info, &buffer, 0, None)
+    ///     .unwrap();
+    /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
     pub fn format_instruction(
         &self,
         instruction: &DecodedInstruction,
-        size: usize,
-        ip: u64,
-        user_data: Option<&mut dyn Any>,
-    ) -> Result<String> {
-        // TODO: Make this a mutable string!
-        let mut buffer = vec![0u8; size];
-        self.format_instruction_raw(instruction, &mut buffer, ip, user_data)
-            .map(|_| {
-                unsafe { CStr::from_ptr(buffer.as_ptr() as _) }
-                    .to_string_lossy()
-                    .into()
-            })
-    }
-
-    /// Formats the given `instruction`, using the given `buffer` for the
-    /// result.
-    ///
-    /// `user_data` may contain any data you wish to pass on to the
-    /// Formatter hooks.
-    pub fn format_instruction_raw(
-        &self,
-        instruction: &DecodedInstruction,
-        buffer: &mut [u8],
-        ip: u64,
+        buffer: &OutputBuffer,
+        ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
             check!(ZydisFormatterFormatInstructionEx(
                 &self.formatter,
                 instruction,
-                buffer.as_ptr() as _,
-                buffer.len(),
-                ip,
+                buffer.buffer.as_ptr() as *mut _,
+                buffer.buffer.len(),
+                ip_to_runtime_addr(ip),
                 match user_data {
                     None => ptr::null_mut(),
                     Some(mut x) => user_data_to_c_void(&mut x),
                 }
             ))
+        }
+    }
+
+    /// Formats just the given operand at `operand_index` from the given
+    /// `instruction`, using `buffer` for storage.
+    ///
+    /// The `ip` may be `None`, in which case relative address formatting is
+    /// used. Otherwise absolute addresses are used.
+    ///
+    /// `user_data` may contain any data you wish to pass on to the Formatter
+    /// hooks.
+    pub fn format_operand(
+        &self,
+        instruction: &DecodedInstruction,
+        operand_index: u8,
+        buffer: &OutputBuffer,
+        ip: Option<u64>,
+        user_data: Option<&mut dyn Any>,
+    ) -> Result<()> {
+        unsafe {
+            check!(ZydisFormatterFormatOperandEx(
+                &self.formatter,
+                instruction,
+                operand_index,
+                buffer.buffer.as_ptr() as *mut _,
+                buffer.buffer.len(),
+                ip_to_runtime_addr(ip),
+                match user_data {
+                    None => ptr::null_mut(),
+                    Some(mut x) => user_data_to_c_void(&mut x),
+                }
+            ))
+        }
+    }
+
+    // TODO: Explain this
+    /// The recommended amount of memory to allocate is 256 bytes.
+    pub fn tokenize_instruction<'b>(
+        &self,
+        instruction: &DecodedInstruction,
+        buffer: &'b mut [u8],
+        ip: Option<u64>,
+        user_data: Option<&mut dyn Any>,
+    ) -> Result<&'b FormatterToken> {
+        unsafe {
+            let mut token = mem::uninitialized();
+            check!(ZydisFormatterTokenizeInstructionEx(
+                &self.formatter,
+                instruction,
+                buffer.as_ptr() as *mut _,
+                buffer.len(),
+                ip_to_runtime_addr(ip),
+                &mut token,
+                match user_data {
+                    None => ptr::null_mut(),
+                    Some(mut x) => user_data_to_c_void(&mut x),
+                }
+            ))?;
+
+            if token.is_null() {
+                Err(Status::User)
+            } else {
+                Ok(&*token)
+            }
         }
     }
 
