@@ -1,10 +1,13 @@
 //! Provides type aliases, struct definitions and the unsafe function
 //! declrations.
 
-use core::{fmt, mem, ptr};
+use core::{fmt, marker::PhantomData, mem};
 
 // TODO: use libc maybe, or wait for this to move into core?
-use std::os::raw::{c_char, c_void};
+use std::{
+    ffi::CStr,
+    os::raw::{c_char, c_void},
+};
 
 use super::{
     enums::*,
@@ -42,27 +45,31 @@ pub type RegisterWidth = u16;
 
 #[derive(Debug)]
 #[repr(C, packed)]
-pub struct FormatterToken {
+pub struct FormatterToken<'a> {
     ty: Token,
     next: u8,
+
+    _p: PhantomData<&'a ()>,
 }
 
-impl FormatterToken {
+impl<'a> FormatterToken<'a> {
     /// Returns the value and type of this token.
-    // TODO: How about not returning a *mut c_char here.
-    pub fn get_value(&self) -> Result<(Token, *mut c_char)> {
+    pub fn get_value(&self) -> Result<(Token, &'a str)> {
         unsafe {
             let mut ty = mem::uninitialized();
             let mut val = mem::uninitialized();
-            check!(
-                ZydisFormatterTokenGetValue(self, &mut ty, &mut val),
-                (ty, val)
-            )
+            check!(ZydisFormatterTokenGetValue(self, &mut ty, &mut val))?;
+
+            let val = CStr::from_ptr(val as *const i8)
+                .to_str()
+                .map_err(|_| Status::NotUTF8)?;
+
+            Ok((ty, val))
         }
     }
 
     /// Returns the next token.
-    pub fn next(&self) -> Result<FormatterToken> {
+    pub fn next(&self) -> Result<&FormatterToken<'a>> {
         unsafe {
             let mut res = self as *const FormatterToken;
             check!(ZydisFormatterTokenNext(&mut res))?;
@@ -70,9 +77,32 @@ impl FormatterToken {
             if res.is_null() {
                 Err(Status::User)
             } else {
-                Ok(ptr::read(res))
+                Ok(&*res)
             }
         }
+    }
+}
+
+impl<'a> IntoIterator for &'a FormatterToken<'a> {
+    type IntoIter = FormatterTokenIterator<'a>;
+    type Item = (Token, &'a str);
+
+    fn into_iter(self) -> Self::IntoIter {
+        FormatterTokenIterator { next: Some(self) }
+    }
+}
+
+pub struct FormatterTokenIterator<'a> {
+    next: Option<&'a FormatterToken<'a>>,
+}
+
+impl<'a> Iterator for FormatterTokenIterator<'a> {
+    type Item = (Token, &'a str);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = self.next.clone();
+        self.next = self.next.and_then(|x| x.next().ok());
+        res.and_then(|x| x.get_value().ok())
     }
 }
 

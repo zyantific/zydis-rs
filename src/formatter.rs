@@ -652,7 +652,7 @@ impl<'a> Formatter<'a> {
         buffer: &'b mut [u8],
         ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
-    ) -> Result<&'b FormatterToken> {
+    ) -> Result<&'b FormatterToken<'b>> {
         unsafe {
             let mut token = mem::uninitialized();
             check!(ZydisFormatterTokenizeInstructionEx(

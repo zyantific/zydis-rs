@@ -11,6 +11,8 @@ pub mod isaset;
 pub mod mnemonic;
 pub mod register;
 
+use core::fmt;
+
 pub use self::{instructioncategory::*, isaext::*, isaset::*, mnemonic::*, register::*};
 
 use super::ffi;
@@ -656,6 +658,33 @@ pub const TOKEN_TYPECAST: Token = Token(0xC);
 pub const TOKEN_DECORATOR: Token = Token(0xD);
 /// The base for user defined tokens.
 pub const TOKEN_USER: Token = Token(0x80);
+
+static TOKEN_NAMES: [&'static str; 0xE] = [
+    "invalid",
+    "whitespace",
+    "delimiter",
+    "opening parenthesis",
+    "closing parenthesis",
+    "prefix",
+    "mnemonic",
+    "register",
+    "absolute address",
+    "relative address",
+    "displacement",
+    "immediate",
+    "typecast",
+    "decorator",
+];
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.0 <= 0xD {
+            write!(f, "{}", TOKEN_NAMES[self.0 as usize])
+        } else {
+            write!(f, "<unknown>")
+        }
+    }
+}
 
 bitflags! {
     #[repr(transparent)]
