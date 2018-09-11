@@ -1,7 +1,7 @@
 //! Provides type aliases, struct definitions and the unsafe function
 //! declrations.
 
-use core::{fmt, marker::PhantomData, mem};
+use core::{fmt, marker::PhantomData, mem, slice};
 
 // TODO: use libc maybe, or wait for this to move into core?
 use std::{
@@ -371,6 +371,12 @@ pub struct MemoryInfo {
     pub base: Register,
     pub index: Register,
     pub scale: u8,
+    pub disp: DisplacementInfo,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub struct DisplacementInfo {
     /// Signals if displacement is present.
     pub has_displacement: bool,
     /// The displacement value
@@ -789,6 +795,15 @@ pub struct InstructionSegments {
     /// The number of logical instruction segments.
     pub count: u8,
     pub segments: [InstructionSegmentsElement; 8],
+}
+
+impl<'a> IntoIterator for &'a InstructionSegments {
+    type IntoIter = slice::Iter<'a, InstructionSegmentsElement>;
+    type Item = &'a InstructionSegmentsElement;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.segments[..self.count as usize]).into_iter()
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
