@@ -39,9 +39,6 @@ fn main() -> Result<()> {
     // A wrapped version of the buffer allowing nicer access.
     let buffer = OutputBuffer::new(&mut buffer[..]);
 
-    // TODO: There should be a way to omit the address if the user wants relative
-    // addresses anyway.
-
     // 0 is the address for our code.
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         // We use Some(ip) here since we want absolute addressing based on the given
