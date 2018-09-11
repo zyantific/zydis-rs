@@ -55,20 +55,27 @@ fn print_mnemonic(
 
             if count > 0 && instruction.operands[count - 1].ty == OperandType::Immediate {
                 let cc = instruction.operands[count - 1].imm.value as usize;
-                let string = buffer.get_string()?;
 
                 match instruction.mnemonic {
                     Mnemonic::CMPPS if cc < 8 => {
-                        return write!(string, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
                     }
                     Mnemonic::CMPPD if cc < 8 => {
-                        return write!(string, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
                     }
                     Mnemonic::VCMPPS if cc < 0x20 => {
-                        return write!(string, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err)
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
                     }
                     Mnemonic::VCMPPD if cc < 0x20 => {
-                        return write!(string, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err)
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
                     }
                     _ => {}
                 }
