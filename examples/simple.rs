@@ -21,13 +21,17 @@ fn main() -> Result<()> {
     // TODO: There should be a way to omit the address if the user wants relative
     // addresses anyway.
 
-    // 0 is the address for our code.
-    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
+    // 0x1337 is the base address for our code.
+    for (instruction, ip) in decoder.instruction_iterator(CODE, 0x1337) {
         // We use Some(ip) here since we want absolute addressing based on the given
         // `ip`. If we would want to have relative addressing, we would use
         // `None` instead.
         formatter.format_instruction(&instruction, &buffer, Some(ip), None)?;
-        println!("0x{:016X} {}", ip, buffer);
+        println!("absolute: 0x{:016X} {}", ip, buffer);
+
+        // Show relative format as well
+        formatter.format_instruction(&instruction, &buffer, None, None)?;
+        println!("relative:                    {}", buffer);
     }
 
     Ok(())
