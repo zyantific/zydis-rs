@@ -586,7 +586,7 @@ impl<'a> Formatter<'a> {
     ///
     /// let info = dec.decode(INT3).unwrap().unwrap();
     /// formatter
-    ///     .format_instruction(&info, &buffer, 0, None)
+    ///     .format_instruction(&info, &buffer, Some(0), None)
     ///     .unwrap();
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
