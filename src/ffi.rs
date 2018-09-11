@@ -133,6 +133,14 @@ impl FormatterBuffer {
         }
     }
 
+    /// Returns the most recently added `FormatterToken`.
+    pub fn get_token<'a>(&'a self) -> Result<&'a FormatterToken<'a>> {
+        unsafe {
+            let mut res = mem::uninitialized();
+            check!(ZydisFormatterBufferGetToken(self, &mut res), &*res)
+        }
+    }
+
     /// Appends a new token to this buffer.
     pub fn append(&mut self, token: Token) -> Result<()> {
         unsafe { check!(ZydisFormatterBufferAppend(self, token)) }
@@ -217,7 +225,7 @@ impl ZyanStringView {
     pub fn new(buffer: &[u8]) -> Result<Self> {
         unsafe {
             let mut view = mem::uninitialized();
-            check!(ZyanStringViewInsideViewEx(
+            check!(ZyanStringViewInsideBufferEx(
                 &mut view,
                 buffer.as_ptr() as *const i8,
                 buffer.len()
@@ -726,6 +734,7 @@ pub struct Prefix {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ZydisFormatter {
+    style: FormatterStyle,
     letter_case: u32,
     force_memory_size: bool,
     force_memory_segment: bool,
@@ -981,6 +990,11 @@ extern "C" {
         string: *mut *mut ZyanString,
     ) -> Status;
 
+    pub fn ZydisFormatterBufferGetToken(
+        buffer: *const FormatterBuffer,
+        token: *mut *const FormatterToken,
+    ) -> Status;
+
     pub fn ZydisFormatterBufferAppend(buffer: *mut FormatterBuffer, ty: Token) -> Status;
 
     pub fn ZydisFormatterBufferRemember(
@@ -1005,7 +1019,7 @@ extern "C" {
 
     pub fn ZyanStringDestroy(string: *mut ZyanString) -> Status;
 
-    pub fn ZyanStringViewInsideViewEx(
+    pub fn ZyanStringViewInsideBufferEx(
         view: *mut ZyanStringView,
         buffer: *const c_char,
         length: usize,

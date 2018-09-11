@@ -117,11 +117,28 @@ fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
     let mut formatter = Formatter::new(FormatterStyle::Intel)?;
+    formatter.set_property(FormatterProperty::ForceSegment(true))?;
+    formatter.set_property(FormatterProperty::ForceSize(true))?;
+
     // clear old prefix
     formatter.set_property(FormatterProperty::HexPrefix(None))?;
     // set h as suffix
     formatter.set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
 
+    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
+
+    let mut buffer = [0u8; 200];
+    let buffer = OutputBuffer::new(&mut buffer[..]);
+
+    // First without hooks
+    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
+        formatter.format_instruction(&instruction, &buffer, Some(ip), None)?;
+        println!("0x{:016X} {}", ip, buffer);
+    }
+
+    println!();
+
+    // Now set the hooks
     let orig_print_mnemonic = formatter.set_print_mnemonic(Box::new(print_mnemonic))?;
     let orig_format_operand = formatter.set_format_operand_imm(Box::new(format_operand_imm))?;
 
@@ -131,11 +148,7 @@ fn main() -> Result<()> {
         omit_immediate: false,
     };
 
-    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
-
-    let mut buffer = [0u8; 200];
-    let buffer = OutputBuffer::new(&mut buffer[..]);
-
+    // And print it with hooks
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
         formatter.format_instruction(&instruction, &buffer, Some(ip), Some(&mut user_data))?;
         println!("0x{:016X} {}", ip, buffer);

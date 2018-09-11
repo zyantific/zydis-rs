@@ -60,7 +60,7 @@ pub enum Status {
     /// - `HookFormatOperandPtr`
     /// - `HookFormatOperandImm`
     /// - `HookPrintMemsize`
-    SkipToken = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0B),
+    SkipToken = make_status!(0, ZYAN_MODULE_ZYDIS, 0x0B),
 
     /// Use this for custom errors that don't fit for any of the other errors.
     User = make_status!(1, ZYAN_MODULE_USER, 0x00),
@@ -173,8 +173,8 @@ macro_rules! check {
         check!($expression, ())
     };
     ($expression:expr, $ok:expr) => {
-        match $expression.into() {
-            $crate::status::Status::Success => Ok($ok),
+        match $expression {
+            x if !x.is_error() => Ok($ok),
             x => Err(x),
         }
     };
@@ -183,8 +183,8 @@ macro_rules! check {
 macro_rules! check_option {
     // This should only be used for the `ZydisDecoderDecodeBuffer` function.
     ($expression:expr, $ok:expr) => {
-        match $expression.into() {
-            $crate::status::Status::Success => Ok(Some($ok)),
+        match $expression {
+            x if !x.is_error() => Ok(Some($ok)),
             $crate::status::Status::NoMoreData => Ok(None),
             x => Err(x),
         }
