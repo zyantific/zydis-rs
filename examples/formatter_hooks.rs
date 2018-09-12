@@ -128,11 +128,11 @@ fn main() -> Result<()> {
     let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
     let mut buffer = [0u8; 200];
-    let buffer = OutputBuffer::new(&mut buffer[..]);
+    let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
     // First without hooks
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        formatter.format_instruction(&instruction, &buffer, Some(ip), None)?;
+        formatter.format_instruction(&instruction, &mut buffer, Some(ip), None)?;
         println!("0x{:016X} {}", ip, buffer);
     }
 
@@ -150,7 +150,7 @@ fn main() -> Result<()> {
 
     // And print it with hooks
     for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        formatter.format_instruction(&instruction, &buffer, Some(ip), Some(&mut user_data))?;
+        formatter.format_instruction(&instruction, &mut buffer, Some(ip), Some(&mut user_data))?;
         println!("0x{:016X} {}", ip, buffer);
     }
 

@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     // Our actual buffer.
     let mut buffer = [0u8; 200];
     // A wrapped version of the buffer allowing nicer access.
-    let buffer = OutputBuffer::new(&mut buffer[..]);
+    let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
     // TODO: There should be a way to omit the address if the user wants relative
     // addresses anyway.
@@ -26,11 +26,11 @@ fn main() -> Result<()> {
         // We use Some(ip) here since we want absolute addressing based on the given
         // `ip`. If we would want to have relative addressing, we would use
         // `None` instead.
-        formatter.format_instruction(&instruction, &buffer, Some(ip), None)?;
+        formatter.format_instruction(&instruction, &mut buffer, Some(ip), None)?;
         println!("absolute: 0x{:016X} {}", ip, buffer);
 
         // Show relative format as well
-        formatter.format_instruction(&instruction, &buffer, None, None)?;
+        formatter.format_instruction(&instruction, &mut buffer, None, None)?;
         println!("relative:                    {}", buffer);
     }
 

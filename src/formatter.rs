@@ -579,21 +579,21 @@ impl<'a> Formatter<'a> {
     /// static INT3: &'static [u8] = &[0xCCu8];
     ///
     /// let mut buffer = vec![0; 200];
-    /// let buffer = OutputBuffer::new(&mut buffer[..]);
+    /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::Intel).unwrap();
     /// let dec = Decoder::new(MachineMode::Long64, AddressWidth::_64).unwrap();
     ///
     /// let info = dec.decode(INT3).unwrap().unwrap();
     /// formatter
-    ///     .format_instruction(&info, &buffer, Some(0), None)
+    ///     .format_instruction(&info, &mut buffer, Some(0), None)
     ///     .unwrap();
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
     pub fn format_instruction(
         &self,
         instruction: &DecodedInstruction,
-        buffer: &OutputBuffer,
+        buffer: &mut OutputBuffer,
         ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
@@ -601,7 +601,7 @@ impl<'a> Formatter<'a> {
             check!(ZydisFormatterFormatInstructionEx(
                 &self.formatter,
                 instruction,
-                buffer.buffer.as_ptr() as *mut _,
+                buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
                 match user_data {
@@ -624,7 +624,7 @@ impl<'a> Formatter<'a> {
         &self,
         instruction: &DecodedInstruction,
         operand_index: u8,
-        buffer: &OutputBuffer,
+        buffer: &mut OutputBuffer,
         ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
@@ -633,7 +633,7 @@ impl<'a> Formatter<'a> {
                 &self.formatter,
                 instruction,
                 operand_index,
-                buffer.buffer.as_ptr() as *mut _,
+                buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
                 match user_data {
@@ -658,7 +658,7 @@ impl<'a> Formatter<'a> {
             check!(ZydisFormatterTokenizeInstructionEx(
                 &self.formatter,
                 instruction,
-                buffer.as_ptr() as *mut _,
+                buffer.as_mut_ptr() as *mut _,
                 buffer.len(),
                 ip_to_runtime_addr(ip),
                 &mut token,
