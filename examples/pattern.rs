@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
             // Obtain offsets for relevant operands, skip others.
             let (dyn_offs, dyn_len) = match op.ty {
-                OperandType::Memory if op.mem.has_displacement => {
+                OperandType::Memory if op.mem.disp.has_displacement => {
                     (insn.raw.disp_offset, insn.raw.disp_size)
                 }
                 OperandType::Immediate if op.imm.is_relative => {
