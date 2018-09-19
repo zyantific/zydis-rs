@@ -17,7 +17,13 @@ Or, probably more common, add a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-zydis = "0.0.4"
+zydis = "0.0.3"
+```
+
+You can also use the in-progress work on the `future` branch, where a lot of refactorings have been done. However, that branch might stil have some bugs.
+```toml
+[dependencies]
+zydis = { git = "https://github.com/zyantific/zydis-rs", branch = "future" }
 ```
 
 ## Example
