@@ -52,7 +52,7 @@ impl Hook {
             PrintAddressRel(_)   => HookType::PRINT_ADDRESS_REL,
             PrintDisp(_)         => HookType::PRINT_DISP,
             PrintImm(_)          => HookType::PRINT_IMM,
-            PrintSize(_)      => HookType::PRINT_SIZE,
+            PrintSize(_)         => HookType::PRINT_SIZE,
             PrintPrefixes(_)     => HookType::PRINT_PREFIXES,
             PrintDecorator(_)    => HookType::PRINT_DECORATOR,
         }
