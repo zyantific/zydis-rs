@@ -1,4 +1,5 @@
 /// Defines the `ISAExt` enum
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ISAExt {
@@ -72,7 +73,7 @@ pub enum ISAExt {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES
+    XSAVES,
 }
 
 /// The last value of the `ISAExt` enum

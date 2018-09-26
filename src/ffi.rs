@@ -340,6 +340,7 @@ impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
 }
 
 /// A decoded operand.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct DecodedOperand {
@@ -371,6 +372,7 @@ pub struct DecodedOperand {
     pub imm: ImmediateInfo,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryInfo {
@@ -382,6 +384,7 @@ pub struct MemoryInfo {
     pub disp: DisplacementInfo,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct DisplacementInfo {
@@ -391,6 +394,7 @@ pub struct DisplacementInfo {
     pub displacement: i64,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct PointerInfo {
@@ -398,6 +402,7 @@ pub struct PointerInfo {
     pub offset: u32,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct ImmediateInfo {
@@ -410,6 +415,7 @@ pub struct ImmediateInfo {
     pub value: u64,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct DecodedInstruction {
@@ -499,6 +505,7 @@ impl DecodedInstruction {
     }
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct AvxInfo {
@@ -528,6 +535,7 @@ pub struct AvxInfo {
     pub has_eviction_hint: bool,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct MetaInfo {
@@ -541,6 +549,7 @@ pub struct MetaInfo {
     pub exception_class: ExceptionClass,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 // For consistency with zydis and the Intel docs.
@@ -702,6 +711,7 @@ pub struct RawInfo {
     pub imm: [RawImmediateInfo; 2],
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct RawImmediateInfo {
@@ -722,6 +732,7 @@ pub struct RawImmediateInfo {
     pub offset: u8,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Prefix {

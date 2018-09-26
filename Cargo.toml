@@ -16,3 +16,9 @@ cmake = "0.1"
 
 [dependencies]
 bitflags = "1.0"
+serde = { version = "1.0", optional = true}
+serde_derive = { version = "1.0", optional = true}
+
+[features]
+default = []
+serialization = ["serde", "serde_derive"]

@@ -118,6 +118,7 @@ impl RegisterClass {
     }
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Feature {
@@ -127,6 +128,7 @@ pub enum Feature {
 
 pub const FEATURE_MAX_VALUE: Feature = Feature::KNC;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum InstructionSegment {
@@ -146,6 +148,7 @@ pub enum InstructionSegment {
 
 pub const INSTRUCTION_SEGMENT_MAX_VALUE: InstructionSegment = InstructionSegment::IMMEDIATE;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum DecoderMode {
@@ -162,6 +165,7 @@ pub enum DecoderMode {
 
 pub const DECODER_MODE_MAX_VALUE: DecoderMode = DecoderMode::CLDEMOTE;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum RegisterClass {
@@ -187,6 +191,7 @@ pub enum RegisterClass {
 
 pub const REGISTER_CLASS_MAX_VALUE: RegisterClass = RegisterClass::BOUND;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum FormatterStyle {
@@ -199,6 +204,7 @@ pub const FORMATTER_STYLE_MAX_VALUE: FormatterStyle = FormatterStyle::IntelMasm;
 
 /// We wrap this in a nicer rust enum `FormatterProperty` already, use that
 /// instead.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ZydisFormatterProperty {
@@ -225,6 +231,7 @@ pub enum ZydisFormatterProperty {
 
 pub const FORMATTER_PROPERTY_MAX_VALUE: ZydisFormatterProperty = ZydisFormatterProperty::HEX_SUFFIX;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum NumericBase {
@@ -234,6 +241,7 @@ pub enum NumericBase {
 
 pub const NUMERIC_BASE_MAX_VALUE: NumericBase = NumericBase::Hex;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Signedness {
@@ -244,6 +252,7 @@ pub enum Signedness {
 
 pub const SIGNEDNESS_MAX_VALUE: Signedness = Signedness::Unsigned;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Padding {
@@ -254,6 +263,7 @@ pub enum Padding {
 pub const PADDING_MAX_VALUE: Padding = Padding::Auto;
 
 /// Use `formatter::Hook` instead.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum HookType {
@@ -279,6 +289,7 @@ pub enum HookType {
 
 pub const HOOK_TYPE_MAX_VALUE: HookType = HookType::PRINT_DECORATOR;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Decorator {
@@ -294,6 +305,7 @@ pub enum Decorator {
 
 pub const DECORATOR_MAX_VALUE: Decorator = Decorator::EH;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum MachineMode {
@@ -307,6 +319,7 @@ pub enum MachineMode {
 
 pub const MACHINE_MODE_MAX_VALUE: MachineMode = MachineMode::Real16;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum AddressWidth {
@@ -317,6 +330,7 @@ pub enum AddressWidth {
 
 pub const ADDRESS_WIDTH_MAX_VALUE: AddressWidth = AddressWidth::_64;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ElementType {
@@ -334,6 +348,7 @@ pub enum ElementType {
 
 pub const ELEMENT_TYPE_MAX_VALUE: ElementType = ElementType::CC;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandType {
@@ -346,6 +361,7 @@ pub enum OperandType {
 
 pub const OPERAND_TYPE_MAX_VALUE: OperandType = OperandType::Immediate;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandEncoding {
@@ -387,6 +403,7 @@ pub enum OperandEncoding {
 
 pub const OPERAND_ENCODING_MAX_VALUE: OperandEncoding = OperandEncoding::JIMM16_32_32;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandVisibility {
@@ -398,6 +415,7 @@ pub enum OperandVisibility {
 
 pub const OPERAND_VISIBILITY_MAX_VALUE: OperandVisibility = OperandVisibility::Hidden;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandAction {
@@ -425,6 +443,7 @@ pub const OPERAND_ACTION_MASK_READ: usize = OperandAction::READ as usize
 
 pub const OPERAND_ACTION_MAX_VALUE: OperandAction = OperandAction::CONDREAD_WRITE;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum InstructionEncoding {
@@ -438,6 +457,7 @@ pub enum InstructionEncoding {
 
 pub const INSTRUCTION_ENCODING_MAX_VALUE: InstructionEncoding = InstructionEncoding::MVEX;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OpcodeMap {
@@ -453,6 +473,7 @@ pub enum OpcodeMap {
 
 pub const OPCODE_MAP_MAX_VALUE: OpcodeMap = OpcodeMap::XOPA;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum MemoryOperandType {
@@ -464,6 +485,7 @@ pub enum MemoryOperandType {
 
 pub const MEMORY_OPERAND_TYPE_MAX_VALUE: MemoryOperandType = MemoryOperandType::MIB;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum CPUFlag {
@@ -492,6 +514,7 @@ pub enum CPUFlag {
 
 pub const CPU_FLAG_MAX_VALUE: CPUFlag = CPUFlag::C3;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum CPUFlagAction {
@@ -506,6 +529,7 @@ pub enum CPUFlagAction {
 
 pub const CPU_FLAG_ACTION_MAX_VALUE: CPUFlagAction = CPUFlagAction::UNDEFINED;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ExceptionClass {
@@ -553,6 +577,7 @@ pub enum ExceptionClass {
 
 pub const EXCEPTION_CLASS_MAX_VALUE: ExceptionClass = ExceptionClass::K21;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum MaskMode {
@@ -566,6 +591,7 @@ pub enum MaskMode {
 
 pub const MASK_MODE_MAX_VALUE: MaskMode = MaskMode::ControlZeroing;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum BroadcastMode {
@@ -586,6 +612,7 @@ pub enum BroadcastMode {
 
 pub const BROADCAST_MODE_MAX_VALUE: BroadcastMode = BroadcastMode::_8_TO_16;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum RoundingMode {
@@ -598,6 +625,7 @@ pub enum RoundingMode {
 
 pub const ROUNDING_MODE_MAX_VALUE: RoundingMode = RoundingMode::RZ;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum SwizzleMode {
@@ -614,6 +642,7 @@ pub enum SwizzleMode {
 
 pub const SWIZZLE_MODE_MAX_VALUE: SwizzleMode = SwizzleMode::DDDD;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ConversionMode {
@@ -627,6 +656,7 @@ pub enum ConversionMode {
 
 pub const CONVERISON_MODE_MAX_VALUE: ConversionMode = ConversionMode::UINT16;
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum PrefixType {
@@ -638,6 +668,7 @@ pub enum PrefixType {
 pub const PREFIX_TYPE_MAX_VALUE: PrefixType = PrefixType::MANDATORY;
 
 /// The type of a formatter token.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Token(pub u8);
@@ -687,6 +718,7 @@ impl fmt::Display for Token {
 }
 
 bitflags! {
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     pub struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;

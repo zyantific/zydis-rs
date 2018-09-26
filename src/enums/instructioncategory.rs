@@ -1,4 +1,5 @@
 /// Defines the `InstructionCategory` enum
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum InstructionCategory {
@@ -96,7 +97,7 @@ pub enum InstructionCategory {
     X87_ALU,
     XOP,
     XSAVE,
-    XSAVEOPT
+    XSAVEOPT,
 }
 
 /// The last value of the `InstructionCategory` enum

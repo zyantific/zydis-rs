@@ -1,4 +1,5 @@
 /// Defines the `Mnemonic` enum
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Mnemonic {
@@ -1590,7 +1591,7 @@ pub enum Mnemonic {
     XSAVES,
     XSAVES64,
     XSETBV,
-    XTEST
+    XTEST,
 }
 
 /// The last value of the `Mnemonic` enum

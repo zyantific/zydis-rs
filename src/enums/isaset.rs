@@ -1,4 +1,5 @@
 /// Defines the `ISASet` enum
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ISASet {
@@ -152,7 +153,7 @@ pub enum ISASet {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES
+    XSAVES,
 }
 
 /// The last value of the `ISASet` enum

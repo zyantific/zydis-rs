@@ -1,4 +1,5 @@
 /// Defines the `Register` enum
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum Register {
@@ -278,7 +279,7 @@ pub enum Register {
     // Uncategorized
     MXCSR,
     PKRU,
-    XCR0
+    XCR0,
 }
 
 /// The last value of the `Register` enum
