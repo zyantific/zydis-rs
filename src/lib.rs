@@ -7,10 +7,10 @@ extern crate core;
 #[macro_use]
 extern crate bitflags;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serialization")]
 extern crate serde;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serialization")]
 #[macro_use]
 extern crate serde_derive;
 
