@@ -809,6 +809,7 @@ pub struct FormatterContext {
     pub user_data: *mut c_void,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct InstructionSegments {
@@ -826,6 +827,7 @@ impl<'a> IntoIterator for &'a InstructionSegments {
     }
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct InstructionSegmentsElement {
