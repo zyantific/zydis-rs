@@ -100,7 +100,7 @@ impl<'a> Iterator for FormatterTokenIterator<'a> {
     type Item = (Token, &'a str);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let res = self.next.clone();
+        let res = self.next;
         self.next = self.next.and_then(|x| x.next().ok());
         res.and_then(|x| x.get_value().ok())
     }
