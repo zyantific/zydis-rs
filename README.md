@@ -14,7 +14,10 @@ Or, probably more common, add a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-zydis = "0.0.4"
+# For the latest version
+zydis = { git = "https://github.com/zyantific/zydis-rs"}
+# For version 0.0.3
+zydis = "0.0.3"
 ```
 
 ## Example
