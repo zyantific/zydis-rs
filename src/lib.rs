@@ -36,7 +36,7 @@ pub use enums::{
 };
 pub use ffi::{
     DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext, FormatterToken,
-    InstructionIterator,
+    InstructionIterator, get_version,
 };
 pub use formatter::{
     user_data_to_c_void, Formatter, FormatterProperty, Hook, OutputBuffer, WrappedAddressFunc,
