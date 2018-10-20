@@ -21,13 +21,6 @@ pub type FormatterFunc = Option<unsafe extern "C" fn(
     *mut FormatterContext) -> Status>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub type FormatterAddressFunc = Option<unsafe extern "C" fn(
-    *const ZydisFormatter,
-    *mut FormatterBuffer,
-    *mut FormatterContext,
-    u64) -> Status>;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub type FormatterDecoratorFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
     *mut FormatterBuffer,
@@ -545,6 +538,8 @@ pub struct MetaInfo {
     pub isa_set: ISASet,
     /// The instruction set extension this instruction belongs to.
     pub isa_ext: ISAExt,
+    /// The branch type.
+    pub branch_type: BranchType,
     /// The exception class of this instruction.
     pub exception_class: ExceptionClass,
 }
@@ -746,9 +741,11 @@ pub struct Prefix {
 #[repr(C)]
 pub struct ZydisFormatter {
     style: FormatterStyle,
-    letter_case: u32,
     force_memory_size: bool,
     force_memory_segment: bool,
+    force_relative_branches: bool,
+    force_relative_riprel: bool,
+    print_branch_size: bool,
     detailed_prefixes: bool,
     addr_base: NumericBase,
     addr_signedness: Signedness,
@@ -760,6 +757,12 @@ pub struct ZydisFormatter {
     imm_base: NumericBase,
     imm_signedness: Signedness,
     imm_padding: Padding,
+    case_prefixes: i32,
+    case_mnemonic: i32,
+    case_registers: i32,
+    case_typecasts: i32,
+    case_decorators: i32,
+    hex_uppercase: bool,
     // ZYDIS_NUMERIC_BASE_MAX_VALUE + 1
     number_format: [[ZydisFormatterStringData; 2]; 2],
 
@@ -774,11 +777,11 @@ pub struct ZydisFormatter {
     func_format_operand_imm: FormatterFunc,
     func_print_mnemonic: FormatterFunc,
     func_print_register: FormatterRegisterFunc,
-    func_print_address_abs: FormatterAddressFunc,
-    func_print_address_rel: FormatterAddressFunc,
+    func_print_address_abs: FormatterFunc,
+    func_print_address_rel: FormatterFunc,
     func_print_disp: FormatterFunc,
     func_print_imm: FormatterFunc,
-    func_print_size: FormatterFunc,
+    func_print_typecast: FormatterFunc,
     func_print_segment: FormatterFunc,
     func_print_prefixes: FormatterFunc,
     func_print_decorator: FormatterDecoratorFunc,
@@ -922,7 +925,7 @@ extern "C" {
 
     pub fn ZydisRegisterEncode(register_class: RegisterClass, id: u8) -> Register;
 
-    pub fn ZydisRegisterGetId(regster: Register) -> i16;
+    pub fn ZydisRegisterGetId(regster: Register) -> i8;
 
     pub fn ZydisRegisterGetClass(register: Register) -> RegisterClass;
 
@@ -931,6 +934,10 @@ extern "C" {
     pub fn ZydisRegisterGetString(register: Register) -> *const c_char;
 
     pub fn ZydisRegisterGetStringWrapped(register: Register) -> *const ShortString;
+
+    pub fn ZydisRegisterGetLargestEnclosing(mode: MachineMode, reg: Register) -> Register;
+
+    pub fn ZydisRegisterClassGetWidth(mode: MachineMode, class: RegisterClass) -> RegisterWidth;
 
     pub fn ZydisCategoryGetString(category: InstructionCategory) -> *const c_char;
 
@@ -1005,6 +1012,27 @@ extern "C" {
         runtime_address: u64,
         token: *mut *const FormatterToken,
         user_data: *mut c_void,
+    ) -> Status;
+
+    pub fn ZydisFormatterTokenizeOperand(
+        formatter: *const ZydisFormatter,
+        instruction: *const DecodedInstruction,
+        index: u8,
+        buffer: *mut c_void,
+        length: usize,
+        runtime_address: u64,
+        token: *mut *const FormatterToken,
+    ) -> Status;
+
+    pub fn ZydisFormatterTokenizeOperandEx(
+        formatter: *const ZydisFormatter,
+        instruction: *const DecodedInstruction,
+        index: u8,
+        buffer: *mut c_void,
+        length: usize,
+        runtime_address: u64,
+        token: *mut *const FormatterToken,
+        user_data: *mut c_void
     ) -> Status;
 
     pub fn ZydisFormatterTokenGetValue(

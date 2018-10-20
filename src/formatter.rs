@@ -23,11 +23,11 @@ pub enum Hook {
     FormatOperandImm(FormatterFunc),
     PrintMnemonic(FormatterFunc),
     PrintRegister(FormatterRegisterFunc),
-    PrintAddressAbs(FormatterAddressFunc),
-    PrintAddressRel(FormatterAddressFunc),
+    PrintAddressAbs(FormatterFunc),
+    PrintAddressRel(FormatterFunc),
     PrintDisp(FormatterFunc),
     PrintImm(FormatterFunc),
-    PrintSize(FormatterFunc),
+    PrintTypecast(FormatterFunc),
     PrintPrefixes(FormatterFunc),
     PrintDecorator(FormatterDecoratorFunc),
 }
@@ -52,30 +52,25 @@ impl Hook {
             PrintAddressRel(_)   => HookType::PRINT_ADDRESS_REL,
             PrintDisp(_)         => HookType::PRINT_DISP,
             PrintImm(_)          => HookType::PRINT_IMM,
-            PrintSize(_)         => HookType::PRINT_SIZE,
+            PrintTypecast(_)     => HookType::PRINT_TYPECAST,
             PrintPrefixes(_)     => HookType::PRINT_PREFIXES,
             PrintDecorator(_)    => HookType::PRINT_DECORATOR,
         }
     }
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     pub unsafe fn to_raw(&self) -> *const c_void {
         use self::Hook::*;
         // Note: do not remove the `*` at `*self`, Rust 1.26 will segfault
         // since we don't give explicit types for mem::transmute.
         match *self {
             PreInstruction(x) | PostInstruction(x) | PrintPrefixes(x) | FormatInstruction(x)
-            | PrintMnemonic(x) =>
-                mem::transmute(x),
+            | PrintMnemonic(x) | PreOperand(x) | PostOperand(x) | FormatOperandReg(x)
+            | FormatOperandMem(x) | FormatOperandPtr(x) | FormatOperandImm(x)
+            | PrintAddressAbs(x) | PrintAddressRel(x) | PrintDisp(x) | PrintImm(x)
+            | PrintTypecast(x) => mem::transmute(x),
 
-            PreOperand(x) | PostOperand(x) | FormatOperandReg(x) | FormatOperandMem(x)
-            | FormatOperandPtr(x) | FormatOperandImm(x) | PrintDisp(x) | PrintImm(x) =>
-                mem::transmute(x),
-
-            PrintRegister(x)                        => mem::transmute(x),
-            PrintAddressAbs(x) | PrintAddressRel(x) => mem::transmute(x),
-            PrintSize(x)                            => mem::transmute(x),
-            PrintDecorator(x)                       => mem::transmute(x),
+            PrintRegister(x) => mem::transmute(x),
+            PrintDecorator(x) => mem::transmute(x),
         }
     }
 
@@ -98,7 +93,7 @@ impl Hook {
             HookType::PRINT_ADDRESS_REL  => PrintAddressRel(mem::transmute(cb)),
             HookType::PRINT_DISP         => PrintDisp(mem::transmute(cb)),
             HookType::PRINT_IMM          => PrintImm(mem::transmute(cb)),
-            HookType::PRINT_SIZE         => PrintSize(mem::transmute(cb)),
+            HookType::PRINT_TYPECAST     => PrintTypecast(mem::transmute(cb)),
             HookType::PRINT_PREFIXES     => PrintPrefixes(mem::transmute(cb)),
             HookType::PRINT_DECORATOR    => PrintDecorator(mem::transmute(cb)),
         }
@@ -120,15 +115,6 @@ pub type WrappedRegisterFunc = dyn Fn(
     &mut FormatterContext,
     Register,
     Option<&mut dyn Any>
-) -> Result<()>;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-pub type WrappedAddressFunc = dyn Fn(
-    &Formatter,
-    &mut FormatterBuffer,
-    &mut FormatterContext,
-    u64,
-    Option<&mut dyn Any>,
 ) -> Result<()>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -194,28 +180,6 @@ macro_rules! wrap_func {
             }
         }
     };
-    (address $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            buffer: *mut FormatterBuffer,
-            ctx: *mut FormatterContext,
-            address: u64,
-        ) -> Status {
-            let formatter = &*(formatter as *const Formatter);
-            let ctx = &mut *ctx;
-            let usr = get_user_data(ctx.user_data);
-            match formatter.$field_name.as_ref().unwrap()(
-                formatter,
-                &mut *buffer,
-                ctx,
-                address,
-                usr,
-            ) {
-                Ok(_) => Status::Success,
-                Err(e) => e,
-            }
-        }
-    };
     (decorator $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
             formatter: *const ZydisFormatter,
@@ -252,18 +216,20 @@ wrap_func!(general format_operand_imm, dispatch_format_operand_imm);
 wrap_func!(general print_mnemonic, dispatch_print_mnemonic);
 wrap_func!(general print_disp, dispatch_print_disp);
 wrap_func!(general print_imm, dispatch_print_imm);
-wrap_func!(general print_size, dispatch_print_size);
+wrap_func!(general print_typecast, dispatch_print_typecast);
 wrap_func!(general print_prefixes, dispatch_print_prefixes);
+wrap_func!(general print_address_abs, dispatch_print_address_abs);
+wrap_func!(general print_address_rel, dispatch_print_address_rel);
 wrap_func!(register print_register, dispatch_print_register);
-wrap_func!(address print_address_abs, dispatch_print_address_abs);
-wrap_func!(address print_address_rel, dispatch_print_address_rel);
 wrap_func!(decorator print_decorator, dispatch_print_decorator);
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum FormatterProperty<'a> {
-    Uppercase(bool),
     ForceSize(bool),
     ForceSegment(bool),
+    ForceRelativeBranches(bool),
+    ForceRelativeRiprel(bool),
+    PrintBranchSize(bool),
     DetailedPrefixes(bool),
     AddressBase(NumericBase),
     AddressSignedness(Signedness),
@@ -275,6 +241,11 @@ pub enum FormatterProperty<'a> {
     ImmediateBase(NumericBase),
     ImmediateSignedness(Signedness),
     ImmediatePadding(Padding),
+    UppercasePrefixes(bool),
+    UppercaseMnemonic(bool),
+    UppercaseRegisters(bool),
+    UppercaseTypecasts(bool),
+    UppercaseDecorators(bool),
     DecPrefix(Option<&'a CStr>),
     DecSuffix(Option<&'a CStr>),
     HexUppercase(bool),
@@ -337,11 +308,11 @@ pub struct Formatter<'a> {
     format_operand_imm: Option<Box<WrappedGeneralFunc>>,
     print_mnemonic: Option<Box<WrappedGeneralFunc>>,
     print_register: Option<Box<WrappedRegisterFunc>>,
-    print_address_abs: Option<Box<WrappedAddressFunc>>,
-    print_address_rel: Option<Box<WrappedAddressFunc>>,
+    print_address_abs: Option<Box<WrappedGeneralFunc>>,
+    print_address_rel: Option<Box<WrappedGeneralFunc>>,
     print_disp: Option<Box<WrappedGeneralFunc>>,
     print_imm: Option<Box<WrappedGeneralFunc>>,
-    print_size: Option<Box<WrappedGeneralFunc>>,
+    print_typecast: Option<Box<WrappedGeneralFunc>>,
     print_prefixes: Option<Box<WrappedGeneralFunc>>,
     print_decorator: Option<Box<WrappedDecoratorFunc>>,
 
@@ -439,7 +410,7 @@ impl<'a> Formatter<'a> {
 
     wrapped_hook_setter!(
         print_address_abs,
-        WrappedAddressFunc,
+        WrappedGeneralFunc,
         set_print_address_abs,
         dispatch_print_address_abs,
         Hook::PrintAddressAbs
@@ -447,7 +418,7 @@ impl<'a> Formatter<'a> {
 
     wrapped_hook_setter!(
         print_address_rel,
-        WrappedAddressFunc,
+        WrappedGeneralFunc,
         set_print_address_rel,
         dispatch_print_address_rel,
         Hook::PrintAddressRel
@@ -470,11 +441,11 @@ impl<'a> Formatter<'a> {
     );
 
     wrapped_hook_setter!(
-        print_size,
+        print_typecast,
         WrappedGeneralFunc,
-        set_print_size,
-        dispatch_print_size,
-        Hook::PrintSize
+        set_print_typecast,
+        dispatch_print_typecast,
+        Hook::PrintTypecast
     );
 
     wrapped_hook_setter!(
@@ -516,7 +487,7 @@ impl<'a> Formatter<'a> {
                     print_address_rel: None,
                     print_disp: None,
                     print_imm: None,
-                    print_size: None,
+                    print_typecast: None,
                     print_prefixes: None,
                     print_decorator: None,
 
@@ -531,29 +502,36 @@ impl<'a> Formatter<'a> {
     pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
-            Uppercase(v)              => (ZydisFormatterProperty::UPPERCASE             , v as usize),
-            ForceSize(v)              => (ZydisFormatterProperty::FORCE_SIZE            , v as usize),
-            ForceSegment(v)           => (ZydisFormatterProperty::FORCE_SEGMENT         , v as usize),
-            DetailedPrefixes(v)       => (ZydisFormatterProperty::DETAILED_PREFIXES     , v as usize),
-            AddressBase(v)            => (ZydisFormatterProperty::ADDR_BASE             , v as usize),
-            AddressSignedness(v)      => (ZydisFormatterProperty::ADDR_SIGNEDNESS       , v as usize),
-            AddressPaddingAbsolute(v) => (ZydisFormatterProperty::ADDR_PADDING_ABSOLUTE , v as usize),
-            AddressPaddingRelative(v) => (ZydisFormatterProperty::ADDR_PADDING_RELATIVE , v as usize),
-            DisplacementBase(v)       => (ZydisFormatterProperty::DISP_BASE             , v as usize),
-            DisplacementSignedness(v) => (ZydisFormatterProperty::DISP_SIGNEDNESS       , v as usize),
-            DisplacementPadding(v)    => (ZydisFormatterProperty::DISP_PADDING          , v as usize),
-            ImmediateBase(v)          => (ZydisFormatterProperty::IMM_BASE              , v as usize),
-            ImmediateSignedness(v)    => (ZydisFormatterProperty::IMM_SIGNEDNESS        , v as usize),
-            ImmediatePadding(v)       => (ZydisFormatterProperty::IMM_PADDING           , v as usize),
-            DecPrefix(Some(v))        => (ZydisFormatterProperty::DEC_PREFIX            , v.as_ptr() as usize),
-            DecPrefix(_)              => (ZydisFormatterProperty::DEC_PREFIX            , 0),
-            DecSuffix(Some(v))        => (ZydisFormatterProperty::DEC_SUFFIX            , v.as_ptr() as usize),
-            DecSuffix(_)              => (ZydisFormatterProperty::DEC_SUFFIX            , 0),
-            HexUppercase(v)           => (ZydisFormatterProperty::HEX_UPPERCASE         , v as usize),
-            HexPrefix(Some(v))        => (ZydisFormatterProperty::HEX_PREFIX            , v.as_ptr() as usize),
-            HexPrefix(_)              => (ZydisFormatterProperty::HEX_PREFIX            , 0),
-            HexSuffix(Some(v))        => (ZydisFormatterProperty::HEX_SUFFIX            , v.as_ptr() as usize),
-            HexSuffix(_)              => (ZydisFormatterProperty::HEX_SUFFIX            , 0),
+            ForceSize(v)              => (ZydisFormatterProperty::FORCE_SIZE              , v as usize),
+            ForceSegment(v)           => (ZydisFormatterProperty::FORCE_SEGMENT           , v as usize),
+            ForceRelativeBranches(v)  => (ZydisFormatterProperty::FORCE_RELATIVE_BRANCHES , v as usize),
+            ForceRelativeRiprel(v)    => (ZydisFormatterProperty::FORCE_RELATIVE_RIPREL   , v as usize),
+            PrintBranchSize(v)        => (ZydisFormatterProperty::PRINT_BRANCH_SIZE       , v as usize),
+            DetailedPrefixes(v)       => (ZydisFormatterProperty::DETAILED_PREFIXES       , v as usize),
+            AddressBase(v)            => (ZydisFormatterProperty::ADDR_BASE               , v as usize),
+            AddressSignedness(v)      => (ZydisFormatterProperty::ADDR_SIGNEDNESS         , v as usize),
+            AddressPaddingAbsolute(v) => (ZydisFormatterProperty::ADDR_PADDING_ABSOLUTE   , v as usize),
+            AddressPaddingRelative(v) => (ZydisFormatterProperty::ADDR_PADDING_RELATIVE   , v as usize),
+            DisplacementBase(v)       => (ZydisFormatterProperty::DISP_BASE               , v as usize),
+            DisplacementSignedness(v) => (ZydisFormatterProperty::DISP_SIGNEDNESS         , v as usize),
+            DisplacementPadding(v)    => (ZydisFormatterProperty::DISP_PADDING            , v as usize),
+            ImmediateBase(v)          => (ZydisFormatterProperty::IMM_BASE                , v as usize),
+            ImmediateSignedness(v)    => (ZydisFormatterProperty::IMM_SIGNEDNESS          , v as usize),
+            ImmediatePadding(v)       => (ZydisFormatterProperty::IMM_PADDING             , v as usize),
+            UppercasePrefixes(v)      => (ZydisFormatterProperty::UPPERCASE_PREFIXES      , v as usize),
+            UppercaseMnemonic(v)      => (ZydisFormatterProperty::UPPERCASE_MNEMONIC      , v as usize),
+            UppercaseRegisters(v)     => (ZydisFormatterProperty::UPPERCASE_REGISTERS     , v as usize),
+            UppercaseTypecasts(v)     => (ZydisFormatterProperty::UPPERCASE_TYPECASTS     , v as usize),
+            UppercaseDecorators(v)    => (ZydisFormatterProperty::UPPERCASE_DECORATORS    , v as usize),
+            DecPrefix(Some(v))        => (ZydisFormatterProperty::DEC_PREFIX              , v.as_ptr() as usize),
+            DecPrefix(_)              => (ZydisFormatterProperty::DEC_PREFIX              , 0),
+            DecSuffix(Some(v))        => (ZydisFormatterProperty::DEC_SUFFIX              , v.as_ptr() as usize),
+            DecSuffix(_)              => (ZydisFormatterProperty::DEC_SUFFIX              , 0),
+            HexUppercase(v)           => (ZydisFormatterProperty::HEX_UPPERCASE           , v as usize),
+            HexPrefix(Some(v))        => (ZydisFormatterProperty::HEX_PREFIX              , v.as_ptr() as usize),
+            HexPrefix(_)              => (ZydisFormatterProperty::HEX_PREFIX              , 0),
+            HexSuffix(Some(v))        => (ZydisFormatterProperty::HEX_SUFFIX              , v.as_ptr() as usize),
+            HexSuffix(_)              => (ZydisFormatterProperty::HEX_SUFFIX              , 0),
         };
 
         unsafe {
@@ -644,7 +622,6 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    // TODO: Explain this
     /// The recommended amount of memory to allocate is 256 bytes.
     pub fn tokenize_instruction<'b>(
         &self,
@@ -658,6 +635,39 @@ impl<'a> Formatter<'a> {
             check!(ZydisFormatterTokenizeInstructionEx(
                 &self.formatter,
                 instruction,
+                buffer.as_mut_ptr() as *mut _,
+                buffer.len(),
+                ip_to_runtime_addr(ip),
+                &mut token,
+                match user_data {
+                    None => ptr::null_mut(),
+                    Some(mut x) => user_data_to_c_void(&mut x),
+                }
+            ))?;
+
+            if token.is_null() {
+                Err(Status::User)
+            } else {
+                Ok(&*token)
+            }
+        }
+    }
+
+    /// Tokenizes the given operand at the `index` of the given `instruction`.
+    pub fn tokenize_operand<'b>(
+        &self,
+        instruction: &DecodedInstruction,
+        index: u8,
+        buffer: &'b mut [u8],
+        ip: Option<u64>,
+        user_data: Option<&mut dyn Any>,
+    ) -> Result<&'b FormatterToken<'b>> {
+        unsafe {
+            let mut token = mem::uninitialized();
+            check!(ZydisFormatterTokenizeOperandEx(
+                &self.formatter,
+                instruction,
+                index,
                 buffer.as_mut_ptr() as *mut _,
                 buffer.len(),
                 ip_to_runtime_addr(ip),

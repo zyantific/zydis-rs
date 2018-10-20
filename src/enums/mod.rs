@@ -40,15 +40,7 @@ impl Register {
     /// assert_eq!(0, Register::RAX.get_id());
     /// ```
     pub fn get_id(self) -> u8 {
-        unsafe {
-            match ffi::ZydisRegisterGetId(self) {
-                x if x < 0 || x > 255 => panic!(
-                    "should not be reachable, register enum is wrong or user casted wrong value \
-                     to register enum"
-                ),
-                x => x as u8,
-            }
-        }
+        unsafe { ffi::ZydisRegisterGetId(self) as u8 }
     }
 
     /// Returns the register-class of this register.
@@ -89,6 +81,19 @@ impl Register {
     pub fn get_width(self, mode: MachineMode) -> ffi::RegisterWidth {
         unsafe { ffi::ZydisRegisterGetWidth(mode, self) }
     }
+
+    /// Returns the largest enclosing register of the given register.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::{Register, MachineMode};
+    ///
+    /// let reg = Register::EAX.get_largest_enclosing(MachineMode::Long64);
+    /// assert_eq!(reg, Register::RAX);
+    /// ```
+    pub fn get_largest_enclosing(self, mode: MachineMode) -> Register {
+        unsafe { ffi::ZydisRegisterGetLargestEnclosing(mode, self) }
+    }
 }
 
 impl RegisterClass {
@@ -102,6 +107,11 @@ impl RegisterClass {
     /// ```
     pub fn encode(self, id: u8) -> Register {
         unsafe { ffi::ZydisRegisterEncode(self, id) }
+    }
+
+    /// Returns the width of the specified register-class.
+    pub fn get_width(self, mode: MachineMode) -> ffi::RegisterWidth {
+        unsafe { ffi::ZydisRegisterClassGetWidth(mode, self) }
     }
 }
 
@@ -195,9 +205,11 @@ pub const FORMATTER_STYLE_MAX_VALUE: FormatterStyle = FormatterStyle::IntelMasm;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ZydisFormatterProperty {
-    UPPERCASE,
     FORCE_SIZE,
     FORCE_SEGMENT,
+    FORCE_RELATIVE_BRANCHES,
+    FORCE_RELATIVE_RIPREL,
+    PRINT_BRANCH_SIZE,
     DETAILED_PREFIXES,
     ADDR_BASE,
     ADDR_SIGNEDNESS,
@@ -209,6 +221,11 @@ pub enum ZydisFormatterProperty {
     IMM_BASE,
     IMM_SIGNEDNESS,
     IMM_PADDING,
+    UPPERCASE_PREFIXES,
+    UPPERCASE_MNEMONIC,
+    UPPERCASE_REGISTERS,
+    UPPERCASE_TYPECASTS,
+    UPPERCASE_DECORATORS,
     DEC_PREFIX,
     DEC_SUFFIX,
     HEX_UPPERCASE,
@@ -269,7 +286,7 @@ pub enum HookType {
     PRINT_ADDRESS_REL,
     PRINT_DISP,
     PRINT_IMM,
-    PRINT_SIZE,
+    PRINT_TYPECAST,
     PRINT_PREFIXES,
     PRINT_DECORATOR,
 }
@@ -674,6 +691,7 @@ pub const TOKEN_DISPLACEMENT: Token = Token(0xA);
 pub const TOKEN_IMMEDIATE: Token = Token(0xB);
 pub const TOKEN_TYPECAST: Token = Token(0xC);
 pub const TOKEN_DECORATOR: Token = Token(0xD);
+pub const TOKEN_SYMBOL: Token = Token(0xE);
 /// The base for user defined tokens.
 pub const TOKEN_USER: Token = Token(0x80);
 
@@ -704,6 +722,16 @@ impl fmt::Display for Token {
     }
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserilaize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub enum BranchType {
+    NONE,
+    SHORT,
+    NEAR,
+    FAR,
+}
+
 bitflags! {
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
@@ -717,8 +745,6 @@ bitflags! {
         const HAS_MVEX                  = 1 << 6;
         const IS_RELATIVE               = 1 << 7;
         const IS_PRIVILIGED             = 1 << 8;
-        const IS_FAR_BRANCH             = 1 << 36;
-        const CPUFLAG_ACCESS            = 1 << 37;
         const ACCEPTS_LOCK              = 1 << 9;
         const ACCEPTS_REP               = 1 << 10;
         const ACCEPTS_REPE              = 1 << 11;
@@ -757,5 +783,12 @@ bitflags! {
             | InstructionAttributes::HAS_SEGMENT_GS.bits;
         const HAS_OPERANDSIZE           = 1 << 34;
         const HAS_ADDRESSIZE            = 1 << 35;
+        const CPUFLAG_ACCESS            = 1 << 36;
+        const CPU_STATE_CR              = 1 << 37;
+        const CPU_STATE_CW              = 1 << 38;
+        const FPU_STATE_CR              = 1 << 39;
+        const FPU_STATE_CW              = 1 << 40;
+        const XMM_STATE_CR              = 1 << 41;
+        const XMM_STATE_CW              = 1 << 42;
     }
 }
