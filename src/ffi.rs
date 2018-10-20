@@ -926,9 +926,7 @@ extern "C" {
 
     pub fn ZydisRegisterGetClass(register: Register) -> RegisterClass;
 
-    pub fn ZydisRegisterGetWidth(register: Register) -> RegisterWidth;
-
-    pub fn ZydisRegisterGetWidth64(register: Register) -> RegisterWidth;
+    pub fn ZydisRegisterGetWidth(mode: MachineMode, register: Register) -> RegisterWidth;
 
     pub fn ZydisRegisterGetString(register: Register) -> *const c_char;
 

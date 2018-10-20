@@ -81,26 +81,13 @@ impl Register {
     ///
     /// # Examples
     /// ```
-    /// use zydis::Register;
+    /// use zydis::{Register, MachineMode};
     ///
-    /// let width = Register::DR0.get_width();
+    /// let width = Register::DR0.get_width(MachineMode::Legacy32);
     /// assert_eq!(32, width);
     /// ```
-    pub fn get_width(self) -> ffi::RegisterWidth {
-        unsafe { ffi::ZydisRegisterGetWidth(self) }
-    }
-
-    /// Returns the width of this register in 64-bit mode, in bits.
-    ///
-    /// # Examples
-    /// ```
-    /// use zydis::Register;
-    ///
-    /// let width = Register::DR0.get_width64();
-    /// assert_eq!(64, width);
-    /// ```
-    pub fn get_width64(self) -> ffi::RegisterWidth {
-        unsafe { ffi::ZydisRegisterGetWidth64(self) }
+    pub fn get_width(self, mode: MachineMode) -> ffi::RegisterWidth {
+        unsafe { ffi::ZydisRegisterGetWidth(mode, self) }
     }
 }
 
