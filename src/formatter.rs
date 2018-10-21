@@ -253,7 +253,7 @@ pub enum FormatterProperty<'a> {
     HexSuffix(Option<&'a CStr>),
 }
 
-pub fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
+fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
     (x as *mut &mut dyn Any) as *mut c_void
 }
 
@@ -632,24 +632,21 @@ impl<'a> Formatter<'a> {
     ) -> Result<&'b FormatterToken<'b>> {
         unsafe {
             let mut token = mem::uninitialized();
-            check!(ZydisFormatterTokenizeInstructionEx(
-                &self.formatter,
-                instruction,
-                buffer.as_mut_ptr() as *mut _,
-                buffer.len(),
-                ip_to_runtime_addr(ip),
-                &mut token,
-                match user_data {
-                    None => ptr::null_mut(),
-                    Some(mut x) => user_data_to_c_void(&mut x),
-                }
-            ))?;
-
-            if token.is_null() {
-                Err(Status::User)
-            } else {
-                Ok(&*token)
-            }
+            check!(
+                ZydisFormatterTokenizeInstructionEx(
+                    &self.formatter,
+                    instruction,
+                    buffer.as_mut_ptr() as *mut _,
+                    buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    &mut token,
+                    match user_data {
+                        None => ptr::null_mut(),
+                        Some(mut x) => user_data_to_c_void(&mut x),
+                    }
+                ),
+                &*token
+            )
         }
     }
 
@@ -664,25 +661,22 @@ impl<'a> Formatter<'a> {
     ) -> Result<&'b FormatterToken<'b>> {
         unsafe {
             let mut token = mem::uninitialized();
-            check!(ZydisFormatterTokenizeOperandEx(
-                &self.formatter,
-                instruction,
-                index,
-                buffer.as_mut_ptr() as *mut _,
-                buffer.len(),
-                ip_to_runtime_addr(ip),
-                &mut token,
-                match user_data {
-                    None => ptr::null_mut(),
-                    Some(mut x) => user_data_to_c_void(&mut x),
-                }
-            ))?;
-
-            if token.is_null() {
-                Err(Status::User)
-            } else {
-                Ok(&*token)
-            }
+            check!(
+                ZydisFormatterTokenizeOperandEx(
+                    &self.formatter,
+                    instruction,
+                    index,
+                    buffer.as_mut_ptr() as *mut _,
+                    buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    &mut token,
+                    match user_data {
+                        None => ptr::null_mut(),
+                        Some(mut x) => user_data_to_c_void(&mut x),
+                    }
+                ),
+                &*token
+            )
         }
     }
 

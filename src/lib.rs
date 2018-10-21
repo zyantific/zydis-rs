@@ -39,7 +39,7 @@ pub use ffi::{
     FormatterToken, InstructionIterator,
 };
 pub use formatter::{
-    user_data_to_c_void, Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc,
-    WrappedGeneralFunc, WrappedRegisterFunc,
+    Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
+    WrappedRegisterFunc,
 };
 pub use status::{Result, Status};

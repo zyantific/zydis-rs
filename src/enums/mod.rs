@@ -695,7 +695,7 @@ pub const TOKEN_SYMBOL: Token = Token(0xE);
 /// The base for user defined tokens.
 pub const TOKEN_USER: Token = Token(0x80);
 
-static TOKEN_NAMES: [&'static str; 0xE] = [
+static TOKEN_NAMES: [&'static str; 0xF] = [
     "invalid",
     "whitespace",
     "delimiter",
@@ -710,11 +710,12 @@ static TOKEN_NAMES: [&'static str; 0xE] = [
     "immediate",
     "typecast",
     "decorator",
+    "symbol",
 ];
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.0 <= 0xD {
+        if self.0 <= 0xE {
             write!(f, "{}", TOKEN_NAMES[self.0 as usize])
         } else {
             write!(f, "<unknown>")
