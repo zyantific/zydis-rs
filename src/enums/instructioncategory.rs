@@ -56,6 +56,7 @@ pub enum InstructionCategory {
     MOVDIR,
     MPX,
     NOP,
+    PADLOCK,
     PCLMULQDQ,
     PCONFIG,
     PKU,
@@ -97,11 +98,11 @@ pub enum InstructionCategory {
     X87_ALU,
     XOP,
     XSAVE,
-    XSAVEOPT,
+    XSAVEOPT
 }
 
 /// The last value of the `InstructionCategory` enum
 pub const CATEGORY_MAX_VALUE: InstructionCategory = InstructionCategory::XSAVEOPT;
 
 /// The number of values in the `InstructionCategory` enum
-pub const CATEGORY_COUNT: usize = 95;
+pub const CATEGORY_COUNT: usize = 96;

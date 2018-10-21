@@ -38,6 +38,7 @@ pub enum ISAExt {
     MOVBE,
     MOVDIR,
     MPX,
+    PADLOCK,
     PAUSE,
     PCLMULQDQ,
     PCONFIG,
@@ -73,11 +74,11 @@ pub enum ISAExt {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES,
+    XSAVES
 }
 
 /// The last value of the `ISAExt` enum
 pub const ISA_EXT_MAX_VALUE: ISAExt = ISAExt::XSAVES;
 
 /// The number of values in the `ISAExt` enum
-pub const ISA_EXT_COUNT: usize = 71;
+pub const ISA_EXT_COUNT: usize = 72;

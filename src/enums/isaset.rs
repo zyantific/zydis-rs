@@ -106,6 +106,10 @@ pub enum ISASet {
     MOVBE,
     MOVDIR,
     MPX,
+    PADLOCK_ACE,
+    PADLOCK_PHE,
+    PADLOCK_PMM,
+    PADLOCK_RNG,
     PAUSE,
     PCLMULQDQ,
     PCONFIG,
@@ -153,11 +157,11 @@ pub enum ISASet {
     XSAVE,
     XSAVEC,
     XSAVEOPT,
-    XSAVES,
+    XSAVES
 }
 
 /// The last value of the `ISASet` enum
 pub const ISA_SET_MAX_VALUE: ISASet = ISASet::XSAVES;
 
 /// The number of values in the `ISASet` enum
-pub const ISA_SET_COUNT: usize = 151;
+pub const ISA_SET_COUNT: usize = 155;

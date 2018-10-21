@@ -416,6 +416,7 @@ pub enum Mnemonic {
     MINSS,
     MONITOR,
     MONITORX,
+    MONTMUL,
     MOV,
     MOVAPD,
     MOVAPS,
@@ -1572,6 +1573,11 @@ pub enum Mnemonic {
     XADD,
     XBEGIN,
     XCHG,
+    XCRYPT_CBC,
+    XCRYPT_CFB,
+    XCRYPT_CTR,
+    XCRYPT_ECB,
+    XCRYPT_OFB,
     XEND,
     XGETBV,
     XLAT,
@@ -1591,11 +1597,14 @@ pub enum Mnemonic {
     XSAVES,
     XSAVES64,
     XSETBV,
-    XTEST,
+    XSHA1,
+    XSHA256,
+    XSTORE,
+    XTEST
 }
 
 /// The last value of the `Mnemonic` enum
 pub const MNEMONIC_MAX_VALUE: Mnemonic = Mnemonic::XTEST;
 
 /// The number of values in the `Mnemonic` enum
-pub const MNEMONIC_COUNT: usize = 1589;
+pub const MNEMONIC_COUNT: usize = 1598;
