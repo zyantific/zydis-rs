@@ -33,7 +33,7 @@ pub enum Hook {
 }
 
 impl Hook {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     pub fn to_id(&self) -> HookType {
         use self::Hook::*;
         match self {
@@ -74,7 +74,7 @@ impl Hook {
         }
     }
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     pub unsafe fn from_raw(id: HookType, cb: *const c_void) -> Hook {
         use self::Hook::*;
         match id {
@@ -100,7 +100,7 @@ impl Hook {
     }
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type WrappedGeneralFunc = dyn Fn(
     &Formatter,
     &mut FormatterBuffer,
@@ -108,7 +108,7 @@ pub type WrappedGeneralFunc = dyn Fn(
     Option<&mut dyn Any>
 ) -> Result<()>;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type WrappedRegisterFunc = dyn Fn(
     &Formatter,
     &mut FormatterBuffer,
@@ -117,7 +117,7 @@ pub type WrappedRegisterFunc = dyn Fn(
     Option<&mut dyn Any>
 ) -> Result<()>;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type WrappedDecoratorFunc = dyn Fn(
     &Formatter,
     &mut FormatterBuffer,
@@ -498,7 +498,7 @@ impl<'a> Formatter<'a> {
     }
 
     /// Sets the given FormatterProperty on this formatter instance.
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {

@@ -4,7 +4,6 @@
 
 extern crate core;
 
-#[macro_use]
 extern crate bitflags;
 
 #[cfg(feature = "serialization")]

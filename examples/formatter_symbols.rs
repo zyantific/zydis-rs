@@ -1,14 +1,14 @@
-#[macro_use]
 extern crate zydis;
 
 use zydis::{
-    ffi, AddressWidth, Decoder, Formatter, FormatterBuffer, FormatterContext, FormatterProperty,
-    FormatterStyle, Hook, MachineMode, OutputBuffer, Result as ZydisResult, Status, TOKEN_SYMBOL,
+    check, ffi, AddressWidth, Decoder, Formatter, FormatterBuffer, FormatterContext,
+    FormatterProperty, FormatterStyle, Hook, MachineMode, OutputBuffer, Result as ZydisResult,
+    Status, TOKEN_SYMBOL,
 };
 
 use std::{any::Any, fmt::Write, mem};
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const CODE: &'static [u8] = &[
     0x48, 0x8B, 0x05, 0x39, 0x00, 0x13, 0x00, // mov rax, qword ptr ds:[<SomeModule.SomeData>]
     0x50,                                     // push rax

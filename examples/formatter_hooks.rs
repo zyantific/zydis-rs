@@ -2,14 +2,14 @@
 
 #![deny(bare_trait_objects)]
 
-#[macro_use]
 extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
+use zydis::check;
 use zydis::*;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 static CODE: &'static [u8] = &[
     // cmpps xmm1, xmm4, 0x03
     0x0F, 0xC2, 0xCC, 0x03,

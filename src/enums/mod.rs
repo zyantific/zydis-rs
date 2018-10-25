@@ -5,6 +5,8 @@
 // sometimes use UPPERCASE where it makes sense.
 #![allow(non_camel_case_types)]
 
+use bitflags::bitflags;
+
 pub mod instructioncategory;
 pub mod isaext;
 pub mod isaset;

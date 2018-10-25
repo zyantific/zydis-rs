@@ -4,7 +4,7 @@ Zydis Rust Bindings
 Rust language bindings for the [Zydis library](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler.
 
 ## Building
-Please make sure you have at least Rust 1.28 installed. Then, just invoke:
+Please make sure you have at least Rust 1.30 installed. Then, just invoke:
 
 ```
 cargo build
@@ -26,7 +26,7 @@ extern crate zydis;
 
 use zydis::*;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 static CODE: &'static [u8] = &[
     0x51, 0x8D, 0x45, 0xFF, 0x50, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08,
     0xFF, 0x15, 0xA0, 0xA5, 0x48, 0x76, 0x85, 0xC0, 0x0F, 0x88, 0xFC,

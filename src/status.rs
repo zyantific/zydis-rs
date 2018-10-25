@@ -17,7 +17,7 @@ macro_rules! make_status {
     };
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[derive(Copy, Clone, Eq, PartialEq)]
 // TODO: Once stable
 //#[non_exhaustive]

@@ -14,20 +14,20 @@ use super::{
     status::{Result, Status},
 };
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type FormatterFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
     *mut FormatterBuffer,
     *mut FormatterContext) -> Status>;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type FormatterDecoratorFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
     *mut FormatterBuffer,
     *mut FormatterContext,
     Decorator) -> Status>;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub type FormatterRegisterFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
     *mut FormatterBuffer,
