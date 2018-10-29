@@ -1,5 +1,7 @@
 extern crate cmake;
 
+use std::env;
+
 fn build_library() {
     let mut config = cmake::Config::new("zydis-c");
 
@@ -9,11 +11,28 @@ fn build_library() {
 
     let dst = config.build();
 
-    println!("cargo:rustc-link-search=native={}/build", dst.display());
+    let target = env::var("TARGET").unwrap_or("(unknown)".to_string());
+    let profile = env::var("PROFILE").unwrap_or("(unknown)".to_string());
+    let is_msvc = target.ends_with("windows-msvc");
+
+    let relative_build_dir = if is_msvc {
+        // ref: https://docs.rs/cmake/0.1.24/src/cmake/lib.rs.html#323
+        match &profile[..] {
+            "bench" | "release" => "Release",
+            _ => "Debug",
+        }
+    } else { "" };
+
     println!(
-        "cargo:rustc-link-search=native={}/build/dependencies/zycore",
-        dst.display()
+        "cargo:rustc-link-search=native={}/build/{}",
+        dst.display(),
+        relative_build_dir);
+    println!(
+        "cargo:rustc-link-search=native={}/build/dependencies/zycore/{}",
+        dst.display(),
+        relative_build_dir
     );
+
     println!("cargo:rustc-link-lib=static=Zydis");
     println!("cargo:rustc-link-lib=static=Zycore");
 }
