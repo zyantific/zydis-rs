@@ -725,7 +725,7 @@ impl fmt::Display for Token {
     }
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserilaize, Serialize))]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum BranchType {
