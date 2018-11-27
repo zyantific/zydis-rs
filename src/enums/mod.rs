@@ -75,7 +75,7 @@ impl Register {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{Register, MachineMode};
+    /// use zydis::{MachineMode, Register};
     ///
     /// let width = Register::DR0.get_width(MachineMode::Legacy32);
     /// assert_eq!(32, width);
@@ -88,7 +88,7 @@ impl Register {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{Register, MachineMode};
+    /// use zydis::{MachineMode, Register};
     ///
     /// let reg = Register::EAX.get_largest_enclosing(MachineMode::Long64);
     /// assert_eq!(reg, Register::RAX);
@@ -747,7 +747,7 @@ bitflags! {
         const HAS_EVEX                  = 1 << 5;
         const HAS_MVEX                  = 1 << 6;
         const IS_RELATIVE               = 1 << 7;
-        const IS_PRIVILIGED             = 1 << 8;
+        const IS_PRIVILEGED             = 1 << 8;
         const ACCEPTS_LOCK              = 1 << 9;
         const ACCEPTS_REP               = 1 << 10;
         const ACCEPTS_REPE              = 1 << 11;
