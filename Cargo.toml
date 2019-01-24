@@ -10,6 +10,7 @@ description = "Bindings for Zydis"
 license     = "MIT"
 keywords    = ["disassembler", "x86", "amd64", "decoder"]
 repository  = "https://github.com/zyantific/zydis-rs/"
+edition     = "2018"
 
 [build-dependencies]
 cmake = "0.1"
