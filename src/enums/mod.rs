@@ -381,6 +381,7 @@ pub enum OperandEncoding {
     DISP8,
     DISP16,
     DISP32,
+    DISP64,
     DISP16_32_64,
     DISP32_32_64,
     DISP16_32_32,
@@ -793,5 +794,19 @@ bitflags! {
         const FPU_STATE_CW              = 1 << 40;
         const XMM_STATE_CR              = 1 << 41;
         const XMM_STATE_CW              = 1 << 42;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn test_encoding() {
+        const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
+
+        let decoder = Decoder::new(MachineMode::LongCompat32, AddressWidth::_32).unwrap();
+        let (insn, _) = decoder.instruction_iterator(CODE, 0x0).next().unwrap();
+        assert_eq!(insn.operands[0].encoding, OperandEncoding::JIMM16_32_32);
     }
 }
