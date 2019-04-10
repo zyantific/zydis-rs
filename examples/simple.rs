@@ -11,7 +11,7 @@ static CODE: &'static [u8] = &[
 
 fn main() -> Result<()> {
     let formatter = Formatter::new(FormatterStyle::Intel)?;
-    let decoder = Decoder::new(MachineMode::LongCompat32, AddressWidth::_32)?;
+    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
 
     // Our actual buffer.
     let mut buffer = [0u8; 200];
