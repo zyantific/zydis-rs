@@ -1,5 +1,5 @@
 //! Provides type aliases, struct definitions and the unsafe function
-//! declrations.
+//! declarations.
 
 use core::{fmt, marker::PhantomData, mem, slice};
 

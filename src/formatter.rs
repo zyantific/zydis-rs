@@ -138,7 +138,7 @@ macro_rules! wrapped_hook_setter{
         /// It returns the previous set *raw* hook.
         pub fn $func_name(&mut self, new_func: Box<$field_type>) -> Result<Hook> {
             self.$field_name = Some(new_func);
-            self.set_raw_hook($constructor(Some($dispatch_func)))
+            unsafe { self.set_raw_hook($constructor(Some($dispatch_func))) }
         }
     };
 }
@@ -557,17 +557,17 @@ impl<'a> Formatter<'a> {
     /// # Examples
     /// ```
     /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode, OutputBuffer};
-    /// static INT3: &'static [u8] = &[0xCCu8];
+    /// static INT3: &'static [u8] = &[0xCC];
     ///
-    /// let mut buffer = vec![0; 200];
+    /// let mut buffer = [0u8; 200];
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
     ///
-    /// let info = dec.decode(INT3).unwrap().unwrap();
+    /// let insn = dec.decode(INT3).unwrap().unwrap();
     /// formatter
-    ///     .format_instruction(&info, &mut buffer, Some(0), None)
+    ///     .format_instruction(&insn, &mut buffer, Some(0), None)
     ///     .unwrap();
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
@@ -654,6 +654,28 @@ impl<'a> Formatter<'a> {
     }
 
     /// Tokenizes the given operand at the `index` of the given `instruction`.
+    /// See also the `tokens` example in the `examples` directory.
+    ///
+    /// # Examples
+    /// ```
+    /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode, TOKEN_REGISTER};
+    /// // push rcx
+    /// static PUSH: &'static [u8] = &[0x51];
+    ///
+    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
+    ///
+    /// let mut buffer = [0; 256];
+    ///
+    /// let insn = dec.decode(PUSH).unwrap().unwrap();
+    /// let (ty, val) = formatter
+    ///     .tokenize_operand(&insn, 0, &mut buffer[..], None, None)
+    ///     .unwrap()
+    ///     .get_value()
+    ///     .unwrap();
+    /// assert_eq!(ty, TOKEN_REGISTER);
+    /// assert_eq!(val, "rcx");
+    /// ```
     pub fn tokenize_operand<'b>(
         &self,
         instruction: &DecodedInstruction,
@@ -690,17 +712,48 @@ impl<'a> Formatter<'a> {
     /// wrapping occurs, your callback will receive raw pointers. You might want
     /// to consider using any of the wrapped variants instead.
     ///
-    /// Be careful when accessing the `user_data` parameter in the raw hooks.
-    /// It's type is `*mut &mut Any`.
-    pub fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
-        unsafe {
-            let mut cb = hook.to_raw();
-            let hook_id = hook.to_id();
+    /// To use the raw hooks set by this function when formatting, use the
+    /// functinos in `zydis::ffi`. For example:
+    ///
+    /// ```
+    /// use zydis::{
+    ///     ffi::ZydisFormatterFormatInstructionEx, AddressWidth, Decoder, Formatter, FormatterStyle,
+    ///     MachineMode, Status,
+    /// };
+    /// static INT3: &'static [u8] = &[0xCC];
+    ///
+    /// let mut buffer = [0u8; 200];
+    ///
+    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
+    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    ///
+    /// let insn = dec.decode(INT3).unwrap().unwrap();
+    /// unsafe {
+    ///     let status = ZydisFormatterFormatInstructionEx(
+    ///         &formatter as *const Formatter as *const _,
+    ///         &insn,
+    ///         buffer.as_mut_ptr() as *mut _,
+    ///         200,                  // buffer size
+    ///         0,                    // runtime address
+    ///         std::ptr::null_mut(), // arbitrary user data passed directly to the hooks.
+    ///     );
+    ///     assert_eq!(status, Status::Success);
+    /// }
+    /// assert_eq!(&buffer[..4], b"int3");
+    /// assert_eq!(buffer[4], 0);
+    /// ```
+    ///
+    /// # Safety
+    ///
+    /// When using any of the wrapped functions here (i.e. `format_instruction`)
+    /// the `user_data` parameters of the hook has the type `*mut &mut Any`.
+    pub unsafe fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
+        let mut cb = hook.to_raw();
+        let hook_id = hook.to_id();
 
-            check!(
-                ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb),
-                Hook::from_raw(hook_id, cb)
-            )
-        }
+        check!(
+            ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb),
+            Hook::from_raw(hook_id, cb)
+        )
     }
 }
