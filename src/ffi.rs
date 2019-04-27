@@ -754,7 +754,6 @@ pub struct Prefix {
     pub value: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct RegisterContext {
     pub values: [u64; crate::enums::REGISTER_MAX_VALUE + 1],
