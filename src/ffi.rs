@@ -461,6 +461,23 @@ impl DecodedInstruction {
         }
     }
 
+    /// Behaves like `calc_absolute_address`, but takes runtime-known values of
+    /// registers passed in the `context` into account.
+    pub fn calc_absolute_address_ex(
+        &self,
+        address: u64,
+        operand: &DecodedOperand,
+        context: &RegisterContext,
+    ) -> Result<u64> {
+        unsafe {
+            let mut addr = 0u64;
+            check!(
+                ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr),
+                addr
+            )
+        }
+    }
+
     /// Returns a mask of CPU-flags that match the given `action`.
     pub fn get_flags(&self, action: CPUFlagAction) -> Result<CPUFlag> {
         unsafe {
@@ -737,6 +754,12 @@ pub struct Prefix {
     pub value: u8,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[repr(C)]
+pub struct RegisterContext {
+    pub values: [u64; crate::enums::REGISTER_MAX_VALUE + 1],
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct ZydisFormatter {
@@ -876,7 +899,15 @@ extern "C" {
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         runtime_address: u64,
-        target_address: *mut u64,
+        result_address: *mut u64,
+    ) -> Status;
+
+    pub fn ZydisCalcAbsoluteAddressEx(
+        instruction: *const DecodedInstruction,
+        operand: *const DecodedOperand,
+        runtime_address: u64,
+        register_context: *const RegisterContext,
+        result_address: *mut u64,
     ) -> Status;
 
     pub fn ZydisGetAccessedFlagsByAction(
