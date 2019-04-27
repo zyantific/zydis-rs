@@ -28,33 +28,35 @@ pub enum Hook {
     PrintDisp(FormatterFunc),
     PrintImm(FormatterFunc),
     PrintTypecast(FormatterFunc),
+    PrintSegment(FormatterFunc),
     PrintPrefixes(FormatterFunc),
     PrintDecorator(FormatterDecoratorFunc),
 }
 
 impl Hook {
     #[rustfmt::skip]
-    pub fn to_id(&self) -> HookType {
+    pub fn to_id(&self) -> FormatterFunction {
         use self::Hook::*;
         match self {
-            PreInstruction(_)    => HookType::PRE_INSTRUCTION,
-            PostInstruction(_)   => HookType::POST_INSTRUCTION,
-            PreOperand(_)        => HookType::PRE_OPERAND,
-            PostOperand(_)       => HookType::POST_OPERAND,
-            FormatInstruction(_) => HookType::FORMAT_INSTRUCTION,
-            FormatOperandReg(_)  => HookType::FORMAT_OPERAND_REG,
-            FormatOperandMem(_)  => HookType::FORMAT_OPERAND_MEM,
-            FormatOperandPtr(_)  => HookType::FORMAT_OPERAND_PTR,
-            FormatOperandImm(_)  => HookType::FORMAT_OPERAND_IMM,
-            PrintMnemonic(_)     => HookType::PRINT_MNEMONIC,
-            PrintRegister(_)     => HookType::PRINT_REGISTER,
-            PrintAddressAbs(_)   => HookType::PRINT_ADDRESS_ABS,
-            PrintAddressRel(_)   => HookType::PRINT_ADDRESS_REL,
-            PrintDisp(_)         => HookType::PRINT_DISP,
-            PrintImm(_)          => HookType::PRINT_IMM,
-            PrintTypecast(_)     => HookType::PRINT_TYPECAST,
-            PrintPrefixes(_)     => HookType::PRINT_PREFIXES,
-            PrintDecorator(_)    => HookType::PRINT_DECORATOR,
+            PreInstruction(_)    => FormatterFunction::PRE_INSTRUCTION,
+            PostInstruction(_)   => FormatterFunction::POST_INSTRUCTION,
+            PreOperand(_)        => FormatterFunction::PRE_OPERAND,
+            PostOperand(_)       => FormatterFunction::POST_OPERAND,
+            FormatInstruction(_) => FormatterFunction::FORMAT_INSTRUCTION,
+            FormatOperandReg(_)  => FormatterFunction::FORMAT_OPERAND_REG,
+            FormatOperandMem(_)  => FormatterFunction::FORMAT_OPERAND_MEM,
+            FormatOperandPtr(_)  => FormatterFunction::FORMAT_OPERAND_PTR,
+            FormatOperandImm(_)  => FormatterFunction::FORMAT_OPERAND_IMM,
+            PrintMnemonic(_)     => FormatterFunction::PRINT_MNEMONIC,
+            PrintRegister(_)     => FormatterFunction::PRINT_REGISTER,
+            PrintAddressAbs(_)   => FormatterFunction::PRINT_ADDRESS_ABS,
+            PrintAddressRel(_)   => FormatterFunction::PRINT_ADDRESS_REL,
+            PrintDisp(_)         => FormatterFunction::PRINT_DISP,
+            PrintImm(_)          => FormatterFunction::PRINT_IMM,
+            PrintTypecast(_)     => FormatterFunction::PRINT_TYPECAST,
+            PrintSegment(_)      => FormatterFunction::PRINT_SEGMENT,
+            PrintPrefixes(_)     => FormatterFunction::PRINT_PREFIXES,
+            PrintDecorator(_)    => FormatterFunction::PRINT_DECORATOR,
         }
     }
 
@@ -67,7 +69,7 @@ impl Hook {
             | PrintMnemonic(x) | PreOperand(x) | PostOperand(x) | FormatOperandReg(x)
             | FormatOperandMem(x) | FormatOperandPtr(x) | FormatOperandImm(x)
             | PrintAddressAbs(x) | PrintAddressRel(x) | PrintDisp(x) | PrintImm(x)
-            | PrintTypecast(x) => mem::transmute(x),
+            | PrintTypecast(x) | PrintSegment(x) => mem::transmute(x),
 
             PrintRegister(x) => mem::transmute(x),
             PrintDecorator(x) => mem::transmute(x),
@@ -75,27 +77,28 @@ impl Hook {
     }
 
     #[rustfmt::skip]
-    pub unsafe fn from_raw(id: HookType, cb: *const c_void) -> Hook {
+    pub unsafe fn from_raw(id: FormatterFunction, cb: *const c_void) -> Hook {
         use self::Hook::*;
         match id {
-            HookType::PRE_INSTRUCTION    => PreInstruction(mem::transmute(cb)),
-            HookType::POST_INSTRUCTION   => PostInstruction(mem::transmute(cb)),
-            HookType::FORMAT_INSTRUCTION => FormatInstruction(mem::transmute(cb)),
-            HookType::PRE_OPERAND        => PreOperand(mem::transmute(cb)),
-            HookType::POST_OPERAND       => PostOperand(mem::transmute(cb)),
-            HookType::FORMAT_OPERAND_REG => FormatOperandReg(mem::transmute(cb)),
-            HookType::FORMAT_OPERAND_MEM => FormatOperandMem(mem::transmute(cb)),
-            HookType::FORMAT_OPERAND_PTR => FormatOperandPtr(mem::transmute(cb)),
-            HookType::FORMAT_OPERAND_IMM => FormatOperandImm(mem::transmute(cb)),
-            HookType::PRINT_MNEMONIC     => PrintMnemonic(mem::transmute(cb)),
-            HookType::PRINT_REGISTER     => PrintRegister(mem::transmute(cb)),
-            HookType::PRINT_ADDRESS_ABS  => PrintAddressAbs(mem::transmute(cb)),
-            HookType::PRINT_ADDRESS_REL  => PrintAddressRel(mem::transmute(cb)),
-            HookType::PRINT_DISP         => PrintDisp(mem::transmute(cb)),
-            HookType::PRINT_IMM          => PrintImm(mem::transmute(cb)),
-            HookType::PRINT_TYPECAST     => PrintTypecast(mem::transmute(cb)),
-            HookType::PRINT_PREFIXES     => PrintPrefixes(mem::transmute(cb)),
-            HookType::PRINT_DECORATOR    => PrintDecorator(mem::transmute(cb)),
+            FormatterFunction::PRE_INSTRUCTION    => PreInstruction(mem::transmute(cb)),
+            FormatterFunction::POST_INSTRUCTION   => PostInstruction(mem::transmute(cb)),
+            FormatterFunction::FORMAT_INSTRUCTION => FormatInstruction(mem::transmute(cb)),
+            FormatterFunction::PRE_OPERAND        => PreOperand(mem::transmute(cb)),
+            FormatterFunction::POST_OPERAND       => PostOperand(mem::transmute(cb)),
+            FormatterFunction::FORMAT_OPERAND_REG => FormatOperandReg(mem::transmute(cb)),
+            FormatterFunction::FORMAT_OPERAND_MEM => FormatOperandMem(mem::transmute(cb)),
+            FormatterFunction::FORMAT_OPERAND_PTR => FormatOperandPtr(mem::transmute(cb)),
+            FormatterFunction::FORMAT_OPERAND_IMM => FormatOperandImm(mem::transmute(cb)),
+            FormatterFunction::PRINT_MNEMONIC     => PrintMnemonic(mem::transmute(cb)),
+            FormatterFunction::PRINT_REGISTER     => PrintRegister(mem::transmute(cb)),
+            FormatterFunction::PRINT_ADDRESS_ABS  => PrintAddressAbs(mem::transmute(cb)),
+            FormatterFunction::PRINT_ADDRESS_REL  => PrintAddressRel(mem::transmute(cb)),
+            FormatterFunction::PRINT_DISP         => PrintDisp(mem::transmute(cb)),
+            FormatterFunction::PRINT_IMM          => PrintImm(mem::transmute(cb)),
+            FormatterFunction::PRINT_TYPECAST     => PrintTypecast(mem::transmute(cb)),
+            FormatterFunction::PRINT_SEGMENT      => PrintSegment(mem::transmute(cb)),
+            FormatterFunction::PRINT_PREFIXES     => PrintPrefixes(mem::transmute(cb)),
+            FormatterFunction::PRINT_DECORATOR    => PrintDecorator(mem::transmute(cb)),
         }
     }
 }
@@ -559,8 +562,8 @@ impl<'a> Formatter<'a> {
     /// let mut buffer = vec![0; 200];
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
-    /// let formatter = Formatter::new(FormatterStyle::Intel).unwrap();
-    /// let dec = Decoder::new(MachineMode::Long64, AddressWidth::_64).unwrap();
+    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
+    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
     ///
     /// let info = dec.decode(INT3).unwrap().unwrap();
     /// formatter

@@ -14,7 +14,7 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
 
     for (insn, ip) in decoder.instruction_iterator(CODE, 0) {
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
@@ -26,10 +26,10 @@ fn main() -> Result<()> {
 
             // Obtain offsets for relevant operands, skip others.
             let (dyn_offs, dyn_len) = match op.ty {
-                OperandType::Memory if op.mem.disp.has_displacement => {
+                OperandType::MEMORY if op.mem.disp.has_displacement => {
                     (insn.raw.disp_offset, insn.raw.disp_size)
                 }
-                OperandType::Immediate if op.imm.is_relative => {
+                OperandType::IMMEDIATE if op.imm.is_relative => {
                     (insn.raw.imm[op_idx].offset, insn.raw.imm[op_idx].size)
                 }
                 _ => continue,

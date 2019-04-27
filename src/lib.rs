@@ -27,11 +27,10 @@ pub use enums::{
     InstructionAttributes, InstructionCategory, InstructionEncoding, InstructionSegment,
     MachineMode, MaskMode, MemoryOperandType, Mnemonic, NumericBase, OpcodeMap, OperandAction,
     OperandEncoding, OperandType, OperandVisibility, Padding, PrefixType, Register, RegisterClass,
-    RoundingMode, Signedness, SwizzleMode, Token, OPERAND_ACTION_MASK_READ,
-    OPERAND_ACTION_MASK_WRITE, TOKEN_ADDRESS_ABS, TOKEN_ADDRESS_REL, TOKEN_DECORATOR,
-    TOKEN_DELIMITER, TOKEN_DISPLACEMENT, TOKEN_IMMEDIATE, TOKEN_INVALID, TOKEN_MNEMONIC,
-    TOKEN_PARENTHESIS_CLOSE, TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER, TOKEN_SYMBOL,
-    TOKEN_TYPECAST, TOKEN_USER, TOKEN_WHITESPACE,
+    RoundingMode, Signedness, SwizzleMode, Token, TOKEN_ADDRESS_ABS, TOKEN_ADDRESS_REL,
+    TOKEN_DECORATOR, TOKEN_DELIMITER, TOKEN_DISPLACEMENT, TOKEN_IMMEDIATE, TOKEN_INVALID,
+    TOKEN_MNEMONIC, TOKEN_PARENTHESIS_CLOSE, TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER,
+    TOKEN_SYMBOL, TOKEN_TYPECAST, TOKEN_USER, TOKEN_WHITESPACE,
 };
 pub use ffi::{
     get_version, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext,

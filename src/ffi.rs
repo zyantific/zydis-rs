@@ -273,7 +273,7 @@ impl Decoder {
     /// ```
     /// use zydis::{AddressWidth, Decoder, MachineMode, Mnemonic};
     /// static INT3: &'static [u8] = &[0xCC];
-    /// let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64).unwrap();
+    /// let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
     ///
     /// let instruction = decoder.decode(INT3).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
@@ -955,7 +955,7 @@ extern "C" {
 
     pub fn ZydisFormatterSetHook(
         formatter: *mut ZydisFormatter,
-        hook: HookType,
+        hook: FormatterFunction,
         callback: *mut *const c_void,
     ) -> Status;
 
@@ -1032,7 +1032,7 @@ extern "C" {
         length: usize,
         runtime_address: u64,
         token: *mut *const FormatterToken,
-        user_data: *mut c_void
+        user_data: *mut c_void,
     ) -> Status;
 
     pub fn ZydisFormatterTokenGetValue(

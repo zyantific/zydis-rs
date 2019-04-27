@@ -10,8 +10,8 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
-    let formatter = Formatter::new(FormatterStyle::Intel)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
+    let formatter = Formatter::new(FormatterStyle::INTEL)?;
 
     let mut buffer = [0u8; 256];
 

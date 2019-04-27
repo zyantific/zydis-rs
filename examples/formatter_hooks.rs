@@ -6,8 +6,7 @@ extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::check;
-use zydis::*;
+use zydis::{check, *};
 
 #[rustfmt::skip]
 static CODE: &'static [u8] = &[
@@ -53,7 +52,7 @@ fn print_mnemonic(
 
             let count = instruction.operand_count as usize;
 
-            if count > 0 && instruction.operands[count - 1].ty == OperandType::Immediate {
+            if count > 0 && instruction.operands[count - 1].ty == OperandType::IMMEDIATE {
                 let cc = instruction.operands[count - 1].imm.value as usize;
 
                 match instruction.mnemonic {
@@ -116,7 +115,7 @@ fn format_operand_imm(
 fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
-    let mut formatter = Formatter::new(FormatterStyle::Intel)?;
+    let mut formatter = Formatter::new(FormatterStyle::INTEL)?;
     formatter.set_property(FormatterProperty::ForceSegment(true))?;
     formatter.set_property(FormatterProperty::ForceSize(true))?;
 
@@ -125,7 +124,7 @@ fn main() -> Result<()> {
     // set h as suffix
     formatter.set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
 
-    let decoder = Decoder::new(MachineMode::Long64, AddressWidth::_64)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
 
     let mut buffer = [0u8; 200];
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
