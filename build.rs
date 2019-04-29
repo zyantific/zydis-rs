@@ -85,6 +85,20 @@ fn build_library() {
         .define("ZYDIS_BUILD_EXAMPLES", "OFF")
         .define("ZYDIS_BUILD_TOOLS", "OFF");
 
+    if cfg!(feature = "no_libc") {
+        config.define("ZYAN_NO_LIBC", "ON");
+    }
+
+    if cfg!(feature = "wasm") {
+        config.define(
+            "CMAKE_TOOLCHAIN_FILE",
+            &format!(
+                "{}/zydis-c/dependencies/zycore/WASMToolchain.cmake",
+                env::current_dir().unwrap().display()
+            ),
+        );
+    }
+
     let dst = config.build();
 
     let target = env::var("TARGET").unwrap_or("(unknown)".to_string());

@@ -71,6 +71,7 @@ pub enum Status {
     // Don't use this, it is used so that you always have a `_` in all match patterns, because
     // otherwise we could hit undefined behaviour.
     #[doc(hidden)]
+    #[allow(overflowing_literals)]
     __NoExhaustiveMatching__ = 0xFFFFFFFF,
 }
 
