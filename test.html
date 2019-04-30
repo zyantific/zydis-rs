@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>zydis-rs wasm test</title>
+  </head>
+  <body>
+    <script>
+      async function load_wasm() {
+          const name = document.querySelector("#wasm_name").value;
+          const importObject = {
+              "env": {},
+          };
+          const obj = await WebAssembly.instantiateStreaming(fetch(name), importObject);
+          console.log(obj.instance.exports);
+          obj.instance.exports.main();
+      }
+    </script>
+
+    <input id="wasm_name" value="target/wasm32-unknown-unknown/debug/examples/simple.wasm"/>
+    <button onclick="load_wasm()">Load WASM File</button>
+  </body>
+</html>
