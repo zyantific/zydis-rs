@@ -37,10 +37,10 @@ steps:
   condition: eq(variables['Agent.OS'], 'Windows_NT')
 
 ### Build zydis-rs.
-- script: cargo build
+- script: cargo build --features serialization
   displayName: 'Building zydis-rs'
 
 
 ### Run tests.
-- script: cargo test
+- script: cargo test --features serialization
   displayName: 'Running tests'
