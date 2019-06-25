@@ -53,7 +53,7 @@ impl<'a> FormatterToken<'a> {
             let mut val = mem::uninitialized();
             check!(ZydisFormatterTokenGetValue(self, &mut ty, &mut val))?;
 
-            let val = CStr::from_ptr(val as *const i8)
+            let val = CStr::from_ptr(val as _)
                 .to_str()
                 .map_err(|_| Status::NotUTF8)?;
 
@@ -62,9 +62,9 @@ impl<'a> FormatterToken<'a> {
     }
 
     /// Returns the next token.
-    pub fn next(&self) -> Result<&FormatterToken<'a>> {
+    pub fn next(&self) -> Result<&'a Self> {
         unsafe {
-            let mut res = self as *const FormatterToken;
+            let mut res = self as *const _;
             check!(ZydisFormatterTokenNext(&mut res))?;
 
             if res.is_null() {
@@ -113,7 +113,7 @@ impl FormatterBuffer {
     /// The returned string always refers to the literal value of the most
     /// recently added token and remains valid after calling `append` or
     /// `restore`.
-    pub fn get_string<'a>(&'a mut self) -> Result<&'a mut ZyanString> {
+    pub fn get_string(&mut self) -> Result<&mut ZyanString> {
         unsafe {
             let mut str = mem::uninitialized();
             check!(ZydisFormatterBufferGetString(self, &mut str))?;
@@ -127,7 +127,7 @@ impl FormatterBuffer {
     }
 
     /// Returns the most recently added `FormatterToken`.
-    pub fn get_token<'a>(&'a self) -> Result<&'a FormatterToken<'a>> {
+    pub fn get_token(&self) -> Result<&FormatterToken<'_>> {
         unsafe {
             let mut res = mem::uninitialized();
             check!(ZydisFormatterBufferGetToken(self, &mut res), &*res)
@@ -316,7 +316,7 @@ pub struct InstructionIterator<'a, 'b> {
     ip: u64,
 }
 
-impl<'a, 'b> Iterator for InstructionIterator<'a, 'b> {
+impl Iterator for InstructionIterator<'_, '_> {
     type Item = (DecodedInstruction, u64);
 
     fn next(&mut self) -> Option<Self::Item> {
