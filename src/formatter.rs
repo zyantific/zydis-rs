@@ -1,6 +1,6 @@
 //! Textual instruction formatting routines.
 
-use core::{any::Any, fmt, marker::PhantomData, mem, ptr};
+use core::{any::Any, fmt, mem, ptr};
 
 use std::{ffi::CStr, os::raw::c_void};
 
@@ -281,13 +281,13 @@ impl<'a> OutputBuffer<'a> {
 
     /// Gets a string from this buffer.
     pub fn as_str(&self) -> Result<&'a str> {
-        unsafe { CStr::from_ptr(self.buffer.as_ptr() as *const i8) }
+        unsafe { CStr::from_ptr(self.buffer.as_ptr() as _) }
             .to_str()
             .map_err(|_| Status::NotUTF8)
     }
 }
 
-impl<'a> fmt::Display for OutputBuffer<'a> {
+impl fmt::Display for OutputBuffer<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = self.as_str().map_err(|_| fmt::Error)?;
         write!(f, "{}", str)
@@ -297,7 +297,7 @@ impl<'a> fmt::Display for OutputBuffer<'a> {
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].
-pub struct Formatter<'a> {
+pub struct Formatter {
     formatter: ZydisFormatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc>>,
@@ -318,11 +318,9 @@ pub struct Formatter<'a> {
     print_typecast: Option<Box<WrappedGeneralFunc>>,
     print_prefixes: Option<Box<WrappedGeneralFunc>>,
     print_decorator: Option<Box<WrappedDecoratorFunc>>,
-
-    _p: PhantomData<&'a ()>,
 }
 
-impl<'a> Formatter<'a> {
+impl Formatter {
     wrapped_hook_setter!(
         pre_instruction,
         WrappedGeneralFunc,
@@ -493,8 +491,6 @@ impl<'a> Formatter<'a> {
                     print_typecast: None,
                     print_prefixes: None,
                     print_decorator: None,
-
-                    _p: PhantomData,
                 }
             )
         }
@@ -502,7 +498,7 @@ impl<'a> Formatter<'a> {
 
     /// Sets the given FormatterProperty on this formatter instance.
     #[rustfmt::skip]
-    pub fn set_property(&mut self, prop: FormatterProperty<'a>) -> Result<()> {
+    pub fn set_property(&mut self, prop: FormatterProperty<'_>) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
             ForceSize(v)              => (ZydisFormatterProperty::FORCE_SIZE              , v as usize),
@@ -626,13 +622,13 @@ impl<'a> Formatter<'a> {
     }
 
     /// The recommended amount of memory to allocate is 256 bytes.
-    pub fn tokenize_instruction<'b>(
+    pub fn tokenize_instruction<'a>(
         &self,
         instruction: &DecodedInstruction,
-        buffer: &'b mut [u8],
+        buffer: &'a mut [u8],
         ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
-    ) -> Result<&'b FormatterToken<'b>> {
+    ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
             let mut token = mem::uninitialized();
             check!(
@@ -676,14 +672,14 @@ impl<'a> Formatter<'a> {
     /// assert_eq!(ty, TOKEN_REGISTER);
     /// assert_eq!(val, "rcx");
     /// ```
-    pub fn tokenize_operand<'b>(
+    pub fn tokenize_operand<'a>(
         &self,
         instruction: &DecodedInstruction,
         index: u8,
-        buffer: &'b mut [u8],
+        buffer: &'a mut [u8],
         ip: Option<u64>,
         user_data: Option<&mut dyn Any>,
-    ) -> Result<&'b FormatterToken<'b>> {
+    ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
             let mut token = mem::uninitialized();
             check!(
