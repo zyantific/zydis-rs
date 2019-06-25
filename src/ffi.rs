@@ -53,7 +53,7 @@ impl<'a> FormatterToken<'a> {
             let mut val = mem::uninitialized();
             check!(ZydisFormatterTokenGetValue(self, &mut ty, &mut val))?;
 
-            let val = CStr::from_ptr(val as _)
+            let val = CStr::from_ptr(val as *const _)
                 .to_str()
                 .map_err(|_| Status::NotUTF8)?;
 
