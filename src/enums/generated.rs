@@ -2103,6 +2103,8 @@ pub const OPERAND_VISIBILITY_MAX_VALUE: usize = 3;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum OperandAction {
+    /// No action.
+    NONE = 0,
     /// The operand is read by the instruction.
     READ = 1,
     /// The operand is written by the instruction (must write).
