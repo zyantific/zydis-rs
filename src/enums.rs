@@ -165,6 +165,23 @@ impl fmt::Display for Token {
 bitflags! {
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
+    pub struct OperandAction: u32 {
+        const READ =  1;
+        const WRITE = 2;
+        const CONDREAD = 4;
+        const CONDWRITE = 8;
+        const READWRITE = 3;
+        const CONDREAD_CONDWRITE = 12;
+        const READ_CONDWRITE = 9;
+        const CONDREAD_WRITE = 6;
+        const MASK_READ = 5;
+        const MASK_WRITE = 10;
+    }
+}
+
+bitflags! {
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+    #[repr(transparent)]
     pub struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;
         const HAS_SIB                   = 1 << 1;

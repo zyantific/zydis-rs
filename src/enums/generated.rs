@@ -2098,39 +2098,6 @@ pub enum OperandVisibility {
 
 pub const OPERAND_VISIBILITY_MAX_VALUE: usize = 3;
 
-/// Defines the `ZydisOperandAction` enum.
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(C)]
-pub enum OperandAction {
-    /// No action.
-    NONE = 0,
-    /// The operand is read by the instruction.
-    READ = 1,
-    /// The operand is written by the instruction (must write).
-    WRITE = 2,
-    /// The operand is conditionally read by the instruction.
-    CONDREAD = 4,
-    /// The operand is conditionally written by the instruction (may write).
-    CONDWRITE = 8,
-    /// The operand is read (must read) and written by the instruction (must
-    /// write).
-    READWRITE = 3,
-    /// The operand is conditionally read (may read) and conditionally written
-    /// by the instruction (may write).
-    CONDREAD_CONDWRITE = 12,
-    /// The operand is read (must read) and conditionally written by the
-    /// instruction (may write).
-    READ_CONDWRITE = 9,
-    /// The operand is written (must write) and conditionally read by the
-    /// instruction (may read).
-    CONDREAD_WRITE = 6,
-    /// Mask combining all reading access flags.
-    MASK_READ = 5,
-    /// Mask combining all writing access flags.
-    MASK_WRITE = 10,
-}
-
 /// Defines the `ZydisInstructionEncoding` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
