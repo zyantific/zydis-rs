@@ -36,11 +36,14 @@ steps:
   displayName: "Install rust (windows)"
   condition: eq(variables['Agent.OS'], 'Windows_NT')
 
+### Update rust.
+- script: rustup update stable
+  displayName: 'Updating rust'
+
 ### Build zydis-rs.
-- script: cargo build --features serialization
+- script: cargo build
   displayName: 'Building zydis-rs'
 
-
 ### Run tests.
-- script: cargo test --features serialization
+- script: cargo test
   displayName: 'Running tests'
