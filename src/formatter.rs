@@ -630,7 +630,7 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
-            let mut token = mem::uninitialized();
+            let mut token = mem::MaybeUninit::uninit();
             check!(
                 ZydisFormatterTokenizeInstructionEx(
                     &self.formatter,
@@ -638,13 +638,13 @@ impl Formatter {
                     buffer.as_mut_ptr() as *mut _,
                     buffer.len(),
                     ip_to_runtime_addr(ip),
-                    &mut token,
+                    token.as_mut_ptr(),
                     match user_data {
                         None => ptr::null_mut(),
                         Some(mut x) => user_data_to_c_void(&mut x),
                     }
                 ),
-                &*token
+                &*{ token.assume_init() }
             )
         }
     }
@@ -681,7 +681,7 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
-            let mut token = mem::uninitialized();
+            let mut token = mem::MaybeUninit::uninit();
             check!(
                 ZydisFormatterTokenizeOperandEx(
                     &self.formatter,
@@ -690,13 +690,13 @@ impl Formatter {
                     buffer.as_mut_ptr() as *mut _,
                     buffer.len(),
                     ip_to_runtime_addr(ip),
-                    &mut token,
+                    token.as_mut_ptr(),
                     match user_data {
                         None => ptr::null_mut(),
                         Some(mut x) => user_data_to_c_void(&mut x),
                     }
                 ),
-                &*token
+                &* { token.assume_init() }
             )
         }
     }
