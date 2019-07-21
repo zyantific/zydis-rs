@@ -1,6 +1,11 @@
 //! Textual instruction formatting routines.
 
-use core::{any::Any, fmt, mem, ptr};
+use core::{
+    any::Any,
+    fmt,
+    mem::{self, MaybeUninit},
+    ptr,
+};
 
 use std::{ffi::CStr, os::raw::c_void};
 
@@ -468,11 +473,11 @@ impl Formatter {
     /// Creates a new formatter instance.
     pub fn new(style: FormatterStyle) -> Result<Self> {
         unsafe {
-            let mut formatter = mem::uninitialized();
+            let mut formatter = MaybeUninit::uninit();
             check!(
-                ZydisFormatterInit(&mut formatter, style as _,),
+                ZydisFormatterInit(formatter.as_mut_ptr(), style as _,),
                 Formatter {
-                    formatter,
+                    formatter: formatter.assume_init(),
                     pre_instruction: None,
                     post_instruction: None,
                     pre_operand: None,
@@ -630,7 +635,7 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
-            let mut token = mem::MaybeUninit::uninit();
+            let mut token = MaybeUninit::uninit();
             check!(
                 ZydisFormatterTokenizeInstructionEx(
                     &self.formatter,
@@ -681,7 +686,7 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
         unsafe {
-            let mut token = mem::MaybeUninit::uninit();
+            let mut token = MaybeUninit::uninit();
             check!(
                 ZydisFormatterTokenizeOperandEx(
                     &self.formatter,
@@ -696,7 +701,7 @@ impl Formatter {
                         Some(mut x) => user_data_to_c_void(&mut x),
                     }
                 ),
-                &* { token.assume_init() }
+                &*{ token.assume_init() }
             )
         }
     }

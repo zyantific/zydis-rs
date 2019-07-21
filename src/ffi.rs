@@ -1,7 +1,7 @@
 //! Provides type aliases, struct definitions and the unsafe function
 //! declarations.
 
-use core::{fmt, marker::PhantomData, mem, slice};
+use core::{fmt, marker::PhantomData, mem::MaybeUninit, slice};
 
 // TODO: use libc maybe, or wait for this to move into core?
 use std::{
@@ -49,15 +49,19 @@ impl<'a> FormatterToken<'a> {
     /// Returns the value and type of this token.
     pub fn get_value(&self) -> Result<(Token, &'a str)> {
         unsafe {
-            let mut ty = mem::uninitialized();
-            let mut val = mem::uninitialized();
-            check!(ZydisFormatterTokenGetValue(self, &mut ty, &mut val))?;
+            let mut ty = MaybeUninit::uninit();
+            let mut val = MaybeUninit::uninit();
+            check!(ZydisFormatterTokenGetValue(
+                self,
+                ty.as_mut_ptr(),
+                val.as_mut_ptr()
+            ))?;
 
-            let val = CStr::from_ptr(val as *const _)
+            let val = CStr::from_ptr(val.assume_init() as *const _)
                 .to_str()
                 .map_err(|_| Status::NotUTF8)?;
 
-            Ok((ty, val))
+            Ok((ty.assume_init(), val))
         }
     }
 
@@ -115,9 +119,10 @@ impl FormatterBuffer {
     /// `restore`.
     pub fn get_string(&mut self) -> Result<&mut ZyanString> {
         unsafe {
-            let mut str = mem::uninitialized();
-            check!(ZydisFormatterBufferGetString(self, &mut str))?;
+            let mut str = MaybeUninit::uninit();
+            check!(ZydisFormatterBufferGetString(self, str.as_mut_ptr()))?;
 
+            let str = str.assume_init();
             if str.is_null() {
                 Err(Status::User)
             } else {
@@ -129,8 +134,11 @@ impl FormatterBuffer {
     /// Returns the most recently added `FormatterToken`.
     pub fn get_token(&self) -> Result<&FormatterToken<'_>> {
         unsafe {
-            let mut res = mem::uninitialized();
-            check!(ZydisFormatterBufferGetToken(self, &mut res), &*res)
+            let mut res = MaybeUninit::uninit();
+            check!(
+                ZydisFormatterBufferGetToken(self, res.as_mut_ptr()),
+                &*res.assume_init()
+            )
         }
     }
 
@@ -142,8 +150,11 @@ impl FormatterBuffer {
     /// Returns a snapshot of the buffer-state.
     pub fn remember(&self) -> Result<FormatterBufferState> {
         unsafe {
-            let mut res = mem::uninitialized();
-            check!(ZydisFormatterBufferRemember(self, &mut res), res)
+            let mut res = MaybeUninit::uninit();
+            check!(
+                ZydisFormatterBufferRemember(self, res.as_mut_ptr()),
+                res.assume_init()
+            )
         }
     }
 
@@ -176,13 +187,13 @@ impl ZyanString {
     /// Create a new `ZyanString` from a given buffer and a capacity.
     pub fn new_ptr(buffer: *mut u8, capacity: usize) -> Result<Self> {
         unsafe {
-            let mut string = mem::uninitialized();
+            let mut string = MaybeUninit::uninit();
             check!(ZyanStringInitCustomBuffer(
-                &mut string,
+                string.as_mut_ptr(),
                 buffer as *mut i8,
                 capacity
             ))?;
-            Ok(string)
+            Ok(string.assume_init())
         }
     }
 
@@ -217,13 +228,13 @@ impl ZyanStringView {
     /// Creates a string view from the given `buffer`.
     pub fn new(buffer: &[u8]) -> Result<Self> {
         unsafe {
-            let mut view = mem::uninitialized();
+            let mut view = MaybeUninit::uninit();
             check!(ZyanStringViewInsideBufferEx(
-                &mut view,
+                view.as_mut_ptr(),
                 buffer.as_ptr() as *const i8,
                 buffer.len()
             ))?;
-            Ok(view)
+            Ok(view.assume_init())
         }
     }
 }
@@ -254,10 +265,10 @@ impl Decoder {
     /// `address_width`.
     pub fn new(machine_mode: MachineMode, address_width: AddressWidth) -> Result<Self> {
         unsafe {
-            let mut decoder = mem::uninitialized();
+            let mut decoder = MaybeUninit::uninit();
             check!(
-                ZydisDecoderInit(&mut decoder, machine_mode, address_width),
-                decoder
+                ZydisDecoderInit(decoder.as_mut_ptr(), machine_mode, address_width),
+                decoder.assume_init()
             )
         }
     }
@@ -280,15 +291,15 @@ impl Decoder {
     /// ```
     pub fn decode(&self, buffer: &[u8]) -> Result<Option<DecodedInstruction>> {
         unsafe {
-            let mut instruction = mem::uninitialized();
+            let mut instruction = MaybeUninit::uninit();
             check_option!(
                 ZydisDecoderDecodeBuffer(
                     self,
                     buffer.as_ptr() as *const c_void,
                     buffer.len(),
-                    &mut instruction
+                    instruction.as_mut_ptr(),
                 ),
-                instruction
+                instruction.assume_init()
             )
         }
     }
@@ -481,10 +492,10 @@ impl DecodedInstruction {
     /// Returns a mask of CPU-flags that match the given `action`.
     pub fn get_flags(&self, action: CPUFlagAction) -> Result<CPUFlag> {
         unsafe {
-            let mut flags = mem::uninitialized();
+            let mut flags = MaybeUninit::uninit();;
             check!(
-                ZydisGetAccessedFlagsByAction(self, action, &mut flags),
-                flags
+                ZydisGetAccessedFlagsByAction(self, action, flags.as_mut_ptr()),
+                flags.assume_init()
             )
         }
     }
@@ -492,8 +503,11 @@ impl DecodedInstruction {
     /// Returns a mask of CPU-flags that are read (tested) by this instruction.
     pub fn get_flags_read(&self) -> Result<CPUFlag> {
         unsafe {
-            let mut flags = mem::uninitialized();
-            check!(ZydisGetAccessedFlagsRead(self, &mut flags), flags)
+            let mut flags = MaybeUninit::uninit();
+            check!(
+                ZydisGetAccessedFlagsRead(self, flags.as_mut_ptr()),
+                flags.assume_init()
+            )
         }
     }
 
@@ -501,16 +515,22 @@ impl DecodedInstruction {
     /// this instruction.
     pub fn get_flags_written(&self) -> Result<CPUFlag> {
         unsafe {
-            let mut flags = mem::uninitialized();
-            check!(ZydisGetAccessedFlagsWritten(self, &mut flags), flags)
+            let mut flags = MaybeUninit::uninit();
+            check!(
+                ZydisGetAccessedFlagsWritten(self, flags.as_mut_ptr()),
+                flags.assume_init()
+            )
         }
     }
 
     /// Returns offsets and sizes of all logical instruction segments.
     pub fn get_segments(&self) -> Result<InstructionSegments> {
         unsafe {
-            let mut segments = mem::uninitialized();
-            check!(ZydisGetInstructionSegments(self, &mut segments), segments)
+            let mut segments = MaybeUninit::uninit();
+            check!(
+                ZydisGetInstructionSegments(self, segments.as_mut_ptr()),
+                segments.assume_init()
+            )
         }
     }
 }
