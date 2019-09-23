@@ -248,6 +248,7 @@ struct ZyanVector {
     size: usize,
     capacity: usize,
     element_size: usize,
+    destructor: *mut c_void,
     data: *mut c_void,
 }
 
@@ -492,7 +493,7 @@ impl DecodedInstruction {
     /// Returns a mask of CPU-flags that match the given `action`.
     pub fn get_flags(&self, action: CPUFlagAction) -> Result<CPUFlag> {
         unsafe {
-            let mut flags = MaybeUninit::uninit();;
+            let mut flags = MaybeUninit::uninit();
             check!(
                 ZydisGetAccessedFlagsByAction(self, action, flags.as_mut_ptr()),
                 flags.assume_init()
@@ -860,7 +861,8 @@ pub struct FormatterContext {
 pub struct InstructionSegments {
     /// The number of logical instruction segments.
     pub count: u8,
-    pub segments: [InstructionSegmentsElement; 8],
+    // ZYDIS_MAX_INSTRUCTION_SEGMENT_COUNT
+    pub segments: [InstructionSegmentsElement; 9],
 }
 
 impl<'a> IntoIterator for &'a InstructionSegments {
@@ -1088,7 +1090,7 @@ extern "C" {
     pub fn ZydisFormatterTokenGetValue(
         token: *const FormatterToken,
         ty: *mut Token,
-        value: *mut *mut c_char,
+        value: *mut *const c_char,
     ) -> Status;
 
     pub fn ZydisFormatterTokenNext(token: *mut *const FormatterToken) -> Status;

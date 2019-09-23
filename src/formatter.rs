@@ -474,8 +474,7 @@ impl Formatter {
     pub fn new(style: FormatterStyle) -> Result<Self> {
         unsafe {
             let mut formatter = MaybeUninit::uninit();
-            check!(
-                ZydisFormatterInit(formatter.as_mut_ptr(), style as _,),
+            check!(ZydisFormatterInit(formatter.as_mut_ptr(), style as _,), {
                 Formatter {
                     formatter: formatter.assume_init(),
                     pre_instruction: None,
@@ -497,7 +496,7 @@ impl Formatter {
                     print_prefixes: None,
                     print_decorator: None,
                 }
-            )
+            })
         }
     }
 

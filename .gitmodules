@@ -1,4 +1,3 @@
 [submodule "zydis-c"]
 	path = zydis-c
-	url = https://github.com/zyantific/zydis.git
-	branch = develop
+	url = https://github.com/zyantific/zydis
