@@ -14,10 +14,7 @@ Or, probably more common, add a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-# For the latest version
-zydis = { git = "https://github.com/zyantific/zydis-rs"}
-# For version 0.0.3
-zydis = "0.0.3"
+zydis = "3.0"
 ```
 
 ## Example
@@ -73,6 +70,7 @@ fn main() -> Result<()> {
 
 | Bindings | Zydis    |
 | -------- | -------- |
+| v3.0.0   | [v3.0.0](https://github.com/zyantific/zydis/releases/tag/v3.0.0) |
 | v0.0.4   | [v2.0.2](https://github.com/zyantific/zydis/tree/v2.0.2) |
 | v0.0.3   | [v2.0.0-develop@e967510](https://github.com/zyantific/zydis/tree/e967510fb251cf39a3556942b58218a9dcac5554) |
 | v0.0.2   | [v2.0.0-alpha2](https://github.com/zyantific/zydis/tree/v2.0.0-alpha2) |
