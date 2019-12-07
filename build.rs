@@ -85,6 +85,10 @@ fn build_library() {
         .define("ZYDIS_BUILD_EXAMPLES", "OFF")
         .define("ZYDIS_BUILD_TOOLS", "OFF");
 
+    if env::var("CARGO_FEATURE_MINIMAL").is_ok() {
+        config.define("ZYDIS_MINIMAL_MODE", "ON");
+    }
+
     let dst = config.build();
 
     let target = env::var("TARGET").unwrap_or("(unknown)".to_string());
