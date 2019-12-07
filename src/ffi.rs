@@ -47,6 +47,7 @@ pub struct FormatterToken<'a> {
 
 impl<'a> FormatterToken<'a> {
     /// Returns the value and type of this token.
+    #[inline]
     pub fn get_value(&self) -> Result<(Token, &'a str)> {
         unsafe {
             let mut ty = MaybeUninit::uninit();
@@ -66,6 +67,7 @@ impl<'a> FormatterToken<'a> {
     }
 
     /// Returns the next token.
+    #[inline]
     pub fn next(&self) -> Result<&'a Self> {
         unsafe {
             let mut res = self as *const _;
@@ -96,6 +98,7 @@ pub struct FormatterTokenIterator<'a> {
 impl<'a> Iterator for FormatterTokenIterator<'a> {
     type Item = (Token, &'a str);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let res = self.next;
         self.next = self.next.and_then(|x| x.next().ok());
@@ -117,6 +120,7 @@ impl FormatterBuffer {
     /// The returned string always refers to the literal value of the most
     /// recently added token and remains valid after calling `append` or
     /// `restore`.
+    #[inline]
     pub fn get_string(&mut self) -> Result<&mut ZyanString> {
         unsafe {
             let mut str = MaybeUninit::uninit();
@@ -132,6 +136,7 @@ impl FormatterBuffer {
     }
 
     /// Returns the most recently added `FormatterToken`.
+    #[inline]
     pub fn get_token(&self) -> Result<&FormatterToken<'_>> {
         unsafe {
             let mut res = MaybeUninit::uninit();
@@ -143,11 +148,13 @@ impl FormatterBuffer {
     }
 
     /// Appends a new token to this buffer.
+    #[inline]
     pub fn append(&mut self, token: Token) -> Result<()> {
         unsafe { check!(ZydisFormatterBufferAppend(self, token)) }
     }
 
     /// Returns a snapshot of the buffer-state.
+    #[inline]
     pub fn remember(&self) -> Result<FormatterBufferState> {
         unsafe {
             let mut res = MaybeUninit::uninit();
@@ -159,6 +166,7 @@ impl FormatterBuffer {
     }
 
     /// Restores a previously saved buffer-state.
+    #[inline]
     pub fn restore(&mut self, state: FormatterBufferState) -> Result<()> {
         unsafe { check!(ZydisFormatterBufferRestore(self, state)) }
     }
@@ -185,6 +193,7 @@ impl ZyanString {
     }
 
     /// Create a new `ZyanString` from a given buffer and a capacity.
+    #[inline]
     pub fn new_ptr(buffer: *mut u8, capacity: usize) -> Result<Self> {
         unsafe {
             let mut string = MaybeUninit::uninit();
@@ -203,6 +212,7 @@ impl ZyanString {
     /// converted to any other encoding. They're simply copied, byte by
     /// byte, to the buffer. Therefore, the buffer should be interpreted as
     /// UTF-8 when later being printed.
+    #[inline]
     pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
         unsafe {
             let bytes = s.as_ref().as_bytes();
@@ -226,6 +236,7 @@ pub struct ZyanStringView {
 
 impl ZyanStringView {
     /// Creates a string view from the given `buffer`.
+    #[inline]
     pub fn new(buffer: &[u8]) -> Result<Self> {
         unsafe {
             let mut view = MaybeUninit::uninit();
@@ -264,6 +275,7 @@ pub struct Decoder {
 impl Decoder {
     /// Creates a new `Decoder` with the given `machine_mode` and
     /// `address_width`.
+    #[inline]
     pub fn new(machine_mode: MachineMode, address_width: AddressWidth) -> Result<Self> {
         unsafe {
             let mut decoder = MaybeUninit::uninit();
@@ -275,6 +287,7 @@ impl Decoder {
     }
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`:
+    #[inline]
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
         unsafe { check!(ZydisDecoderEnableMode(self, mode, value as _)) }
     }
@@ -290,6 +303,7 @@ impl Decoder {
     /// let instruction = decoder.decode(INT3).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
+    #[inline]
     pub fn decode(&self, buffer: &[u8]) -> Result<Option<DecodedInstruction>> {
         unsafe {
             let mut instruction = MaybeUninit::uninit();
@@ -309,6 +323,7 @@ impl Decoder {
     ///
     /// The iterator ignores all errors and stops producing values in the case
     /// of an error.
+    #[inline]
     pub fn instruction_iterator<'a, 'b>(
         &'a self,
         buffer: &'b [u8],
@@ -331,6 +346,7 @@ pub struct InstructionIterator<'a, 'b> {
 impl Iterator for InstructionIterator<'_, '_> {
     type Item = (DecodedInstruction, u64);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self.decoder.decode(self.buffer) {
             Ok(Some(insn)) => {
@@ -463,6 +479,7 @@ pub struct DecodedInstruction {
 impl DecodedInstruction {
     /// Calculates the absolute address for the given instruction operand,
     /// using the given `address` as the address for this instruction.
+    #[inline]
     pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
         unsafe {
             let mut addr = 0u64;
@@ -475,6 +492,7 @@ impl DecodedInstruction {
 
     /// Behaves like `calc_absolute_address`, but takes runtime-known values of
     /// registers passed in the `context` into account.
+    #[inline]
     pub fn calc_absolute_address_ex(
         &self,
         address: u64,
@@ -502,6 +520,7 @@ impl DecodedInstruction {
     }
 
     /// Returns a mask of CPU-flags that are read (tested) by this instruction.
+    #[inline]
     pub fn get_flags_read(&self) -> Result<CPUFlag> {
         unsafe {
             let mut flags = MaybeUninit::uninit();
@@ -514,6 +533,7 @@ impl DecodedInstruction {
 
     /// Returns a mask of CPU-flags that are written (modified, undefined) by
     /// this instruction.
+    #[inline]
     pub fn get_flags_written(&self) -> Result<CPUFlag> {
         unsafe {
             let mut flags = MaybeUninit::uninit();
@@ -525,6 +545,7 @@ impl DecodedInstruction {
     }
 
     /// Returns offsets and sizes of all logical instruction segments.
+    #[inline]
     pub fn get_segments(&self) -> Result<InstructionSegments> {
         unsafe {
             let mut segments = MaybeUninit::uninit();

@@ -141,6 +141,7 @@ macro_rules! wrapped_hook_setter{
         ///
         /// This function accepts a wrapped version of the raw hook.
         /// It returns the previous set *raw* hook.
+        #[inline]
         pub fn $func_name(&mut self, new_func: Box<$field_type>) -> Result<Hook> {
             self.$field_name = Some(new_func);
             unsafe { self.set_raw_hook($constructor(Some($dispatch_func))) }
@@ -280,11 +281,13 @@ pub struct OutputBuffer<'a> {
 
 impl<'a> OutputBuffer<'a> {
     /// Creates a new `OutputBuffer` using the given `buffer` for storage.
+    #[inline]
     pub fn new(buffer: &'a mut [u8]) -> Self {
         Self { buffer }
     }
 
     /// Gets a string from this buffer.
+    #[inline]
     pub fn as_str(&self) -> Result<&'a str> {
         unsafe { CStr::from_ptr(self.buffer.as_ptr() as _) }
             .to_str()
@@ -571,6 +574,7 @@ impl Formatter {
     ///     .unwrap();
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
+    #[inline]
     pub fn format_instruction(
         &self,
         instruction: &DecodedInstruction,
@@ -601,6 +605,7 @@ impl Formatter {
     ///
     /// `user_data` may contain any data you wish to pass on to the Formatter
     /// hooks.
+    #[inline]
     pub fn format_operand(
         &self,
         instruction: &DecodedInstruction,
@@ -626,6 +631,7 @@ impl Formatter {
     }
 
     /// The recommended amount of memory to allocate is 256 bytes.
+    #[inline]
     pub fn tokenize_instruction<'a>(
         &self,
         instruction: &DecodedInstruction,
@@ -676,6 +682,7 @@ impl Formatter {
     /// assert_eq!(ty, TOKEN_REGISTER);
     /// assert_eq!(val, "rcx");
     /// ```
+    #[inline]
     pub fn tokenize_operand<'a>(
         &self,
         instruction: &DecodedInstruction,
@@ -747,6 +754,7 @@ impl Formatter {
     ///
     /// When using any of the wrapped functions here (i.e. `format_instruction`)
     /// the `user_data` parameters of the hook has the type `*mut &mut Any`.
+    #[inline]
     pub unsafe fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
         let mut cb = hook.to_raw();
         let hook_id = hook.to_id();
