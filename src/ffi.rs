@@ -397,7 +397,7 @@ pub struct DecodedOperand {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryInfo {
-    pub ty: OperandType,
+    pub ty: MemoryOperandType,
     pub segment: Register,
     pub base: Register,
     pub index: Register,
