@@ -2,7 +2,7 @@
 
 /// Defines the `ZydisInstructionCategory` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum InstructionCategory {
     INVALID = 0,
@@ -110,7 +110,7 @@ pub const CATEGORY_MAX_VALUE: usize = 98;
 
 /// Defines the `ZydisISASet` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum ISASet {
     INVALID = 0,
@@ -282,7 +282,7 @@ pub const ISA_SET_MAX_VALUE: usize = 162;
 
 /// Defines the `ZydisISAExt` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum ISAExt {
     INVALID = 0,
@@ -365,7 +365,7 @@ pub const ISA_EXT_MAX_VALUE: usize = 73;
 
 /// Defines the `ZydisMnemonic` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Mnemonic {
     INVALID = 0,
@@ -1980,7 +1980,7 @@ pub const MNEMONIC_MAX_VALUE: usize = 1605;
 
 /// Defines the `ZydisMachineMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum MachineMode {
     /// 64 bit mode.
@@ -2001,7 +2001,7 @@ pub const MACHINE_MODE_MAX_VALUE: usize = 5;
 
 /// Defines the `ZydisAddressWidth` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum AddressWidth {
     _16 = 0,
@@ -2013,7 +2013,7 @@ pub const ADDRESS_WIDTH_MAX_VALUE: usize = 2;
 
 /// Defines the `ZydisElementType` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum ElementType {
     INVALID = 0,
@@ -2041,7 +2041,7 @@ pub const ELEMENT_TYPE_MAX_VALUE: usize = 9;
 
 /// Defines the `ZydisOperandType` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum OperandType {
     /// The operand is not used.
@@ -2060,7 +2060,7 @@ pub const OPERAND_TYPE_MAX_VALUE: usize = 4;
 
 /// Defines the `ZydisOperandEncoding` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum OperandEncoding {
     NONE = 0,
@@ -2104,7 +2104,7 @@ pub const OPERAND_ENCODING_MAX_VALUE: usize = 34;
 
 /// Defines the `ZydisOperandVisibility` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum OperandVisibility {
     INVALID = 0,
@@ -2120,7 +2120,7 @@ pub const OPERAND_VISIBILITY_MAX_VALUE: usize = 3;
 
 /// Defines the `ZydisInstructionEncoding` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum InstructionEncoding {
     /// The instruction uses the legacy encoding.
@@ -2141,7 +2141,7 @@ pub const INSTRUCTION_ENCODING_MAX_VALUE: usize = 5;
 
 /// Defines the `ZydisOpcodeMap` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum OpcodeMap {
     DEFAULT = 0,
@@ -2158,7 +2158,7 @@ pub const OPCODE_MAP_MAX_VALUE: usize = 7;
 
 /// Defines the `ZydisRegister` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Register {
     NONE = 0,
@@ -2424,7 +2424,7 @@ pub const REGISTER_MAX_VALUE: usize = 256;
 
 /// Defines the `ZydisRegisterClass` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum RegisterClass {
     INVALID = 0,
@@ -2468,7 +2468,7 @@ pub const REGCLASS_MAX_VALUE: usize = 17;
 
 /// Defines the `ZydisMemoryOperandType` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum MemoryOperandType {
     INVALID = 0,
@@ -2484,7 +2484,7 @@ pub const MEMOP_TYPE_MAX_VALUE: usize = 3;
 
 /// Defines the `ZydisCPUFlag` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum CPUFlag {
     /// Carry flag.
@@ -2535,7 +2535,7 @@ pub const CPUFLAG_MAX_VALUE: usize = 20;
 
 /// Defines the `ZydisCPUFlagAction` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum CPUFlagAction {
     /// The CPU flag is not touched by the instruction.
@@ -2558,7 +2558,7 @@ pub const CPUFLAG_ACTION_MAX_VALUE: usize = 6;
 
 /// Defines the `ZydisBranchType` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum BranchType {
     /// The instruction is not a branch instruction.
@@ -2575,7 +2575,7 @@ pub const BRANCH_TYPE_MAX_VALUE: usize = 3;
 
 /// Defines the `ZydisExceptionClass` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum ExceptionClass {
     NONE = 0,
@@ -2624,7 +2624,7 @@ pub const EXCEPTION_CLASS_MAX_VALUE: usize = 39;
 
 /// Defines the `ZydisMaskMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum MaskMode {
     INVALID = 0,
@@ -2644,7 +2644,7 @@ pub const MASK_MODE_MAX_VALUE: usize = 5;
 
 /// Defines the `ZydisBroadcastMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum BroadcastMode {
     INVALID = 0,
@@ -2666,7 +2666,7 @@ pub const BROADCAST_MODE_MAX_VALUE: usize = 12;
 
 /// Defines the `ZydisRoundingMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum RoundingMode {
     INVALID = 0,
@@ -2684,7 +2684,7 @@ pub const ROUNDING_MODE_MAX_VALUE: usize = 4;
 
 /// Defines the `ZydisSwizzleMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum SwizzleMode {
     INVALID = 0,
@@ -2702,7 +2702,7 @@ pub const SWIZZLE_MODE_MAX_VALUE: usize = 8;
 
 /// Defines the `ZydisConversionMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum ConversionMode {
     INVALID = 0,
@@ -2717,7 +2717,7 @@ pub const CONVERSION_MODE_MAX_VALUE: usize = 5;
 
 /// Defines the `ZydisPrefixType` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum PrefixType {
     /// The prefix is ignored by the instruction.
@@ -2732,7 +2732,7 @@ pub const PREFIX_TYPE_MAX_VALUE: usize = 2;
 
 /// Defines the `ZydisDecoderMode` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum DecoderMode {
     /// Enables minimal instruction decoding without semantic analysis.
@@ -2759,7 +2759,7 @@ pub const DECODER_MODE_MAX_VALUE: usize = 8;
 
 /// Defines the `ZydisFormatterStyle` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum FormatterStyle {
     /// Generates `AT&T`-style disassembly.
@@ -2836,7 +2836,7 @@ pub const FORMATTER_PROP_MAX_VALUE: usize = 25;
 
 /// Defines the `ZydisNumericBase` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum NumericBase {
     /// Decimal system.
@@ -2849,7 +2849,7 @@ pub const NUMERIC_BASE_MAX_VALUE: usize = 1;
 
 /// Defines the `ZydisSignedness` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Signedness {
     /// Automatically choose the most suitable mode based on the operands `ZydisDecodedOperand.imm.is_signed` attribute.
@@ -2864,7 +2864,7 @@ pub const SIGNEDNESS_MAX_VALUE: usize = 2;
 
 /// Defines the `ZydisPadding` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Padding {
     /// Disables padding.
@@ -2875,7 +2875,7 @@ pub enum Padding {
 
 /// Defines the `ZydisFormatterFunction` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum FormatterFunction {
     /// This function is invoked before the formatter formats an instruction.
@@ -2922,7 +2922,7 @@ pub const FORMATTER_FUNC_MAX_VALUE: usize = 18;
 
 /// Defines the `ZydisDecorator` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Decorator {
     INVALID = 0,
@@ -2946,7 +2946,7 @@ pub const DECORATOR_MAX_VALUE: usize = 7;
 
 /// Defines the `ZydisInstructionSegment` struct.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum InstructionSegment {
     NONE = 0,
@@ -2978,7 +2978,7 @@ pub const INSTR_SEGMENT_MAX_VALUE: usize = 11;
 
 /// Defines the `ZydisFeature` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Feature {
     DECODER = 0,

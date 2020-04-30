@@ -362,7 +362,7 @@ impl Iterator for InstructionIterator<'_, '_> {
 
 /// A decoded operand.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DecodedOperand {
     /// The operand id.
@@ -394,7 +394,7 @@ pub struct DecodedOperand {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct MemoryInfo {
     pub ty: MemoryOperandType,
@@ -406,7 +406,7 @@ pub struct MemoryInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DisplacementInfo {
     /// Signals if displacement is present.
@@ -416,7 +416,7 @@ pub struct DisplacementInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct PointerInfo {
     pub segment: u16,
@@ -424,7 +424,7 @@ pub struct PointerInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ImmediateInfo {
     /// Signals, if the immediate is signed.
@@ -437,7 +437,7 @@ pub struct ImmediateInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DecodedInstruction {
     /// The machine mode used to decode this instruction.
@@ -558,7 +558,7 @@ impl DecodedInstruction {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct AvxInfo {
     /// The `AVX` vector-length.
@@ -588,7 +588,7 @@ pub struct AvxInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct MetaInfo {
     /// The category this instruction belongs to.
@@ -604,7 +604,7 @@ pub struct MetaInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 // For consistency with zydis and the Intel docs.
 #[allow(non_snake_case)]
@@ -766,7 +766,7 @@ pub struct RawInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct RawImmediateInfo {
     /// Signals, if the immediate value is signed.
@@ -787,7 +787,7 @@ pub struct RawImmediateInfo {
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct Prefix {
     /// The type of this prefix.
