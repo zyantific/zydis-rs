@@ -19,6 +19,8 @@ pub mod status;
 pub mod ffi;
 
 pub mod enums;
+
+#[cfg(not(feature = "minimal"))]
 pub mod formatter;
 
 pub use enums::{
@@ -36,6 +38,7 @@ pub use ffi::{
     get_version, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext,
     FormatterToken, InstructionIterator,
 };
+#[cfg(not(feature = "minimal"))]
 pub use formatter::{
     Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
     WrappedRegisterFunc,
