@@ -102,7 +102,7 @@ fn build_library() {
         relative_build_dir
     );
     println!(
-        "cargo:rustc-link-search=native={}/build/dependencies/zycore/{}",
+        "cargo:rustc-link-search=native={}/build/zycore/{}",
         dst.display(),
         relative_build_dir
     );
