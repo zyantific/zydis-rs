@@ -199,7 +199,7 @@ impl ZyanString {
             let mut string = MaybeUninit::uninit();
             check!(ZyanStringInitCustomBuffer(
                 string.as_mut_ptr(),
-                buffer as *mut i8,
+                buffer as *mut _,
                 capacity
             ))?;
             Ok(string.assume_init())
@@ -242,7 +242,7 @@ impl ZyanStringView {
             let mut view = MaybeUninit::uninit();
             check!(ZyanStringViewInsideBufferEx(
                 view.as_mut_ptr(),
-                buffer.as_ptr() as *const i8,
+                buffer.as_ptr() as *const _,
                 buffer.len()
             ))?;
             Ok(view.assume_init())
