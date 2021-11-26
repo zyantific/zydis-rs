@@ -89,6 +89,11 @@ fn build_library() {
         config.define("ZYDIS_MINIMAL_MODE", "ON");
     }
 
+    if env::var("CARGO_FEATURE_NOLIBC").is_ok() {
+        config.define("ZYAN_NO_LIBC", "ON")
+            .define("ZYDIS_NO_LIBC", "ON");
+    }
+
     let dst = config.build();
 
     let target = env::var("TARGET").unwrap_or("(unknown)".to_string());
