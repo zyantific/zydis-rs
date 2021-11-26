@@ -70,8 +70,10 @@ pub enum Status {
     // TODO: For now ...
     // Don't use this, it is used so that you always have a `_` in all match patterns, because
     // otherwise we could hit undefined behaviour.
+    //
+    // 0x7FF... so that this can fit within one isize.
     #[doc(hidden)]
-    __NoExhaustiveMatching__ = 0xFFFFFFFF,
+    __NoExhaustiveMatching__ = 0x7FFFFFFF,
 }
 
 impl Status {
