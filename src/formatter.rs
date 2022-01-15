@@ -134,9 +134,8 @@ pub type WrappedDecoratorFunc = dyn Fn(
     Option<&mut dyn Any>
 ) -> Result<()>;
 
-macro_rules! wrapped_hook_setter{
-    ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr)
-        => {
+macro_rules! wrapped_hook_setter {
+    ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr) => {
         /// Sets the formatter hook to the provided value.
         ///
         /// This function accepts a wrapped version of the raw hook.

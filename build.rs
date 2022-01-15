@@ -90,7 +90,8 @@ fn build_library() {
     }
 
     if env::var("CARGO_FEATURE_NOLIBC").is_ok() {
-        config.define("ZYAN_NO_LIBC", "ON")
+        config
+            .define("ZYAN_NO_LIBC", "ON")
             .define("ZYDIS_NO_LIBC", "ON");
     }
 
