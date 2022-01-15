@@ -583,17 +583,24 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
-            check!(ZydisFormatterFormatInstructionEx(
-                &self.formatter,
-                instruction,
-                buffer.buffer.as_mut_ptr() as *mut _,
-                buffer.buffer.len(),
-                ip_to_runtime_addr(ip),
-                match user_data {
-                    None => ptr::null_mut(),
-                    Some(mut x) => user_data_to_c_void(&mut x),
-                }
-            ))
+            check!(match user_data {
+                Some(mut x) => ZydisFormatterFormatInstructionEx(
+                    &self.formatter,
+                    instruction,
+                    buffer.buffer.as_mut_ptr() as *mut _,
+                    buffer.buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    user_data_to_c_void(&mut x),
+                ),
+                None => ZydisFormatterFormatInstructionEx(
+                    &self.formatter,
+                    instruction,
+                    buffer.buffer.as_mut_ptr() as *mut _,
+                    buffer.buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    ptr::null_mut(),
+                ),
+            })
         }
     }
 
@@ -615,18 +622,26 @@ impl Formatter {
         user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
-            check!(ZydisFormatterFormatOperandEx(
-                &self.formatter,
-                instruction,
-                operand_index,
-                buffer.buffer.as_mut_ptr() as *mut _,
-                buffer.buffer.len(),
-                ip_to_runtime_addr(ip),
-                match user_data {
-                    None => ptr::null_mut(),
-                    Some(mut x) => user_data_to_c_void(&mut x),
-                }
-            ))
+            check!(match user_data {
+                Some(mut x) => ZydisFormatterFormatOperandEx(
+                    &self.formatter,
+                    instruction,
+                    operand_index,
+                    buffer.buffer.as_mut_ptr() as *mut _,
+                    buffer.buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    user_data_to_c_void(&mut x),
+                ),
+                None => ZydisFormatterFormatOperandEx(
+                    &self.formatter,
+                    instruction,
+                    operand_index,
+                    buffer.buffer.as_mut_ptr() as *mut _,
+                    buffer.buffer.len(),
+                    ip_to_runtime_addr(ip),
+                    ptr::null_mut(),
+                ),
+            })
         }
     }
 
@@ -642,18 +657,26 @@ impl Formatter {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ZydisFormatterTokenizeInstructionEx(
-                    &self.formatter,
-                    instruction,
-                    buffer.as_mut_ptr() as *mut _,
-                    buffer.len(),
-                    ip_to_runtime_addr(ip),
-                    token.as_mut_ptr(),
-                    match user_data {
-                        None => ptr::null_mut(),
-                        Some(mut x) => user_data_to_c_void(&mut x),
-                    }
-                ),
+                match user_data {
+                    Some(mut x) => ZydisFormatterTokenizeInstructionEx(
+                        &self.formatter,
+                        instruction,
+                        buffer.as_mut_ptr() as *mut _,
+                        buffer.len(),
+                        ip_to_runtime_addr(ip),
+                        token.as_mut_ptr(),
+                        user_data_to_c_void(&mut x),
+                    ),
+                    None => ZydisFormatterTokenizeInstructionEx(
+                        &self.formatter,
+                        instruction,
+                        buffer.as_mut_ptr() as *mut _,
+                        buffer.len(),
+                        ip_to_runtime_addr(ip),
+                        token.as_mut_ptr(),
+                        ptr::null_mut(),
+                    ),
+                },
                 &*{ token.assume_init() }
             )
         }
@@ -694,19 +717,28 @@ impl Formatter {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ZydisFormatterTokenizeOperandEx(
-                    &self.formatter,
-                    instruction,
-                    index,
-                    buffer.as_mut_ptr() as *mut _,
-                    buffer.len(),
-                    ip_to_runtime_addr(ip),
-                    token.as_mut_ptr(),
-                    match user_data {
-                        None => ptr::null_mut(),
-                        Some(mut x) => user_data_to_c_void(&mut x),
-                    }
-                ),
+                match user_data {
+                    Some(mut x) => ZydisFormatterTokenizeOperandEx(
+                        &self.formatter,
+                        instruction,
+                        index,
+                        buffer.as_mut_ptr() as *mut _,
+                        buffer.len(),
+                        ip_to_runtime_addr(ip),
+                        token.as_mut_ptr(),
+                        user_data_to_c_void(&mut x),
+                    ),
+                    None => ZydisFormatterTokenizeOperandEx(
+                        &self.formatter,
+                        instruction,
+                        index,
+                        buffer.as_mut_ptr() as *mut _,
+                        buffer.len(),
+                        ip_to_runtime_addr(ip),
+                        token.as_mut_ptr(),
+                        ptr::null_mut(),
+                    ),
+                },
                 &*{ token.assume_init() }
             )
         }
