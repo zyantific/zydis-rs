@@ -119,8 +119,6 @@ fn build_library() {
 
 fn main() {
     println!("cargo:rerun-if-changed=zydis-c");
-    println!("cargo:rerun-if-changed=src/ZycoreExportConfig.h");
-    println!("cargo:rerun-if-changed=src/ZydisExportConfig.h");
 
     build_library();
 }

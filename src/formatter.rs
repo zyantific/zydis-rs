@@ -235,6 +235,7 @@ wrap_func!(decorator print_decorator, dispatch_print_decorator);
 pub enum FormatterProperty<'a> {
     ForceSize(bool),
     ForceSegment(bool),
+    ForceScaleOne(bool),
     ForceRelativeBranches(bool),
     ForceRelativeRiprel(bool),
     PrintBranchSize(bool),
@@ -257,6 +258,7 @@ pub enum FormatterProperty<'a> {
     DecPrefix(Option<&'a CStr>),
     DecSuffix(Option<&'a CStr>),
     HexUppercase(bool),
+    HexForceLeadingNumber(bool),
     HexPrefix(Option<&'a CStr>),
     HexSuffix(Option<&'a CStr>),
 }
@@ -507,36 +509,38 @@ impl Formatter {
     pub fn set_property(&mut self, prop: FormatterProperty<'_>) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
-            ForceSize(v)              => (ZydisFormatterProperty::FORCE_SIZE              , v as usize),
-            ForceSegment(v)           => (ZydisFormatterProperty::FORCE_SEGMENT           , v as usize),
-            ForceRelativeBranches(v)  => (ZydisFormatterProperty::FORCE_RELATIVE_BRANCHES , v as usize),
-            ForceRelativeRiprel(v)    => (ZydisFormatterProperty::FORCE_RELATIVE_RIPREL   , v as usize),
-            PrintBranchSize(v)        => (ZydisFormatterProperty::PRINT_BRANCH_SIZE       , v as usize),
-            DetailedPrefixes(v)       => (ZydisFormatterProperty::DETAILED_PREFIXES       , v as usize),
-            AddressBase(v)            => (ZydisFormatterProperty::ADDR_BASE               , v as usize),
-            AddressSignedness(v)      => (ZydisFormatterProperty::ADDR_SIGNEDNESS         , v as usize),
-            AddressPaddingAbsolute(v) => (ZydisFormatterProperty::ADDR_PADDING_ABSOLUTE   , v as usize),
-            AddressPaddingRelative(v) => (ZydisFormatterProperty::ADDR_PADDING_RELATIVE   , v as usize),
-            DisplacementBase(v)       => (ZydisFormatterProperty::DISP_BASE               , v as usize),
-            DisplacementSignedness(v) => (ZydisFormatterProperty::DISP_SIGNEDNESS         , v as usize),
-            DisplacementPadding(v)    => (ZydisFormatterProperty::DISP_PADDING            , v as usize),
-            ImmediateBase(v)          => (ZydisFormatterProperty::IMM_BASE                , v as usize),
-            ImmediateSignedness(v)    => (ZydisFormatterProperty::IMM_SIGNEDNESS          , v as usize),
-            ImmediatePadding(v)       => (ZydisFormatterProperty::IMM_PADDING             , v as usize),
-            UppercasePrefixes(v)      => (ZydisFormatterProperty::UPPERCASE_PREFIXES      , v as usize),
-            UppercaseMnemonic(v)      => (ZydisFormatterProperty::UPPERCASE_MNEMONIC      , v as usize),
-            UppercaseRegisters(v)     => (ZydisFormatterProperty::UPPERCASE_REGISTERS     , v as usize),
-            UppercaseTypecasts(v)     => (ZydisFormatterProperty::UPPERCASE_TYPECASTS     , v as usize),
-            UppercaseDecorators(v)    => (ZydisFormatterProperty::UPPERCASE_DECORATORS    , v as usize),
-            DecPrefix(Some(v))        => (ZydisFormatterProperty::DEC_PREFIX              , v.as_ptr() as usize),
-            DecPrefix(_)              => (ZydisFormatterProperty::DEC_PREFIX              , 0),
-            DecSuffix(Some(v))        => (ZydisFormatterProperty::DEC_SUFFIX              , v.as_ptr() as usize),
-            DecSuffix(_)              => (ZydisFormatterProperty::DEC_SUFFIX              , 0),
-            HexUppercase(v)           => (ZydisFormatterProperty::HEX_UPPERCASE           , v as usize),
-            HexPrefix(Some(v))        => (ZydisFormatterProperty::HEX_PREFIX              , v.as_ptr() as usize),
-            HexPrefix(_)              => (ZydisFormatterProperty::HEX_PREFIX              , 0),
-            HexSuffix(Some(v))        => (ZydisFormatterProperty::HEX_SUFFIX              , v.as_ptr() as usize),
-            HexSuffix(_)              => (ZydisFormatterProperty::HEX_SUFFIX              , 0),
+            ForceSize(v)              => (ZydisFormatterProperty::FORCE_SIZE               , v as usize),
+            ForceSegment(v)           => (ZydisFormatterProperty::FORCE_SEGMENT            , v as usize),
+            ForceScaleOne(v)          => (ZydisFormatterProperty::FORCE_SCALE_ONE          , v as usize),
+            ForceRelativeBranches(v)  => (ZydisFormatterProperty::FORCE_RELATIVE_BRANCHES  , v as usize),
+            ForceRelativeRiprel(v)    => (ZydisFormatterProperty::FORCE_RELATIVE_RIPREL    , v as usize),
+            PrintBranchSize(v)        => (ZydisFormatterProperty::PRINT_BRANCH_SIZE        , v as usize),
+            DetailedPrefixes(v)       => (ZydisFormatterProperty::DETAILED_PREFIXES        , v as usize),
+            AddressBase(v)            => (ZydisFormatterProperty::ADDR_BASE                , v as usize),
+            AddressSignedness(v)      => (ZydisFormatterProperty::ADDR_SIGNEDNESS          , v as usize),
+            AddressPaddingAbsolute(v) => (ZydisFormatterProperty::ADDR_PADDING_ABSOLUTE    , v as usize),
+            AddressPaddingRelative(v) => (ZydisFormatterProperty::ADDR_PADDING_RELATIVE    , v as usize),
+            DisplacementBase(v)       => (ZydisFormatterProperty::DISP_BASE                , v as usize),
+            DisplacementSignedness(v) => (ZydisFormatterProperty::DISP_SIGNEDNESS          , v as usize),
+            DisplacementPadding(v)    => (ZydisFormatterProperty::DISP_PADDING             , v as usize),
+            ImmediateBase(v)          => (ZydisFormatterProperty::IMM_BASE                 , v as usize),
+            ImmediateSignedness(v)    => (ZydisFormatterProperty::IMM_SIGNEDNESS           , v as usize),
+            ImmediatePadding(v)       => (ZydisFormatterProperty::IMM_PADDING              , v as usize),
+            UppercasePrefixes(v)      => (ZydisFormatterProperty::UPPERCASE_PREFIXES       , v as usize),
+            UppercaseMnemonic(v)      => (ZydisFormatterProperty::UPPERCASE_MNEMONIC       , v as usize),
+            UppercaseRegisters(v)     => (ZydisFormatterProperty::UPPERCASE_REGISTERS      , v as usize),
+            UppercaseTypecasts(v)     => (ZydisFormatterProperty::UPPERCASE_TYPECASTS      , v as usize),
+            UppercaseDecorators(v)    => (ZydisFormatterProperty::UPPERCASE_DECORATORS     , v as usize),
+            DecPrefix(Some(v))        => (ZydisFormatterProperty::DEC_PREFIX               , v.as_ptr() as usize),
+            DecPrefix(_)              => (ZydisFormatterProperty::DEC_PREFIX               , 0),
+            DecSuffix(Some(v))        => (ZydisFormatterProperty::DEC_SUFFIX               , v.as_ptr() as usize),
+            DecSuffix(_)              => (ZydisFormatterProperty::DEC_SUFFIX               , 0),
+            HexUppercase(v)           => (ZydisFormatterProperty::HEX_UPPERCASE            , v as usize),
+            HexForceLeadingNumber(v)  => (ZydisFormatterProperty::HEX_FORCE_LEADING_NUMBER , v as usize),
+            HexPrefix(Some(v))        => (ZydisFormatterProperty::HEX_PREFIX               , v.as_ptr() as usize),
+            HexPrefix(_)              => (ZydisFormatterProperty::HEX_PREFIX               , 0),
+            HexSuffix(Some(v))        => (ZydisFormatterProperty::HEX_SUFFIX               , v.as_ptr() as usize),
+            HexSuffix(_)              => (ZydisFormatterProperty::HEX_SUFFIX               , 0),
         };
 
         unsafe {
@@ -558,14 +562,14 @@ impl Formatter {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode, OutputBuffer};
+    /// use zydis::{StackWidth, Decoder, Formatter, FormatterStyle, MachineMode, OutputBuffer};
     /// static INT3: &'static [u8] = &[0xCC];
     ///
     /// let mut buffer = [0u8; 200];
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
-    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
     /// let insn = dec.decode(INT3).unwrap().unwrap();
     /// formatter
@@ -663,11 +667,11 @@ impl Formatter {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{AddressWidth, Decoder, Formatter, FormatterStyle, MachineMode, TOKEN_REGISTER};
+    /// use zydis::{StackWidth, Decoder, Formatter, FormatterStyle, MachineMode, TOKEN_REGISTER};
     /// // push rcx
     /// static PUSH: &'static [u8] = &[0x51];
     ///
-    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     ///
     /// let mut buffer = [0; 256];
@@ -723,7 +727,7 @@ impl Formatter {
     ///
     /// ```
     /// use zydis::{
-    ///     ffi::ZydisFormatterFormatInstructionEx, AddressWidth, Decoder, Formatter, FormatterStyle,
+    ///     ffi::ZydisFormatterFormatInstructionEx, StackWidth, Decoder, Formatter, FormatterStyle,
     ///     MachineMode, Status,
     /// };
     /// static INT3: &'static [u8] = &[0xCC];
@@ -731,7 +735,7 @@ impl Formatter {
     /// let mut buffer = [0u8; 200];
     ///
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
-    /// let dec = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
     /// let insn = dec.decode(INT3).unwrap().unwrap();
     /// unsafe {

@@ -3,6 +3,9 @@
 
 use core::{fmt, marker::PhantomData, mem::MaybeUninit, slice};
 
+// TODO: Split this into ffi being a module and having three modules below it,
+// decoder, encoder and formatter.
+
 // TODO: use libc maybe, or wait for this to move into core?
 use std::{
     ffi::CStr,
@@ -13,6 +16,8 @@ use super::{
     enums::*,
     status::{Result, Status},
 };
+
+pub mod encoder;
 
 #[rustfmt::skip]
 pub type FormatterFunc = Option<unsafe extern "C" fn(
@@ -267,20 +272,20 @@ struct ZyanVector {
 #[repr(C)]
 pub struct Decoder {
     machine_mode: MachineMode,
-    address_width: AddressWidth,
+    stack_width: StackWidth,
     // DECODER_MODE_MAX_VALUE + 1
     decoder_mode: [bool; 9],
 }
 
 impl Decoder {
     /// Creates a new `Decoder` with the given `machine_mode` and
-    /// `address_width`.
+    /// `stack_width`.
     #[inline]
-    pub fn new(machine_mode: MachineMode, address_width: AddressWidth) -> Result<Self> {
+    pub fn new(machine_mode: MachineMode, stack_width: StackWidth) -> Result<Self> {
         unsafe {
             let mut decoder = MaybeUninit::uninit();
             check!(
-                ZydisDecoderInit(decoder.as_mut_ptr(), machine_mode, address_width),
+                ZydisDecoderInit(decoder.as_mut_ptr(), machine_mode, stack_width),
                 decoder.assume_init()
             )
         }
@@ -296,9 +301,9 @@ impl Decoder {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{AddressWidth, Decoder, MachineMode, Mnemonic};
+    /// use zydis::{Decoder, MachineMode, Mnemonic, StackWidth};
     /// static INT3: &'static [u8] = &[0xCC];
-    /// let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64).unwrap();
+    /// let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
     /// let instruction = decoder.decode(INT3).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
@@ -360,6 +365,16 @@ impl Iterator for InstructionIterator<'_, '_> {
     }
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub enum DecodedOperandKind {
+    Reg(Register),
+    Mem(MemoryInfo),
+    Ptr(PointerInfo),
+    Imm(ImmediateInfo),
+}
+
 /// A decoded operand.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -367,8 +382,6 @@ impl Iterator for InstructionIterator<'_, '_> {
 pub struct DecodedOperand {
     /// The operand id.
     pub id: u8,
-    /// The type of the operand.
-    pub ty: OperandType,
     /// The visibility of the operand.
     pub visibility: OperandVisibility,
     /// The operand action.
@@ -383,14 +396,9 @@ pub struct DecodedOperand {
     pub element_size: u16,
     /// The number of elements.
     pub element_count: u16,
-    /// The register value.
-    pub reg: Register,
-    /// Extended information for memory operands.
-    pub mem: MemoryInfo,
-    /// Extended information for pointer operands.
-    pub ptr: PointerInfo,
-    /// Extended information for immediate operands.
-    pub imm: ImmediateInfo,
+    /// Additional operand attributes.
+    pub attributes: ZydisOperandAttributes,
+    pub kind: DecodedOperandKind,
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -460,14 +468,21 @@ pub struct DecodedInstruction {
     pub address_width: u8,
     /// The number of instruction operands.
     pub operand_count: u8,
-    /// Detailed information for all instruction operands.
-    // ZYDIS_MAX_OPERAND_COUNT
-    pub operands: [DecodedOperand; 10],
+    /// The number of explicit (visible) instruction operands.
+    pub operand_count_visible: u8,
+    // /// Detailed information for all instruction operands.
+    // // ZYDIS_MAX_OPERAND_COUNT
+    // pub operands: [DecodedOperand; 10],
     /// Instruction attributes.
     pub attributes: InstructionAttributes,
-    // ZYDIS_CPUFLAG_MAX_VALUE + 1
-    /// The action performed to the `CPUFlag` used to index this array.
-    pub accessed_flags: [CPUFlagAction; 21],
+    // NOTE: This is undefined behaviour if this is ever null, but it's currently asserted in
+    // zydis that it isn't null (or rather they'll always be set because the length is asserted to
+    // be inbounds).
+    pub cpu_flags: &'static ZydisAccessedFlags,
+    pub fpu_flags: &'static ZydisAccessedFlags,
+    // // ZYDIS_CPUFLAG_MAX_VALUE + 1
+    // /// The action performed to the `CPUFlag` used to index this array.
+    // pub accessed_flags: [CPUFlagAction; 21],
     /// Extended information for `AVX` instructions.
     pub avx: AvxInfo,
     /// Meta info.
@@ -507,6 +522,8 @@ impl DecodedInstruction {
             )
         }
     }
+
+    // TODO: These don't exist anymore
 
     /// Returns a mask of CPU-flags that match the given `action`.
     pub fn get_flags(&self, action: CPUFlagAction) -> Result<CPUFlag> {
@@ -633,6 +650,7 @@ pub struct RawInfo {
     /// Refer to the instruction attributes to check for the presence of the
     /// `REX` prefix.
     pub rex_offset: u8,
+    // TODO: Update this
     /// Extension of the `ModRM.reg` field (inverted).
     pub xop_R: u8,
     /// Extension of the `SIB.index` field (inverted).
@@ -796,6 +814,65 @@ pub struct Prefix {
     pub value: u8,
 }
 
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+// For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct ContextVectorUnified {
+    pub W: u8,
+    pub R: u8,
+    pub X: u8,
+    pub B: u8,
+    pub L: u8,
+    pub LL: u8,
+    pub R2: u8,
+    pub V2: u8,
+    pub vvvv: u8,
+    pub mask: u8,
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub struct ContextRegInfo {
+    pub is_mod_reg: bool,
+    pub id_reg: u8,
+    pub id_rm: u8,
+    pub id_ndsndd: u8,
+    pub id_base: u8,
+    pub id_index: u8,
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub struct ContextEvex {
+    pub ty: u8,
+    pub element_size: u8,
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub struct contextMvex {
+    pub functionality: u8,
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub struct DecoderContext {
+    pub definition: *const c_void,
+    pub eosz_index: u8,
+    pub easz_index: u8,
+    pub vector_unified: ContextVectorUnified,
+    pub reg_info: ContextRegInfo,
+    pub evex: ContextEvex,
+    pub mvex: ContextMvex,
+    pub cd8_scal: u8,
+}
+
 #[repr(C)]
 pub struct RegisterContext {
     pub values: [u64; crate::enums::REGISTER_MAX_VALUE + 1],
@@ -807,6 +884,7 @@ pub struct ZydisFormatter {
     style: FormatterStyle,
     force_memory_size: bool,
     force_memory_segment: bool,
+    force_memory_scale: bool,
     force_relative_branches: bool,
     force_relative_riprel: bool,
     print_branch_size: bool,
@@ -827,6 +905,7 @@ pub struct ZydisFormatter {
     case_typecasts: i32,
     case_decorators: i32,
     hex_uppercase: bool,
+    hex_force_leading_number: bool,
     // ZYDIS_NUMERIC_BASE_MAX_VALUE + 1
     number_format: [[ZydisFormatterStringData; 2]; 2],
 
@@ -866,6 +945,7 @@ pub struct FormatterContext {
     // But how would we enforce constness then?
     /// The instruction being formatted.
     pub instruction: *const DecodedInstruction,
+    pub operands: *const DecodedOperand,
     /// The current operand being formatted.
     pub operand: *const DecodedOperand,
     /// The runtime address of the instruction.
@@ -976,7 +1056,7 @@ extern "C" {
     pub fn ZydisDecoderInit(
         decoder: *mut Decoder,
         machine_mode: MachineMode,
-        address_width: AddressWidth,
+        stack_width: StackWidth,
     ) -> Status;
 
     pub fn ZydisDecoderEnableMode(
@@ -985,11 +1065,29 @@ extern "C" {
         enabled: bool,
     ) -> Status;
 
-    pub fn ZydisDecoderDecodeBuffer(
+    pub fn ZydisDecoderDecodeFull(
         decoder: *const Decoder,
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
+        operands: *mut DecodedOperand,
+        operand_count: u8,
+        flags: ZydisDecodingFlags,
+    ) -> Status;
+
+    pub fn ZydisDecoderDecodeInstruction(
+        decoder: *const Decoder,
+        context: *mut ZydisDecoderContext,
+        buffer: *const c_void,
+        length: usize,
+        instruction: *mut DecodedInstruction,
+    ) -> Status;
+
+    pub fn ZydisDecoderDecodeOperands(
+        decoder: *const Decoder,
+        context: *mut ZydisDecoderContext,
+        operands: *mut DecodedOperand,
+        operand_count: u8,
     ) -> Status;
 
     pub fn ZydisMnemonicGetString(mnemonic: Mnemonic) -> *const c_char;
@@ -1035,6 +1133,8 @@ extern "C" {
     pub fn ZydisFormatterFormatInstruction(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
+        operands: *const DecodedOperand,
+        operand_count: u8,
         buffer: *mut c_char,
         buffer_length: usize,
         runtime_address: u64,
@@ -1043,6 +1143,8 @@ extern "C" {
     pub fn ZydisFormatterFormatInstructionEx(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
+        operands: *const DecodedOperand,
+        operand_count: u8,
         buffer: *mut c_char,
         buffer_length: usize,
         runtime_address: u64,
@@ -1052,7 +1154,7 @@ extern "C" {
     pub fn ZydisFormatterFormatOperand(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
-        operand_index: u8,
+        operand: *const DecodedOperand,
         buffer: *mut c_char,
         buffer_length: usize,
         runtime_address: u64,
@@ -1061,7 +1163,7 @@ extern "C" {
     pub fn ZydisFormatterFormatOperandEx(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
-        operand_index: u8,
+        operand: *const DecodedOperand,
         buffer: *mut c_char,
         buffer_length: usize,
         runtime_address: u64,
@@ -1071,6 +1173,8 @@ extern "C" {
     pub fn ZydisFormatterTokenizeInstruction(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
+        operands: *const DecodedOperand,
+        operand_count: u8,
         buffer: *mut c_void,
         length: usize,
         runtime_address: u64,
@@ -1080,6 +1184,8 @@ extern "C" {
     pub fn ZydisFormatterTokenizeInstructionEx(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
+        operands: *const DecodedOperand,
+        operand_count: u8,
         buffer: *mut c_void,
         length: usize,
         runtime_address: u64,
@@ -1090,7 +1196,7 @@ extern "C" {
     pub fn ZydisFormatterTokenizeOperand(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
-        index: u8,
+        operand: *const DecodedOperand,
         buffer: *mut c_void,
         length: usize,
         runtime_address: u64,
@@ -1100,6 +1206,7 @@ extern "C" {
     pub fn ZydisFormatterTokenizeOperandEx(
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
+        operand: *const DecodedOperand,
         index: u8,
         buffer: *mut c_void,
         length: usize,

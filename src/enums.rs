@@ -192,35 +192,47 @@ bitflags! {
         const HAS_MVEX                  = 1 << 6;
         const IS_RELATIVE               = 1 << 7;
         const IS_PRIVILEGED             = 1 << 8;
-        const ACCEPTS_LOCK              = 1 << 9;
-        const ACCEPTS_REP               = 1 << 10;
-        const ACCEPTS_REPE              = 1 << 11;
-        const ACCEPTS_REPZ              = 1 << 11;
-        const ACCEPTS_REPNE             = 1 << 12;
-        const ACCEPTS_REPNZ             = 1 << 12;
-        const ACCEPTS_BND               = 1 << 13;
-        const ACCEPTS_XACQUIRE          = 1 << 14;
-        const ACCEPTS_XRELEASE          = 1 << 15;
-        const ACCEPTS_HLE_WITHOUT_LOCK  = 1 << 16;
-        const ACCEPTS_BRANCH_HINTS      = 1 << 17;
-        const ACCEPTS_SEGMENT           = 1 << 18;
-        const HAS_LOCK                  = 1 << 19;
-        const HAS_REP                   = 1 << 20;
-        const HAS_REPE                  = 1 << 21;
-        const HAS_REPZ                  = 1 << 21;
-        const HAS_REPNE                 = 1 << 22;
-        const HAS_REPNZ                 = 1 << 22;
-        const HAS_BND                   = 1 << 23;
-        const HAS_XACQUIRE              = 1 << 24;
-        const HAS_XRELEASE              = 1 << 25;
-        const HAS_BRANCH_NOT_TAKEN      = 1 << 26;
-        const HAS_BRNACH_TAKEN          = 1 << 27;
-        const HAS_SEGMENT_CS            = 1 << 28;
-        const HAS_SEGMENT_SS            = 1 << 29;
-        const HAS_SEGMENT_DS            = 1 << 30;
-        const HAS_SEGMENT_ES            = 1 << 31;
-        const HAS_SEGMENT_FS            = 1 << 32;
-        const HAS_SEGMENT_GS            = 1 << 33;
+
+        const CPUFLAG_ACCESS            = 1 << 9;
+        const CPU_STATE_CR              = 1 << 10;
+        const CPU_STATE_CW              = 1 << 11;
+        const FPU_STATE_CR              = 1 << 12;
+        const FPU_STATE_CW              = 1 << 13;
+        const XMM_STATE_CR              = 1 << 14;
+        const XMM_STATE_CW              = 1 << 15;
+
+
+        const ACCEPTS_LOCK              = 1 << 16;
+        const ACCEPTS_REP               = 1 << 17;
+        const ACCEPTS_REPE              = 1 << 18;
+        const ACCEPTS_REPZ              = 1 << 18;
+        const ACCEPTS_REPNE             = 1 << 19;
+        const ACCEPTS_REPNZ             = 1 << 19;
+        const ACCEPTS_BND               = 1 << 20;
+        const ACCEPTS_XACQUIRE          = 1 << 21;
+        const ACCEPTS_XRELEASE          = 1 << 22;
+        const ACCEPTS_HLE_WITHOUT_LOCK  = 1 << 23;
+        const ACCEPTS_BRANCH_HINTS      = 1 << 24;
+        const ACCEPTS_NOTRACK           = 1 << 25;
+        const ACCEPTS_SEGMENT           = 1 << 26;
+        const HAS_LOCK                  = 1 << 27;
+        const HAS_REP                   = 1 << 28;
+        const HAS_REPE                  = 1 << 29;
+        const HAS_REPZ                  = 1 << 29;
+        const HAS_REPNE                 = 1 << 30;
+        const HAS_REPNZ                 = 1 << 30;
+        const HAS_BND                   = 1 << 31;
+        const HAS_XACQUIRE              = 1 << 32;
+        const HAS_XRELEASE              = 1 << 33;
+        const HAS_BRANCH_NOT_TAKEN      = 1 << 34;
+        const HAS_BRANCH_TAKEN          = 1 << 35;
+        const HAS_NOTRACK               = 1 << 36;
+        const HAS_SEGMENT_CS            = 1 << 37;
+        const HAS_SEGMENT_SS            = 1 << 38;
+        const HAS_SEGMENT_DS            = 1 << 39;
+        const HAS_SEGMENT_ES            = 1 << 40;
+        const HAS_SEGMENT_FS            = 1 << 41;
+        const HAS_SEGMENT_GS            = 1 << 42;
         const HAS_SEGMENT               =
               InstructionAttributes::HAS_SEGMENT_CS.bits
             | InstructionAttributes::HAS_SEGMENT_SS.bits
@@ -228,15 +240,9 @@ bitflags! {
             | InstructionAttributes::HAS_SEGMENT_ES.bits
             | InstructionAttributes::HAS_SEGMENT_FS.bits
             | InstructionAttributes::HAS_SEGMENT_GS.bits;
-        const HAS_OPERANDSIZE           = 1 << 34;
-        const HAS_ADDRESSIZE            = 1 << 35;
-        const CPUFLAG_ACCESS            = 1 << 36;
-        const CPU_STATE_CR              = 1 << 37;
-        const CPU_STATE_CW              = 1 << 38;
-        const FPU_STATE_CR              = 1 << 39;
-        const FPU_STATE_CW              = 1 << 40;
-        const XMM_STATE_CR              = 1 << 41;
-        const XMM_STATE_CW              = 1 << 42;
+        const HAS_OPERANDSIZE           = 1 << 43;
+        const HAS_ADDRESSIZE            = 1 << 44;
+        const HAS_EVEX_B                = 1 << 45;
     }
 }
 
@@ -248,7 +254,7 @@ mod tests {
     fn test_encoding() {
         const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
 
-        let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, AddressWidth::_32).unwrap();
+        let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
         let (insn, _) = decoder.instruction_iterator(CODE, 0x0).next().unwrap();
         assert_eq!(insn.operands[0].encoding, OperandEncoding::JIMM16_32_32);
     }

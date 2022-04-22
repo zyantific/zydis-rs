@@ -62,6 +62,10 @@ pub enum Status {
     /// - `HookPrintMemsize`
     SkipToken = make_status!(0, ZYAN_MODULE_ZYDIS, 0x0B),
 
+    // Encoder
+    /// The requested instruction can't be encoded.
+    ImpossibleInstruction = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0C),
+
     /// Use this for custom errors that don't fit for any of the other errors.
     User = make_status!(1, ZYAN_MODULE_USER, 0x00),
     /// The given bytes were not UTF8 encoded.

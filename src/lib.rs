@@ -24,7 +24,7 @@ pub mod enums;
 pub mod formatter;
 
 pub use enums::{
-    AddressWidth, BranchType, BroadcastMode, CPUFlag, CPUFlagAction, ConversionMode, DecoderMode,
+    StackWidth, BranchType, BroadcastMode, CPUFlag, CPUFlagAction, ConversionMode, DecoderMode,
     Decorator, ElementType, ExceptionClass, Feature, FormatterStyle, ISAExt, ISASet,
     InstructionAttributes, InstructionCategory, InstructionEncoding, InstructionSegment,
     MachineMode, MaskMode, MemoryOperandType, Mnemonic, NumericBase, OpcodeMap, OperandAction,
