@@ -634,23 +634,20 @@ pub struct MetaInfo {
     pub exception_class: ExceptionClass,
 }
 
+/// Detailed info about the `REX` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)] // For consistency with zydis and the Intel docs.
 #[allow(non_snake_case)]
-pub struct RawInfo {
-    /// The number of legacy prefixes.
-    pub prefix_count: u8,
-    /// Detailed info about the legacy prefixes (including `REX`).
-    pub prefixes: [Prefix; MAX_INSTRUCTION_LENGTH],
+pub struct RawInfoRex {
     /// 64-bit operand-size promotion.
-    pub rex_W: u8,
+    pub W: u8,
     /// Extension of the `ModRM.reg` field.
-    pub rex_R: u8,
+    pub R: u8,
     /// Extension of the `SIB.index` field.
-    pub rex_X: u8,
+    pub X: u8,
     /// Extension of the `ModRM.rm`, `SIB.base` or `opcode.reg` field.
-    pub rex_B: u8,
+    pub B: u8,
     /// The offset to the effective `REX` byte, relative to the beginning of
     /// the instruction, in bytes.
     ///
@@ -663,110 +660,149 @@ pub struct RawInfo {
     /// Refer to the instruction attributes to check for the presence of the
     /// `REX` prefix.
     pub rex_offset: u8,
-    // TODO: Update this
+}
+
+/// Detailed info about the `XOP` prefix.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoXop {
     /// Extension of the `ModRM.reg` field (inverted).
-    pub xop_R: u8,
+    pub aR: u8,
     /// Extension of the `SIB.index` field (inverted).
-    pub xop_X: u8,
+    pub X: u8,
     /// Extension of the `ModRM.rm`, `SIB.base` or `opcode.reg` (inverted).
-    pub xop_B: u8,
+    pub B: u8,
     /// Opcode-map specifier.
-    pub xop_m_mmmm: u8,
+    pub m_mmmm: u8,
     /// 64-bit operand-size promotion or opcode-extension.
-    pub xop_W: u8,
+    pub W: u8,
     /// `NDS`/`NDD` (non-destructive-source/destination) register specifier
     /// (inverted).
-    pub xop_vvvv: u8,
+    pub vvvv: u8,
     /// Vector-length specifier.
-    pub xop_L: u8,
+    pub L: u8,
     /// Compressed legacy prefix.
-    pub xop_pp: u8,
+    pub pp: u8,
     /// The offset of the first xop byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub xop_offset: u8,
+    pub offset: u8,
+}
+
+/// Detailed info about the `VEX` prefix.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoVex {
     /// Extension of the `modRM.reg` field (inverted).
-    pub vex_R: u8,
+    pub R: u8,
     /// Extension of the `SIB.index` field (inverted).
-    pub vex_X: u8,
+    pub X: u8,
     /// Extension of the `ModRM.rm`, `SIB.base` or `opcode.reg` field
     /// (inverted).
-    pub vex_B: u8,
+    pub B: u8,
     /// Opcode-map specifier.
-    pub vex_mmmm: u8,
+    pub mmmm: u8,
     /// 64-bit operand-size promotion or opcode-extension.
-    pub vex_W: u8,
+    pub W: u8,
     /// `NDS`/`NDD` (non-destructive-source/destination) register specifier
     /// (inverted).
-    pub vex_vvvv: u8,
+    pub vvvv: u8,
     /// Vector-length specifier.
-    pub vex_L: u8,
+    pub L: u8,
     /// Compressed legacy prefix.
-    pub vex_pp: u8,
+    pub pp: u8,
     /// The offset of the first `VEX` byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub vex_offset: u8,
+    pub offset: u8,
     /// The size of the `VEX` prefix, in bytes.
-    pub vex_size: u8,
+    pub size: u8,
+}
+
+/// Detailed info about the `EVEX` prefix.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoEvex {
     /// Extension of the `ModRM.reg` field (inverted).
-    pub evex_R: u8,
+    pub R: u8,
     /// Extension of the `SIB.index/vidx` field (inverted).
-    pub evex_X: u8,
+    pub X: u8,
     /// Extension of the `ModRM.rm` or `SIB.base` field (inverted).
-    pub evex_B: u8,
+    pub B: u8,
     /// High-16 register specifier modifier (inverted).
-    pub evex_R2: u8,
+    pub R2: u8,
     /// Opcode-map specifier.
-    pub evex_mm: u8,
+    pub mm: u8,
     /// 64-bit operand-size promotion or opcode-extension.
-    pub evex_W: u8,
+    pub W: u8,
     /// `NDS`/`NDD` (non-destructive-source/destination) register specifier
     /// (inverted).
-    pub evex_vvvv: u8,
+    pub vvvv: u8,
     /// Compressed legacy prefix.
-    pub evex_pp: u8,
+    pub pp: u8,
     /// Zeroing/Merging.
-    pub evex_z: u8,
+    pub z: u8,
     /// Vector-length specifier or rounding-control (most significant bit).
-    pub evex_L2: u8,
+    pub L2: u8,
     /// Vector-length specifier or rounding-control (least significant bit).
-    pub evex_L: u8,
+    pub L: u8,
     /// Broadcast/RC/SAE context.
-    pub evex_b: u8,
+    pub b: u8,
     /// High-16 `NDS`/`VIDX` register specifier.
-    pub evex_V2: u8,
+    pub V2: u8,
     /// Embedded opmask register specifier.
-    pub evex_aaa: u8,
+    pub aaa: u8,
     /// The offset of the first evex byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub evex_offset: u8,
+    pub offset: u8,
+}
+
+/// Detailed info about the `MVEX` prefix.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoMvex {
     /// Extension of the `ModRM.reg` field (inverted).
-    pub mvex_R: u8,
+    pub R: u8,
     /// Extension of the `SIB.index/vidx` field (inverted).
-    pub mvex_X: u8,
+    pub X: u8,
     /// Extension of the `ModRM.rm` or `SIB.base` field (inverted).
-    pub mvex_B: u8,
+    pub B: u8,
     /// High-16 register specifier modifier (inverted).
-    pub mvex_R2: u8,
+    pub R2: u8,
     /// Opcode-map specifier.
-    pub mvex_mmmm: u8,
+    pub mmmm: u8,
     /// 64-bit operand-size promotion or opcode-extension.
-    pub mvex_W: u8,
+    pub W: u8,
     /// `NDS`/`NDD` (non-destructive-source/destination) register specifier
     /// (inverted).
-    pub mvex_vvvv: u8,
+    pub vvvv: u8,
     /// Compressed legacy prefix.
-    pub mvex_pp: u8,
+    pub pp: u8,
     /// Non-temporal/eviction hint.
-    pub mvex_E: u8,
+    pub E: u8,
     /// Swizzle/broadcast/up-convert/down-convert/static-rounding controls.
-    pub mvex_SSS: u8,
+    pub SSS: u8,
     /// High-16 `NDS`/`VIDX` register specifier.
-    pub mvex_V2: u8,
+    pub V2: u8,
     /// Embedded opmask register specifier.
-    pub mvex_kkk: u8,
+    pub kkk: u8,
     /// The offset of the first mvex byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub mvex_offset: u8,
+    pub offset: u8,
+}
+
+/// Detailed info about the `ModRM` byte.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoModRm {
     /// The addressing mode.
     pub modrm_mod: u8,
     /// Register specifier or opcode-extension.
@@ -776,15 +812,31 @@ pub struct RawInfo {
     /// The offset of the `ModRM` byte, relative to the beginning of the
     /// instruction, in bytes.
     pub modrm_offset: u8,
+}
+
+/// Detailed info about the `SIB` byte.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoSib {
     /// The scale factor.
-    pub sib_scale: u8,
+    pub scale: u8,
     /// The index-register specifier.
-    pub sib_index: u8,
+    pub index: u8,
     /// The base-register specifier.
-    pub sib_base: u8,
+    pub base: u8,
     /// THe offset of the `SIB` byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub sib_offset: u8,
+    pub offset: u8,
+}
+
+/// Detailed info about displacement-bytes.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfoDisp {
     /// The displacement value.
     pub disp_value: i64,
     /// THe physical displacement size, in bits.
@@ -792,6 +844,41 @@ pub struct RawInfo {
     /// The offset of the displacement data, relative to the beginning of the
     /// instruction, in bytes.
     pub disp_offset: u8,
+}
+
+/// Union for raw info from various mutually exclusive vector extensions.
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub enum RawInfoKindSpecific {
+    Xop(RawInfoXop),
+    Vex(RawInfoVex),
+    Evex(RawInfoEvex),
+    Mvex(RawInfoMvex),
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)] // For consistency with zydis and the Intel docs.
+#[allow(non_snake_case)]
+pub struct RawInfo {
+    /// The number of legacy prefixes.
+    pub prefix_count: u8,
+    /// Detailed info about the legacy prefixes (including `REX`).
+    pub prefixes: [Prefix; MAX_INSTRUCTION_LENGTH],
+    /// Detailed info about the `REX` prefix.
+    pub rex: RawInfoRex,
+    /// Raw info depending on the instruction kind.
+    ///
+    /// Note: this is an anonymous union in the C library.
+    pub kind_specific: RawInfoKindSpecific,
+    /// Detailed info about the `ModRM` byte.
+    pub modrm: RawInfoModRm,
+    /// Detailed info about the `SIB` byte.
+    pub sib: RawInfoSib,
+    /// Detailed info about displacement-bytes.
+    pub disp: RawInfoDisp,
     /// Detailed information about immediate-bytes.
     pub imm: [RawImmediateInfo; 2],
 }
