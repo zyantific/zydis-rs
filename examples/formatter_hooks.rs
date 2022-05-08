@@ -43,7 +43,7 @@ fn print_mnemonic(
 ) -> Result<()> {
     let instruction = unsafe { &*ctx.instruction };
     let operands =
-        unsafe { core::slice::from_raw_parts(ctx.operand, instruction.operand_count as usize) };
+        unsafe { core::slice::from_raw_parts(ctx.operands, instruction.operand_count as usize) };
     match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
         Some(&mut UserData {
             ref mut omit_immediate,
