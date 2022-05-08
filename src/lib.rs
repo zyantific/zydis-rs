@@ -2,24 +2,10 @@
 
 #![deny(bare_trait_objects)]
 
-extern crate core;
-
-extern crate bitflags;
-
-#[cfg(feature = "serialization")]
-extern crate serde;
-
-#[cfg(feature = "serialization")]
-#[macro_use]
-extern crate serde_derive;
-extern crate core;
-
 #[macro_use]
 pub mod status;
-
-pub mod ffi;
-
 pub mod enums;
+pub mod ffi;
 
 #[cfg(not(feature = "minimal"))]
 pub mod formatter;
