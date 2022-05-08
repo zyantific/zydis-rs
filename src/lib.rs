@@ -20,27 +20,27 @@ pub mod ffi;
 
 pub mod enums;
 
-#[cfg(not(feature = "minimal"))]
-pub mod formatter;
+// #[cfg(not(feature = "minimal"))]
+// pub mod formatter;
 
 pub use enums::{
-    StackWidth, BranchType, BroadcastMode, CPUFlag, CPUFlagAction, ConversionMode, DecoderMode,
-    Decorator, ElementType, ExceptionClass, Feature, FormatterStyle, ISAExt, ISASet,
-    InstructionAttributes, InstructionCategory, InstructionEncoding, InstructionSegment,
-    MachineMode, MaskMode, MemoryOperandType, Mnemonic, NumericBase, OpcodeMap, OperandAction,
-    OperandEncoding, OperandType, OperandVisibility, Padding, PrefixType, Register, RegisterClass,
-    RoundingMode, Signedness, SwizzleMode, Token, TOKEN_ADDRESS_ABS, TOKEN_ADDRESS_REL,
-    TOKEN_DECORATOR, TOKEN_DELIMITER, TOKEN_DISPLACEMENT, TOKEN_IMMEDIATE, TOKEN_INVALID,
-    TOKEN_MNEMONIC, TOKEN_PARENTHESIS_CLOSE, TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER,
-    TOKEN_SYMBOL, TOKEN_TYPECAST, TOKEN_USER, TOKEN_WHITESPACE,
+    BranchType, BroadcastMode, ConversionMode, DecoderMode, Decorator, ElementType, ExceptionClass,
+    Feature, FormatterStyle, ISAExt, ISASet, InstructionAttributes, InstructionCategory,
+    InstructionEncoding, InstructionSegment, MachineMode, MaskMode, MemoryOperandType, Mnemonic,
+    NumericBase, OpcodeMap, OperandAction, OperandEncoding, OperandType, OperandVisibility,
+    Padding, PrefixType, Register, RegisterClass, RoundingMode, Signedness, StackWidth,
+    SwizzleMode, Token, TOKEN_ADDRESS_ABS, TOKEN_ADDRESS_REL, TOKEN_DECORATOR, TOKEN_DELIMITER,
+    TOKEN_DISPLACEMENT, TOKEN_IMMEDIATE, TOKEN_INVALID, TOKEN_MNEMONIC, TOKEN_PARENTHESIS_CLOSE,
+    TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER, TOKEN_SYMBOL, TOKEN_TYPECAST, TOKEN_USER,
+    TOKEN_WHITESPACE,
 };
 pub use ffi::{
     get_version, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext,
     FormatterToken, InstructionIterator,
 };
-#[cfg(not(feature = "minimal"))]
-pub use formatter::{
-    Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
-    WrappedRegisterFunc,
-};
+// #[cfg(not(feature = "minimal"))]
+// pub use formatter::{
+//     Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc,
+// WrappedGeneralFunc,     WrappedRegisterFunc,
+// };
 pub use status::{Result, Status};

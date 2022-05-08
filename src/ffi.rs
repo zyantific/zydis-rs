@@ -309,15 +309,38 @@ impl Decoder {
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
-    pub fn decode(&self, buffer: &[u8]) -> Result<Option<DecodedInstruction>> {
+    pub fn decode(
+        &self,
+        buffer: &[u8],
+        operands: &mut [DecodedOperand],
+    ) -> Result<Option<DecodedInstruction>> {
+        // TODO(ath): is there a more elegant way to construct this MaybeUninit slice?
+        self.decode_uninit_operands(buffer, unsafe { std::mem::transmute(operands) })
+    }
+
+    /// Decodes a single binary instruction to a `DecodedInstruction` without
+    /// initializing the operands first.
+    #[inline]
+    pub fn decode_uninit_operands(
+        &self,
+        buffer: &[u8],
+        operands: &mut [MaybeUninit<DecodedOperand>],
+    ) -> Result<Option<DecodedInstruction>> {
+        if operands.len() > usize::from(u8::MAX) {
+            return Err(Status::InvalidArgument);
+        }
+
         unsafe {
             let mut instruction = MaybeUninit::uninit();
             check_option!(
-                ZydisDecoderDecodeBuffer(
+                ZydisDecoderDecodeFull(
                     self,
                     buffer.as_ptr() as *const c_void,
                     buffer.len(),
                     instruction.as_mut_ptr(),
+                    operands.as_mut_ptr() as _,
+                    operands.len() as u8,
+                    DecodingFlags::empty(), // TODO(ath): expose to user
                 ),
                 instruction.assume_init()
             )
@@ -349,19 +372,36 @@ pub struct InstructionIterator<'a, 'b> {
 }
 
 impl Iterator for InstructionIterator<'_, '_> {
-    type Item = (DecodedInstruction, u64);
+    // TODO(ath): should we switch this to yield a struct instead?
+    type Item = (DecodedInstruction, [DecodedOperand; MAX_OPERAND_COUNT], u64);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        match self.decoder.decode(self.buffer) {
-            Ok(Some(insn)) => {
-                self.buffer = &self.buffer[insn.length as usize..];
-                let ip = self.ip;
-                self.ip += u64::from(insn.length);
-                Some((insn, ip))
-            }
-            _ => None,
-        }
+        let mut operands = unsafe {
+            // Shamelessly pasted from the unstable impl of `uninit_array`:
+            // https://doc.rust-lang.org/stable/std/mem/union.MaybeUninit.html#method.uninit_array
+            MaybeUninit::<[MaybeUninit<DecodedOperand>; MAX_OPERAND_COUNT]>::uninit().assume_init()
+        };
+
+        let insn = self
+            .decoder
+            .decode_uninit_operands(self.buffer, &mut operands)
+            .ok()
+            .flatten()?;
+
+        self.buffer = &self.buffer[insn.length as usize..];
+
+        let ip = self.ip;
+        self.ip += u64::from(insn.length);
+
+        // SAFETY: Zydis zeroes all operands passed, regardless of whether
+        //         they are used or not.
+        let operands: [DecodedOperand; MAX_OPERAND_COUNT] = unsafe {
+            // `array_assume_init` is still unstable :(
+            std::mem::transmute(operands)
+        };
+
+        Some((insn, operands, ip))
     }
 }
 
@@ -397,7 +437,8 @@ pub struct DecodedOperand {
     /// The number of elements.
     pub element_count: u16,
     /// Additional operand attributes.
-    pub attributes: ZydisOperandAttributes,
+    pub attributes: OperandAttributes,
+    /// Operand information specific to the kind of the operand.
     pub kind: DecodedOperandKind,
 }
 
@@ -447,6 +488,17 @@ pub struct ImmediateInfo {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
+pub struct AccessedFlags<FlagType> {
+    tested: FlagType,
+    modified: FlagType,
+    set_0: FlagType,
+    set_1: FlagType,
+    undefined: FlagType,
+}
+
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
 pub struct DecodedInstruction {
     /// The machine mode used to decode this instruction.
     pub machine_mode: MachineMode,
@@ -454,7 +506,7 @@ pub struct DecodedInstruction {
     pub mnemonic: Mnemonic,
     /// The length of the decoded instruction.
     pub length: u8,
-    /// The instruciton-encoding.
+    /// The instruction-encoding.
     pub encoding: InstructionEncoding,
     /// The opcode map.
     pub opcode_map: OpcodeMap,
@@ -470,19 +522,16 @@ pub struct DecodedInstruction {
     pub operand_count: u8,
     /// The number of explicit (visible) instruction operands.
     pub operand_count_visible: u8,
-    // /// Detailed information for all instruction operands.
-    // // ZYDIS_MAX_OPERAND_COUNT
-    // pub operands: [DecodedOperand; 10],
     /// Instruction attributes.
     pub attributes: InstructionAttributes,
-    // NOTE: This is undefined behaviour if this is ever null, but it's currently asserted in
-    // zydis that it isn't null (or rather they'll always be set because the length is asserted to
-    // be inbounds).
-    pub cpu_flags: &'static ZydisAccessedFlags,
-    pub fpu_flags: &'static ZydisAccessedFlags,
-    // // ZYDIS_CPUFLAG_MAX_VALUE + 1
-    // /// The action performed to the `CPUFlag` used to index this array.
-    // pub accessed_flags: [CPUFlagAction; 21],
+    /// Information about CPU flags accessed by the instruction.
+    ///
+    /// The bits in the masks correspond to the actual bits in the
+    /// `FLAGS/EFLAGS/RFLAGS` register.
+    // https://github.com/zyantific/zydis/issues/319
+    pub cpu_flags: Option<&'static AccessedFlags<CpuFlag>>,
+    /// Information about FPU flags accessed by the instruction.
+    pub fpu_flags: Option<&'static AccessedFlags<FpuFlag>>,
     /// Extended information for `AVX` instructions.
     pub avx: AvxInfo,
     /// Meta info.
@@ -519,44 +568,6 @@ impl DecodedInstruction {
             check!(
                 ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr),
                 addr
-            )
-        }
-    }
-
-    // TODO: These don't exist anymore
-
-    /// Returns a mask of CPU-flags that match the given `action`.
-    pub fn get_flags(&self, action: CPUFlagAction) -> Result<CPUFlag> {
-        unsafe {
-            let mut flags = MaybeUninit::uninit();
-            check!(
-                ZydisGetAccessedFlagsByAction(self, action, flags.as_mut_ptr()),
-                flags.assume_init()
-            )
-        }
-    }
-
-    /// Returns a mask of CPU-flags that are read (tested) by this instruction.
-    #[inline]
-    pub fn get_flags_read(&self) -> Result<CPUFlag> {
-        unsafe {
-            let mut flags = MaybeUninit::uninit();
-            check!(
-                ZydisGetAccessedFlagsRead(self, flags.as_mut_ptr()),
-                flags.assume_init()
-            )
-        }
-    }
-
-    /// Returns a mask of CPU-flags that are written (modified, undefined) by
-    /// this instruction.
-    #[inline]
-    pub fn get_flags_written(&self) -> Result<CPUFlag> {
-        unsafe {
-            let mut flags = MaybeUninit::uninit();
-            check!(
-                ZydisGetAccessedFlagsWritten(self, flags.as_mut_ptr()),
-                flags.assume_init()
             )
         }
     }
@@ -622,14 +633,13 @@ pub struct MetaInfo {
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)]
-// For consistency with zydis and the Intel docs.
+#[repr(C)] // For consistency with zydis and the Intel docs.
 #[allow(non_snake_case)]
 pub struct RawInfo {
     /// The number of legacy prefixes.
     pub prefix_count: u8,
-    // ZYDIS_MAX_INSTRUCTION_LENGTH
-    pub prefixes: [Prefix; 15],
+    /// Detailed info about the legacy prefixes (including `REX`).
+    pub prefixes: [Prefix; MAX_INSTRUCTION_LENGTH],
     /// 64-bit operand-size promotion.
     pub rex_W: u8,
     /// Extension of the `ModRM.reg` field.
@@ -804,6 +814,7 @@ pub struct RawImmediateInfo {
     pub offset: u8,
 }
 
+/// Detailed info about the legacy prefixes (including `REX`).
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -855,7 +866,7 @@ pub struct ContextEvex {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-pub struct contextMvex {
+pub struct ContextMvex {
     pub functionality: u8,
 }
 
@@ -875,7 +886,7 @@ pub struct DecoderContext {
 
 #[repr(C)]
 pub struct RegisterContext {
-    pub values: [u64; crate::enums::REGISTER_MAX_VALUE + 1],
+    pub values: [u64; REGISTER_MAX_VALUE + 1],
 }
 
 #[derive(Debug)]
@@ -942,7 +953,7 @@ struct ZydisFormatterStringData {
 #[repr(C)]
 pub struct FormatterContext {
     // TODO: Can we do some things with Option<NonNull<T>> here for nicer usage?
-    // But how would we enforce constness then?
+    //       But how would we enforce constness then?
     /// The instruction being formatted.
     pub instruction: *const DecodedInstruction,
     pub operands: *const DecodedOperand,
@@ -1032,22 +1043,6 @@ extern "C" {
         result_address: *mut u64,
     ) -> Status;
 
-    pub fn ZydisGetAccessedFlagsByAction(
-        instruction: *const DecodedInstruction,
-        action: CPUFlagAction,
-        flags: *mut CPUFlag,
-    ) -> Status;
-
-    pub fn ZydisGetAccessedFlagsRead(
-        instruction: *const DecodedInstruction,
-        flags: *mut CPUFlag,
-    ) -> Status;
-
-    pub fn ZydisGetAccessedFlagsWritten(
-        instruction: *const DecodedInstruction,
-        flags: *mut CPUFlag,
-    ) -> Status;
-
     pub fn ZydisGetInstructionSegments(
         instruction: *const DecodedInstruction,
         segments: *mut InstructionSegments,
@@ -1072,12 +1067,12 @@ extern "C" {
         instruction: *mut DecodedInstruction,
         operands: *mut DecodedOperand,
         operand_count: u8,
-        flags: ZydisDecodingFlags,
+        flags: DecodingFlags,
     ) -> Status;
 
     pub fn ZydisDecoderDecodeInstruction(
         decoder: *const Decoder,
-        context: *mut ZydisDecoderContext,
+        context: *mut DecoderContext,
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
@@ -1085,7 +1080,7 @@ extern "C" {
 
     pub fn ZydisDecoderDecodeOperands(
         decoder: *const Decoder,
-        context: *mut ZydisDecoderContext,
+        context: *mut DecoderContext,
         operands: *mut DecodedOperand,
         operand_count: u8,
     ) -> Status;

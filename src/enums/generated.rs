@@ -2304,7 +2304,8 @@ pub enum OperandVisibility {
     EXPLICIT = 1,
     /// The operand is part of the opcode, but listed as an operand.
     IMPLICIT = 2,
-    /// The operand is part of the opcode, and not typically listed as an operand.
+    /// The operand is part of the opcode, and not typically listed as an
+    /// operand.
     HIDDEN = 3,
 }
 
@@ -2704,9 +2705,12 @@ pub enum MemoryOperandType {
     INVALID = 0,
     /// Normal memory operand.
     MEM = 1,
-    /// The memory operand is only used for address-generation. No real memory-access is caused.
+    /// The memory operand is only used for address-generation. No real
+    /// memory-access is caused.
     AGEN = 2,
-    /// A memory operand using `SIB` addressing form, where the index register is not used in address calculation and scale is ignored. No real memory-access is caused.
+    /// A memory operand using `SIB` addressing form, where the index register
+    /// is not used in address calculation and scale is ignored. No real
+    /// memory-access is caused.
     MIB = 3,
     /// A vector `SIB` memory addressing operand (`VSIB`).
     VSIB = 4,
@@ -2800,7 +2804,8 @@ pub enum MaskMode {
     ZEROING = 3,
     /// The embedded mask register is used as a control-mask (element selector).
     CONTROL = 4,
-    /// The embedded mask register is used as a zeroing control-mask (element selector).
+    /// The embedded mask register is used as a zeroing control-mask (element
+    /// selector).
     CONTROL_ZEROING = 5,
 }
 
@@ -2921,7 +2926,8 @@ pub enum DecoderMode {
 
 pub const DECODER_MODE_MAX_VALUE: usize = 8;
 
-/// Defines possible physical instruction encodings as bit flags, so multiple acceptable encodings can be specified simultaneously.
+/// Defines possible physical instruction encodings as bit flags, so multiple
+/// acceptable encodings can be specified simultaneously.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -2937,7 +2943,8 @@ pub enum EncodableEncoding {
 
 pub const ENCODABLE_ENCODING_MAX_VALUE: usize = 63;
 
-/// Defines encodable physical/effective sizes of relative immediate operands. See `ZydisEncoderRequest.branch_width` for more details.
+/// Defines encodable physical/effective sizes of relative immediate operands.
+/// See `ZydisEncoderRequest.branch_width` for more details.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -2951,7 +2958,8 @@ pub enum BranchWidth {
 
 pub const BRANCH_WIDTH_MAX_VALUE: usize = 4;
 
-/// Defines possible values for address size hints. See `ZydisEncoderRequest` for more information about address size hints.
+/// Defines possible values for address size hints. See `ZydisEncoderRequest`
+/// for more information about address size hints.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -2964,7 +2972,8 @@ pub enum AddressSizeHint {
 
 pub const ADDRESS_SIZE_HINT_MAX_VALUE: usize = 3;
 
-/// Defines possible values for operand size hints. See `ZydisEncoderRequest` for more information about operand size hints.
+/// Defines possible values for operand size hints. See `ZydisEncoderRequest`
+/// for more information about operand size hints.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -2987,7 +2996,8 @@ pub enum FormatterStyle {
     ATT = 0,
     /// Generates `Intel`-style disassembly.
     INTEL = 1,
-    /// Generates `MASM`-style disassembly that is directly accepted as input for the `MASM` assembler.
+    /// Generates `MASM`-style disassembly that is directly accepted as input
+    /// for the `MASM` assembler.
     INTEL_MASM = 2,
 }
 
@@ -2999,7 +3009,8 @@ pub const FORMATTER_STYLE_MAX_VALUE: usize = 2;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub enum ZydisFormatterProperty {
-    /// Controls the printing of effective operand-size suffixes (`AT&T`) or operand-sizes of memory operands (`INTEL`).
+    /// Controls the printing of effective operand-size suffixes (`AT&T`) or
+    /// operand-sizes of memory operands (`INTEL`).
     FORCE_SIZE = 0,
     /// Controls the printing of segment prefixes.
     FORCE_SEGMENT = 1,
@@ -3015,7 +3026,8 @@ pub enum ZydisFormatterProperty {
     DETAILED_PREFIXES = 6,
     /// Controls the base of address values.
     ADDR_BASE = 7,
-    /// Controls the signedness of relative addresses. Absolute addresses are always unsigned.
+    /// Controls the signedness of relative addresses. Absolute addresses are
+    /// always unsigned.
     ADDR_SIGNEDNESS = 8,
     /// Controls the padding of absolute address values.
     ADDR_PADDING_ABSOLUTE = 9,
@@ -3049,7 +3061,8 @@ pub enum ZydisFormatterProperty {
     DEC_SUFFIX = 23,
     /// Controls the letter-case of hexadecimal values.
     HEX_UPPERCASE = 24,
-    /// Controls whether to prepend hexadecimal values with a leading zero if the first character is non-numeric.
+    /// Controls whether to prepend hexadecimal values with a leading zero if
+    /// the first character is non-numeric.
     HEX_FORCE_LEADING_NUMBER = 25,
     /// Controls the prefix for hexadecimal values.
     HEX_PREFIX = 26,
@@ -3077,7 +3090,8 @@ pub const NUMERIC_BASE_MAX_VALUE: usize = 1;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum Signedness {
-    /// Automatically choose the most suitable mode based on the operands ZydisDecodedOperand.imm.is_signed` attribute.
+    /// Automatically choose the most suitable mode based on the operands
+    /// ZydisDecodedOperand.imm.is_signed` attribute.
     AUTO = 0,
     /// Force signed values.
     SIGNED = 1,
@@ -3094,7 +3108,8 @@ pub const SIGNEDNESS_MAX_VALUE: usize = 2;
 pub enum Padding {
     /// Disables padding.
     DISABLED = 0,
-    /// Padds the value to the current stack-width for addresses, or to the operand-width for immediate values (hexadecimal only).
+    /// Padds the value to the current stack-width for addresses, or to the
+    /// operand-width for immediate values (hexadecimal only).
     AUTO = -1,
 }
 
@@ -3133,13 +3148,16 @@ pub enum FormatterFunction {
     PRINT_DISP = 13,
     /// This function is invoked to print an immediate value.
     PRINT_IMM = 14,
-    /// This function is invoked to print the size of a memory operand (`INTEL` only).
+    /// This function is invoked to print the size of a memory operand (`INTEL`
+    /// only).
     PRINT_TYPECAST = 15,
-    /// This function is invoked to print the segment-register of a memory operand.
+    /// This function is invoked to print the segment-register of a memory
+    /// operand.
     PRINT_SEGMENT = 16,
     /// This function is invoked to print the instruction prefixes.
     PRINT_PREFIXES = 17,
-    /// This function is invoked after formatting an operand to print a `EVEX`/`MVEX` decorator.
+    /// This function is invoked after formatting an operand to print a
+    /// `EVEX`/`MVEX` decorator.
     PRINT_DECORATOR = 18,
 }
 
@@ -3214,4 +3232,3 @@ pub enum Feature {
 }
 
 pub const FEATURE_MAX_VALUE: usize = 4;
-

@@ -36,7 +36,7 @@ pub struct OperandRegister {
 #[repr(C)]
 pub struct OperandPointer {
     pub segment: u16,
-    pub offset: u32
+    pub offset: u32,
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -47,7 +47,8 @@ pub struct Operand {
     pub reg: OperandRegister,
     pub mem: OperandMemory,
     pub ptr: OperandPointer,
-    /// This can be either a i64 or u64, but raw unions are kind of unergonomic to use in Rust.
+    /// This can be either a i64 or u64, but raw unions are kind of unergonomic
+    /// to use in Rust.
     pub imm: u64,
 }
 

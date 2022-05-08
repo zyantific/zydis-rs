@@ -12,6 +12,10 @@ pub use self::generated::*;
 
 use super::ffi;
 
+pub const MAX_INSTRUCTION_LENGTH: usize = 15;
+pub const MAX_OPERAND_COUNT: usize = 10;
+pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
+
 impl Mnemonic {
     /// Returns a string corresponding to this mnemonic.
     ///
@@ -165,23 +169,66 @@ impl fmt::Display for Token {
 bitflags! {
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
-    pub struct OperandAction: u32 {
-        const READ =  1;
-        const WRITE = 2;
-        const CONDREAD = 4;
-        const CONDWRITE = 8;
-        const READWRITE = 3;
-        const CONDREAD_CONDWRITE = 12;
-        const READ_CONDWRITE = 9;
-        const CONDREAD_WRITE = 6;
-        const MASK_READ = 5;
-        const MASK_WRITE = 10;
+    pub struct DecodingFlags: u8 {
+        const VISIBLE_OPERANDS_ONLY = 1 << 0;
     }
-}
 
-bitflags! {
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
+    pub struct OperandAction: u32 {
+        const READ                  = 1 << 0;
+        const WRITE                 = 1 << 1;
+        const CONDREAD              = 1 << 2;
+        const CONDWRITE             = 1 << 3;
+
+        const READWRITE             = Self::READ.bits | Self::WRITE.bits;
+        const CONDREAD_CONDWRITE    = Self::CONDREAD.bits | Self::CONDWRITE.bits;
+        const READ_CONDWRITE        = Self::READ.bits | Self::CONDWRITE.bits;
+        const CONDREAD_WRITE        = Self::CONDREAD.bits | Self::WRITE.bits;
+        const MASK_READ             = Self::CONDREAD.bits | Self::READ.bits;
+        const MASK_WRITE            = Self::CONDWRITE.bits | Self::WRITE.bits;
+    }
+
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+    #[repr(transparent)]
+    pub struct CpuFlag: u32 {
+        const CF   = 1 <<  0;
+        const PF   = 1 <<  2;
+        const AF   = 1 <<  4;
+        const ZF   = 1 <<  6;
+        const SF   = 1 <<  7;
+        const TF   = 1 <<  8;
+        const IF   = 1 <<  9;
+        const DF   = 1 << 10;
+        const OF   = 1 << 11;
+        const IOPL = 1 << 12;
+        const NT   = 1 << 14;
+        const RF   = 1 << 16;
+        const VM   = 1 << 17;
+        const AC   = 1 << 18;
+        const VIF  = 1 << 19;
+        const VIP  = 1 << 20;
+        const ID   = 1 << 21;
+    }
+
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+    #[repr(transparent)]
+    pub struct FpuFlag: u32 {
+        const C0 = 1 << 0;
+        const C1 = 1 << 1;
+        const C2 = 1 << 2;
+        const C3 = 1 << 3;
+    }
+
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+    #[repr(transparent)]
+    pub struct OperandAttributes: u8 {
+        const IS_MULTISOURCE4 = 1 << 0;
+    }
+
+    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+    #[repr(transparent)]
+    // TODO(ath): recheck
     pub struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;
         const HAS_SIB                   = 1 << 1;
