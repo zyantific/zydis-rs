@@ -15,6 +15,7 @@ use super::ffi;
 pub const MAX_INSTRUCTION_LENGTH: usize = 15;
 pub const MAX_OPERAND_COUNT: usize = 10;
 pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
+pub const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
 impl Mnemonic {
     /// Returns a string corresponding to this mnemonic.

@@ -21,6 +21,7 @@ pub use enums::{
     TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER, TOKEN_SYMBOL, TOKEN_TYPECAST, TOKEN_USER,
     TOKEN_WHITESPACE,
 };
+#[allow(deprecated)]
 pub use ffi::{
     get_version, AddressWidth, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer,
     FormatterContext, FormatterToken, InstructionIterator,
