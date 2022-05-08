@@ -22,8 +22,8 @@ pub use enums::{
     TOKEN_WHITESPACE,
 };
 pub use ffi::{
-    get_version, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext,
-    FormatterToken, InstructionIterator,
+    get_version, AddressWidth, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer,
+    FormatterContext, FormatterToken, InstructionIterator,
 };
 #[cfg(not(feature = "minimal"))]
 pub use formatter::{

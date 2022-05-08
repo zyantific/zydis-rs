@@ -2,6 +2,7 @@
 
 use core::{
     any::Any,
+    convert::TryInto as _,
     fmt,
     mem::{self, MaybeUninit},
     ptr,
@@ -586,16 +587,17 @@ impl Formatter {
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
-        if operands.len() > usize::from(u8::MAX) {
-            return Err(Status::InvalidArgument);
-        }
+        let num_ops: u8 = operands
+            .len()
+            .try_into()
+            .map_err(|_| Status::InvalidArgument)?;
 
         unsafe {
             check!(ZydisFormatterFormatInstructionEx(
                 &self.formatter,
                 instruction,
                 operands.as_ptr(),
-                operands.len() as u8,
+                num_ops.min(instruction.operand_count_visible),
                 buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -650,9 +652,10 @@ impl Formatter {
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
-        if operands.len() > usize::from(u8::MAX) {
-            return Err(Status::InvalidArgument);
-        }
+        let num_ops: u8 = operands
+            .len()
+            .try_into()
+            .map_err(|_| Status::InvalidArgument)?;
 
         unsafe {
             let mut token = MaybeUninit::uninit();
@@ -661,7 +664,7 @@ impl Formatter {
                     &self.formatter,
                     instruction,
                     operands.as_ptr(),
-                    operands.len() as u8,
+                    num_ops.min(instruction.operand_count_visible),
                     buffer.as_mut_ptr() as *mut _,
                     buffer.len(),
                     ip_to_runtime_addr(ip),
@@ -744,6 +747,7 @@ impl Formatter {
     ///     ffi::ZydisFormatterFormatInstructionEx, StackWidth, Decoder, Formatter, FormatterStyle,
     ///     MachineMode, Status,
     /// };
+    /// use zydis::enums::MAX_OPERAND_COUNT;
     /// static INT3: &'static [u8] = &[0xCC];
     ///
     /// let mut buffer = [0u8; 200];
@@ -751,11 +755,14 @@ impl Formatter {
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let insn = dec.decode(INT3).unwrap().unwrap();
+    /// let mut operands = [DecodedOperand; MAX_OPERAND_COUNT];
+    /// let insn = dec.decode(INT3, &mut operands).unwrap().unwrap();
     /// unsafe {
     ///     let status = ZydisFormatterFormatInstructionEx(
     ///         &formatter as *const Formatter as *const _,
     ///         &insn,
+    ///         &operands,
+    ///         insn.operand_count_visible,
     ///         buffer.as_mut_ptr() as *mut _,
     ///         200,                  // buffer size
     ///         0,                    // runtime address

@@ -10,15 +10,19 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
     let formatter = Formatter::new(FormatterStyle::INTEL)?;
 
     let mut buffer = [0u8; 256];
 
-    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        for (ty, val) in
-            formatter.tokenize_instruction(&instruction, &mut buffer[..], Some(ip), None)?
-        {
+    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
+        for (ty, val) in formatter.tokenize_instruction(
+            &instruction,
+            &operands,
+            &mut buffer[..],
+            Some(ip),
+            None,
+        )? {
             println!("token type: {}, value: {}", ty, val);
         }
         println!("----");

@@ -6,7 +6,7 @@ extern crate zydis;
 
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
-use zydis::{check, *};
+use zydis::{check, ffi::DecodedOperandKind, *};
 
 #[rustfmt::skip]
 static CODE: &'static [u8] = &[
@@ -42,6 +42,8 @@ fn print_mnemonic(
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
     let instruction = unsafe { &*ctx.instruction };
+    let operands =
+        unsafe { core::slice::from_raw_parts(ctx.operand, instruction.operand_count as usize) };
     match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
         Some(&mut UserData {
             ref mut omit_immediate,
@@ -52,31 +54,36 @@ fn print_mnemonic(
 
             let count = instruction.operand_count as usize;
 
-            if count > 0 && instruction.operands[count - 1].ty == OperandType::IMMEDIATE {
-                let cc = instruction.operands[count - 1].imm.value as usize;
-
-                match instruction.mnemonic {
-                    Mnemonic::CMPPS if cc < 8 => {
-                        buffer.append(TOKEN_MNEMONIC)?;
-                        let string = buffer.get_string()?;
-                        return write!(string, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
+            if count > 0 {
+                if let DecodedOperandKind::Imm(imm) = &operands[count - 1].kind {
+                    let cc = imm.value as usize;
+                    match instruction.mnemonic {
+                        Mnemonic::CMPPS if cc < 8 => {
+                            buffer.append(TOKEN_MNEMONIC)?;
+                            let string = buffer.get_string()?;
+                            return write!(string, "cmp{}ps", CONDITION_CODES[cc])
+                                .map_err(user_err);
+                        }
+                        Mnemonic::CMPPD if cc < 8 => {
+                            buffer.append(TOKEN_MNEMONIC)?;
+                            let string = buffer.get_string()?;
+                            return write!(string, "cmp{}pd", CONDITION_CODES[cc])
+                                .map_err(user_err);
+                        }
+                        Mnemonic::VCMPPS if cc < 0x20 => {
+                            buffer.append(TOKEN_MNEMONIC)?;
+                            let string = buffer.get_string()?;
+                            return write!(string, "vcmp{}ps", CONDITION_CODES[cc])
+                                .map_err(user_err);
+                        }
+                        Mnemonic::VCMPPD if cc < 0x20 => {
+                            buffer.append(TOKEN_MNEMONIC)?;
+                            let string = buffer.get_string()?;
+                            return write!(string, "vcmp{}pd", CONDITION_CODES[cc])
+                                .map_err(user_err);
+                        }
+                        _ => {}
                     }
-                    Mnemonic::CMPPD if cc < 8 => {
-                        buffer.append(TOKEN_MNEMONIC)?;
-                        let string = buffer.get_string()?;
-                        return write!(string, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
-                    }
-                    Mnemonic::VCMPPS if cc < 0x20 => {
-                        buffer.append(TOKEN_MNEMONIC)?;
-                        let string = buffer.get_string()?;
-                        return write!(string, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
-                    }
-                    Mnemonic::VCMPPD if cc < 0x20 => {
-                        buffer.append(TOKEN_MNEMONIC)?;
-                        let string = buffer.get_string()?;
-                        return write!(string, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
-                    }
-                    _ => {}
                 }
             }
 
@@ -124,14 +131,14 @@ fn main() -> Result<()> {
     // set h as suffix
     formatter.set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
 
-    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
     let mut buffer = [0u8; 200];
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
     // First without hooks
-    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        formatter.format_instruction(&instruction, &mut buffer, Some(ip), None)?;
+    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
+        formatter.format_instruction(&instruction, &operands, &mut buffer, Some(ip), None)?;
         println!("0x{:016X} {}", ip, buffer);
     }
 
@@ -148,8 +155,14 @@ fn main() -> Result<()> {
     };
 
     // And print it with hooks
-    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
-        formatter.format_instruction(&instruction, &mut buffer, Some(ip), Some(&mut user_data))?;
+    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
+        formatter.format_instruction(
+            &instruction,
+            &operands,
+            &mut buffer,
+            Some(ip),
+            Some(&mut user_data),
+        )?;
         println!("0x{:016X} {}", ip, buffer);
     }
 

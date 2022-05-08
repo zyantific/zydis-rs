@@ -19,6 +19,9 @@ use super::{
 
 pub mod encoder;
 
+#[deprecated(note = "use `StackWidth` instead")]
+pub type AddressWidth = StackWidth;
+
 #[rustfmt::skip]
 pub type FormatterFunc = Option<unsafe extern "C" fn(
     *const ZydisFormatter,
