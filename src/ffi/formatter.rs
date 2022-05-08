@@ -1,24 +1,30 @@
 use super::*;
 
-#[rustfmt::skip]
-pub type FormatterFunc = Option<unsafe extern "C" fn(
-    *const ZydisFormatter,
-    *mut FormatterBuffer,
-    *mut FormatterContext) -> Status>;
+pub type FormatterFunc = Option<
+    unsafe extern "C" fn(
+        *const ZydisFormatter,
+        *mut FormatterBuffer,
+        *mut FormatterContext,
+    ) -> Status,
+>;
 
-#[rustfmt::skip]
-pub type FormatterDecoratorFunc = Option<unsafe extern "C" fn(
-    *const ZydisFormatter,
-    *mut FormatterBuffer,
-    *mut FormatterContext,
-    Decorator) -> Status>;
+pub type FormatterDecoratorFunc = Option<
+    unsafe extern "C" fn(
+        *const ZydisFormatter,
+        *mut FormatterBuffer,
+        *mut FormatterContext,
+        Decorator,
+    ) -> Status,
+>;
 
-#[rustfmt::skip]
-pub type FormatterRegisterFunc = Option<unsafe extern "C" fn(
-    *const ZydisFormatter,
-    *mut FormatterBuffer,
-    *mut FormatterContext,
-    Register) -> Status>;
+pub type FormatterRegisterFunc = Option<
+    unsafe extern "C" fn(
+        *const ZydisFormatter,
+        *mut FormatterBuffer,
+        *mut FormatterContext,
+        Register,
+    ) -> Status,
+>;
 
 #[derive(Debug)]
 #[repr(C, packed)]
@@ -188,8 +194,7 @@ pub struct ZydisFormatter {
     case_decorators: i32,
     hex_uppercase: bool,
     hex_force_leading_number: bool,
-    // ZYDIS_NUMERIC_BASE_MAX_VALUE + 1
-    number_format: [[ZydisFormatterStringData; 2]; 2],
+    number_format: [[ZydisFormatterStringData; NUMERIC_BASE_MAX_VALUE + 1]; 2],
 
     func_pre_instruction: FormatterFunc,
     func_post_instruction: FormatterFunc,

@@ -1,10 +1,12 @@
 use super::*;
 
+pub type ZyanStringFlags = u8;
+
 /// The string type used in zydis.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ZyanString {
-    flags: u8,
+    flags: ZyanStringFlags,
     vector: ZyanVector,
 }
 
