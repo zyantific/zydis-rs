@@ -567,7 +567,7 @@ pub struct RawInfoSib {
 pub struct RawInfoDisp {
     /// The displacement value.
     pub disp_value: i64,
-    /// THe physical displacement size, in bits.
+    /// The physical displacement size, in bits.
     pub disp_size: u8,
     /// The offset of the displacement data, relative to the beginning of the
     /// instruction, in bytes.
@@ -580,6 +580,9 @@ pub struct RawInfoDisp {
 #[repr(C)] // For consistency with zydis and the Intel docs.
 #[allow(non_snake_case)]
 pub enum RawInfoKindSpecific {
+    // Note: this must match the order in `ZydisInstructionEncoding`.
+    Legacy,
+    _3DNOW,
     Xop(RawInfoXop),
     Vex(RawInfoVex),
     Evex(RawInfoEvex),
