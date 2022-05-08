@@ -12,6 +12,7 @@ extern crate serde;
 #[cfg(feature = "serialization")]
 #[macro_use]
 extern crate serde_derive;
+extern crate core;
 
 #[macro_use]
 pub mod status;
@@ -20,8 +21,8 @@ pub mod ffi;
 
 pub mod enums;
 
-// #[cfg(not(feature = "minimal"))]
-// pub mod formatter;
+#[cfg(not(feature = "minimal"))]
+pub mod formatter;
 
 pub use enums::{
     BranchType, BroadcastMode, ConversionMode, DecoderMode, Decorator, ElementType, ExceptionClass,
@@ -38,9 +39,9 @@ pub use ffi::{
     get_version, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer, FormatterContext,
     FormatterToken, InstructionIterator,
 };
-// #[cfg(not(feature = "minimal"))]
-// pub use formatter::{
-//     Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc,
-// WrappedGeneralFunc,     WrappedRegisterFunc,
-// };
+#[cfg(not(feature = "minimal"))]
+pub use formatter::{
+    Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
+    WrappedRegisterFunc,
+};
 pub use status::{Result, Status};

@@ -1202,7 +1202,6 @@ extern "C" {
         formatter: *const ZydisFormatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
-        index: u8,
         buffer: *mut c_void,
         length: usize,
         runtime_address: u64,

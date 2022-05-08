@@ -581,14 +581,21 @@ impl Formatter {
     pub fn format_instruction(
         &self,
         instruction: &DecodedInstruction,
+        operands: &[DecodedOperand],
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
+        if operands.len() > usize::from(u8::MAX) {
+            return Err(Status::InvalidArgument);
+        }
+
         unsafe {
             check!(ZydisFormatterFormatInstructionEx(
                 &self.formatter,
                 instruction,
+                operands.as_ptr(),
+                operands.len() as u8,
                 buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -612,7 +619,7 @@ impl Formatter {
     pub fn format_operand(
         &self,
         instruction: &DecodedInstruction,
-        operand_index: u8,
+        operand: &DecodedOperand,
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
@@ -621,7 +628,7 @@ impl Formatter {
             check!(ZydisFormatterFormatOperandEx(
                 &self.formatter,
                 instruction,
-                operand_index,
+                operand,
                 buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -638,16 +645,23 @@ impl Formatter {
     pub fn tokenize_instruction<'a>(
         &self,
         instruction: &DecodedInstruction,
+        operands: &[DecodedOperand],
         buffer: &'a mut [u8],
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
     ) -> Result<&'a FormatterToken<'a>> {
+        if operands.len() > usize::from(u8::MAX) {
+            return Err(Status::InvalidArgument);
+        }
+
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
                 ZydisFormatterTokenizeInstructionEx(
                     &self.formatter,
                     instruction,
+                    operands.as_ptr(),
+                    operands.len() as u8,
                     buffer.as_mut_ptr() as *mut _,
                     buffer.len(),
                     ip_to_runtime_addr(ip),
@@ -689,7 +703,7 @@ impl Formatter {
     pub fn tokenize_operand<'a>(
         &self,
         instruction: &DecodedInstruction,
-        index: u8,
+        operand: &DecodedOperand,
         buffer: &'a mut [u8],
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
@@ -700,7 +714,7 @@ impl Formatter {
                 ZydisFormatterTokenizeOperandEx(
                     &self.formatter,
                     instruction,
-                    index,
+                    operand,
                     buffer.as_mut_ptr() as *mut _,
                     buffer.len(),
                     ip_to_runtime_addr(ip),
