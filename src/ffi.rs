@@ -1015,7 +1015,7 @@ pub struct ShortString {
 /// use zydis;
 /// let (major, minor, patch, build) = zydis::get_version();
 /// println!("Zydis version: {}.{}.{}.{}", major, minor, patch, build);
-/// assert_eq!(major, 3);
+/// assert_eq!(major, 4);
 /// ```
 pub fn get_version() -> (u16, u16, u16, u16) {
     let combined_ver = unsafe { ZydisGetVersion() };
