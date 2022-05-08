@@ -27,7 +27,7 @@ fn main() -> Result<()> {
             // Obtain offsets for relevant operands, skip others.
             let (dyn_offs, dyn_len) = match &op.kind {
                 DecodedOperandKind::Mem(op) if op.disp.has_displacement => {
-                    (insn.raw.disp_offset, insn.raw.disp_size)
+                    (insn.raw.disp.offset, insn.raw.disp.size)
                 }
                 DecodedOperandKind::Imm(op) if op.is_relative => {
                     (insn.raw.imm[op_idx].offset, insn.raw.imm[op_idx].size)
