@@ -109,7 +109,7 @@ impl Status {
             Status::OutOfRange => "An index was out of bounds.",
             Status::NotFound => "The requested entity was not found.",
             Status::NotEnoughMemory => "Insufficient memory to perform the operation.",
-            Status::BadSystemcall => "An error occured during a system call.",
+            Status::BadSystemcall => "An error occurred during a system call.",
             Status::NoMoreData => {
                 "An attempt was made to read data from an input data-source that has no more data \
                  available."
@@ -181,17 +181,6 @@ macro_rules! check {
     ($expression:expr, $ok:expr) => {
         match $expression {
             x if !x.is_error() => Ok($ok),
-            x => Err(x),
-        }
-    };
-}
-
-macro_rules! check_option {
-    // This should only be used for the `ZydisDecoderDecodeBuffer` function.
-    ($expression:expr, $ok:expr) => {
-        match $expression {
-            x if !x.is_error() => Ok(Some($ok)),
-            $crate::status::Status::NoMoreData => Ok(None),
             x => Err(x),
         }
     };

@@ -249,13 +249,12 @@ bitflags! {
         const XMM_STATE_CR              = 1 << 14;
         const XMM_STATE_CW              = 1 << 15;
 
-
         const ACCEPTS_LOCK              = 1 << 16;
         const ACCEPTS_REP               = 1 << 17;
         const ACCEPTS_REPE              = 1 << 18;
         const ACCEPTS_REPZ              = 1 << 18;
         const ACCEPTS_REPNE             = 1 << 19;
-        const ACCEPTS_REPNZ             = 1 << 19;
+        const ACCEPTS_REPNZ             = Self::ACCEPTS_REPNE.bits;
         const ACCEPTS_BND               = 1 << 20;
         const ACCEPTS_XACQUIRE          = 1 << 21;
         const ACCEPTS_XRELEASE          = 1 << 22;
@@ -266,9 +265,9 @@ bitflags! {
         const HAS_LOCK                  = 1 << 27;
         const HAS_REP                   = 1 << 28;
         const HAS_REPE                  = 1 << 29;
-        const HAS_REPZ                  = 1 << 29;
+        const HAS_REPZ                  = Self::HAS_REPE.bits;
         const HAS_REPNE                 = 1 << 30;
-        const HAS_REPNZ                 = 1 << 30;
+        const HAS_REPNZ                 = Self::HAS_REPNE.bits;
         const HAS_BND                   = 1 << 31;
         const HAS_XACQUIRE              = 1 << 32;
         const HAS_XRELEASE              = 1 << 33;
@@ -281,13 +280,13 @@ bitflags! {
         const HAS_SEGMENT_ES            = 1 << 40;
         const HAS_SEGMENT_FS            = 1 << 41;
         const HAS_SEGMENT_GS            = 1 << 42;
-        const HAS_SEGMENT               =
-              InstructionAttributes::HAS_SEGMENT_CS.bits
-            | InstructionAttributes::HAS_SEGMENT_SS.bits
-            | InstructionAttributes::HAS_SEGMENT_DS.bits
-            | InstructionAttributes::HAS_SEGMENT_ES.bits
-            | InstructionAttributes::HAS_SEGMENT_FS.bits
-            | InstructionAttributes::HAS_SEGMENT_GS.bits;
+        const HAS_SEGMENT
+            = Self::HAS_SEGMENT_CS.bits
+            | Self::HAS_SEGMENT_SS.bits
+            | Self::HAS_SEGMENT_DS.bits
+            | Self::HAS_SEGMENT_ES.bits
+            | Self::HAS_SEGMENT_FS.bits
+            | Self::HAS_SEGMENT_GS.bits;
         const HAS_OPERANDSIZE           = 1 << 43;
         const HAS_ADDRESSIZE            = 1 << 44;
         const HAS_EVEX_B                = 1 << 45;

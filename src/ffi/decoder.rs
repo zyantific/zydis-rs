@@ -2,80 +2,114 @@ use super::*;
 
 #[derive(Clone, Debug)]
 #[repr(C)]
-pub struct Decoder {
+pub struct ZydisDecoder {
     machine_mode: MachineMode,
     stack_width: StackWidth,
     decoder_mode: [bool; DECODER_MODE_MAX_VALUE + 1],
 }
 
+#[derive(Clone, Debug)]
+pub struct Decoder {
+    decoder: ZydisDecoder,
+    instruction: DecodedInstruction,
+    operands: [DecodedOperand; MAX_OPERAND_COUNT],
+}
+
 impl Decoder {
-    /// Creates a new `Decoder` with the given `machine_mode` and
-    /// `stack_width`.
+    /// Creates a new `Decoder` with the given `machine_mode` and `stack_width`.
     #[inline]
     pub fn new(machine_mode: MachineMode, stack_width: StackWidth) -> Result<Self> {
         unsafe {
             let mut decoder = MaybeUninit::uninit();
-            check!(
-                ZydisDecoderInit(decoder.as_mut_ptr(), machine_mode, stack_width),
-                decoder.assume_init()
-            )
+            let status = ZydisDecoderInit(decoder.as_mut_ptr(), machine_mode, stack_width);
+            if status.is_error() {
+                return Err(status);
+            }
+
+            Ok(Self {
+                decoder: decoder.assume_init(),
+                instruction: core::mem::zeroed(),
+                operands: core::mem::zeroed(),
+            })
         }
     }
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`:
     #[inline]
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
-        unsafe { check!(ZydisDecoderEnableMode(self, mode, value as _)) }
+        unsafe { check!(ZydisDecoderEnableMode(&mut self.decoder, mode, value as _)) }
     }
 
-    /// Decodes a single binary instruction to a `DecodedInstruction`.
+    /// Decodes a single binary instruction.
+    ///
+    /// This uses the internal buffers in the decoder instance. Use
+    /// [`decode_into`] to decode into custom buffers instead.
     ///
     /// # Examples
     /// ```
     /// use zydis::{Decoder, MachineMode, Mnemonic, StackWidth};
     /// static INT3: &'static [u8] = &[0xCC];
-    /// let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
+    /// let mut decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let instruction = decoder.decode(INT3).unwrap().unwrap();
+    /// let (instruction, operands) = decoder.decode(INT3).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
     pub fn decode(
-        &self,
+        &mut self,
         buffer: &[u8],
-        operands: &mut [DecodedOperand],
-    ) -> Result<Option<DecodedInstruction>> {
-        // TODO(ath): is there a more elegant way to construct this MaybeUninit slice?
-        self.decode_uninit_operands(buffer, unsafe { std::mem::transmute(operands) })
+    ) -> Result<Option<(&DecodedInstruction, &[DecodedOperand])>> {
+        let insn = unsafe { std::mem::transmute(&mut self.instruction) };
+        let operands = unsafe { std::mem::transmute(self.operands.as_mut_slice()) };
+        if Self::decode_into_internal(&self.decoder, buffer, insn, operands)? {
+            let num_ops = usize::from(self.instruction.operand_count);
+            let operands = &self.operands[..num_ops];
+            Ok(Some((&self.instruction, operands)))
+        } else {
+            Ok(None)
+        }
     }
 
-    /// Decodes a single binary instruction to a `DecodedInstruction` without
-    /// initializing the operands first.
-    #[inline]
-    pub fn decode_uninit_operands(
-        &self,
+    fn decode_into_internal(
+        decoder: &ZydisDecoder,
         buffer: &[u8],
+        insn: &mut MaybeUninit<DecodedInstruction>,
         operands: &mut [MaybeUninit<DecodedOperand>],
-    ) -> Result<Option<DecodedInstruction>> {
+    ) -> Result<bool> {
         if operands.len() > usize::from(u8::MAX) {
             return Err(Status::InvalidArgument);
         }
 
-        unsafe {
-            let mut instruction = MaybeUninit::uninit();
-            check_option!(
-                ZydisDecoderDecodeFull(
-                    self,
-                    buffer.as_ptr() as *const c_void,
-                    buffer.len(),
-                    instruction.as_mut_ptr(),
-                    operands.as_mut_ptr() as _,
-                    operands.len() as u8,
-                    DecodingFlags::empty(), // TODO(ath): expose to user
-                ),
-                instruction.assume_init()
+        match unsafe {
+            ZydisDecoderDecodeFull(
+                decoder,
+                buffer.as_ptr() as *const c_void,
+                buffer.len(),
+                insn.as_mut_ptr(),
+                operands.as_mut_ptr() as _,
+                operands.len() as u8,
+                DecodingFlags::empty(), // TODO(ath): expose to user
             )
+        } {
+            x if !x.is_error() => Ok(true),
+            Status::NoMoreData => Ok(false),
+            x => Err(x),
         }
+    }
+
+    /// Decodes a single binary instruction without initializing the structs
+    /// first.
+    ///
+    /// Returns `true` if an instruction was decoded, `false` if not (buffer
+    /// empty).
+    #[inline]
+    pub fn decode_into(
+        &self,
+        buffer: &[u8],
+        insn: &mut MaybeUninit<DecodedInstruction>,
+        operands: &mut [MaybeUninit<DecodedOperand>],
+    ) -> Result<bool> {
+        Self::decode_into_internal(&self.decoder, buffer, insn, operands)
     }
 
     /// Returns an iterator over all the instructions in the buffer.
@@ -83,11 +117,11 @@ impl Decoder {
     /// The iterator ignores all errors and stops producing values in the case
     /// of an error.
     #[inline]
-    pub fn instruction_iterator<'a, 'b>(
-        &'a self,
-        buffer: &'b [u8],
+    pub fn instruction_iterator<'decoder, 'buffer>(
+        &'decoder mut self,
+        buffer: &'buffer [u8],
         ip: u64,
-    ) -> InstructionIterator<'a, 'b> {
+    ) -> InstructionIterator<'decoder, 'buffer> {
         InstructionIterator {
             decoder: self,
             buffer,
@@ -96,43 +130,58 @@ impl Decoder {
     }
 }
 
-pub struct InstructionIterator<'a, 'b> {
-    decoder: &'a Decoder,
-    buffer: &'b [u8],
+// TODO(ath): better ideas for what the iterator should yield?
+pub struct FullDecodedInstruction {
+    pub ip: u64,
+    pub insn: DecodedInstruction,
+    operands: [DecodedOperand; MAX_OPERAND_COUNT],
+}
+
+impl FullDecodedInstruction {
+    pub fn operands(&self) -> &[DecodedOperand] {
+        &self.operands[..usize::from(self.insn.operand_count)]
+    }
+
+    pub fn visible_operands(&self) -> &[DecodedOperand] {
+        &self.operands[..usize::from(self.insn.operand_count_visible)]
+    }
+}
+
+pub struct InstructionIterator<'decoder, 'buffer> {
+    decoder: &'decoder Decoder,
+    buffer: &'buffer [u8],
     ip: u64,
 }
 
 impl Iterator for InstructionIterator<'_, '_> {
-    // TODO(ath): should we switch this to yield a struct instead?
-    type Item = (DecodedInstruction, [DecodedOperand; MAX_OPERAND_COUNT], u64);
+    type Item = Result<FullDecodedInstruction>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let mut operands = unsafe {
-            // Shamelessly pasted from the unstable impl of `uninit_array`:
-            // https://doc.rust-lang.org/stable/std/mem/union.MaybeUninit.html#method.uninit_array
-            MaybeUninit::<[MaybeUninit<DecodedOperand>; MAX_OPERAND_COUNT]>::uninit().assume_init()
-        };
+        let mut insn = MaybeUninit::uninit();
+        let mut operands =
+            unsafe { MaybeUninit::<[MaybeUninit<_>; MAX_OPERAND_COUNT]>::uninit().assume_init() };
 
-        let insn = self
+        match self
             .decoder
-            .decode_uninit_operands(self.buffer, &mut operands)
-            .ok()
-            .flatten()?;
+            .decode_into(self.buffer, &mut insn, &mut operands)
+        {
+            Ok(true) => {
+                let insn = unsafe { insn.assume_init() };
 
-        self.buffer = &self.buffer[insn.length as usize..];
+                self.buffer = &self.buffer[usize::from(insn.length)..];
+                let ip = self.ip;
+                self.ip += u64::from(insn.length);
 
-        let ip = self.ip;
-        self.ip += u64::from(insn.length);
-
-        // SAFETY: Zydis zeroes all operands passed, regardless of whether
-        //         they are used or not.
-        let operands: [DecodedOperand; MAX_OPERAND_COUNT] = unsafe {
-            // `array_assume_init` is still unstable :(
-            std::mem::transmute(operands)
-        };
-
-        Some((insn, operands, ip))
+                Some(Ok(FullDecodedInstruction {
+                    ip,
+                    insn,
+                    operands: unsafe { core::mem::transmute(operands) },
+                }))
+            }
+            Ok(false) => None,
+            Err(e) => Some(Err(e)),
+        }
     }
 }
 
@@ -305,7 +354,7 @@ impl DecodedInstruction {
 
     /// Returns offsets and sizes of all logical instruction segments.
     #[inline]
-    pub fn get_segments(&self) -> Result<InstructionSegments> {
+    pub fn segments(&self) -> Result<InstructionSegments> {
         unsafe {
             let mut segments = MaybeUninit::uninit();
             check!(
@@ -532,14 +581,14 @@ pub struct RawInfoMvex {
 #[allow(non_snake_case)]
 pub struct RawInfoModRm {
     /// The addressing mode.
-    pub modrm_mod: u8,
+    pub mod_: u8,
     /// Register specifier or opcode-extension.
-    pub modrm_reg: u8,
+    pub reg: u8,
     /// Register specifier or opcode-extension.
-    pub modrm_rm: u8,
+    pub rm: u8,
     /// The offset of the `ModRM` byte, relative to the beginning of the
     /// instruction, in bytes.
-    pub modrm_offset: u8,
+    pub offset: u8,
 }
 
 /// Detailed info about the `SIB` byte.
@@ -707,19 +756,19 @@ pub struct DecoderContext {
 
 extern "C" {
     pub fn ZydisDecoderInit(
-        decoder: *mut Decoder,
+        decoder: *mut ZydisDecoder,
         machine_mode: MachineMode,
         stack_width: StackWidth,
     ) -> Status;
 
     pub fn ZydisDecoderEnableMode(
-        decoder: *mut Decoder,
+        decoder: *mut ZydisDecoder,
         mode: DecoderMode,
         enabled: bool,
     ) -> Status;
 
     pub fn ZydisDecoderDecodeFull(
-        decoder: *const Decoder,
+        decoder: *const ZydisDecoder,
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
@@ -729,7 +778,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisDecoderDecodeInstruction(
-        decoder: *const Decoder,
+        decoder: *const ZydisDecoder,
         context: *mut DecoderContext,
         buffer: *const c_void,
         length: usize,
@@ -737,7 +786,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisDecoderDecodeOperands(
-        decoder: *const Decoder,
+        decoder: *const ZydisDecoder,
         context: *mut DecoderContext,
         operands: *mut DecodedOperand,
         operand_count: u8,
