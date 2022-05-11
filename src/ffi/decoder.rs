@@ -630,7 +630,7 @@ pub struct RawInfoDisp {
 #[allow(non_snake_case)]
 pub enum RawInfoKindSpecific {
     // Note: this must match the order in `ZydisInstructionEncoding`.
-    Legacy,
+    Legacy(RawInfoRex),
     _3DNOW,
     Xop(RawInfoXop),
     Vex(RawInfoVex),
@@ -647,8 +647,6 @@ pub struct RawInfo {
     pub prefix_count: u8,
     /// Detailed info about the legacy prefixes (including `REX`).
     pub prefixes: [Prefix; MAX_INSTRUCTION_LENGTH],
-    /// Detailed info about the `REX` prefix.
-    pub rex: RawInfoRex,
     /// Raw info depending on the instruction kind.
     ///
     /// Note: this is an anonymous union in the C library.
