@@ -16,7 +16,10 @@ static CODE: &'static [u8] = &[
 fn main() -> Result<()> {
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
-    for (insn, operands, ip) in decoder.instruction_iterator(CODE, 0) {
+    for insn in decoder.instruction_iterator(CODE, 0) {
+        let (ip, insn) = insn?;
+        let operands = insn.operands(&decoder);
+
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
         let mut mask = 0u16;
 

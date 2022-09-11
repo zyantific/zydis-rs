@@ -13,15 +13,14 @@ const ZYAN_MODULE_USER: usize = 0x3FF;
 
 macro_rules! make_status {
     ($error:expr, $module:expr, $code:expr) => {
-        ((($error & 1) << 31) | (($module & 0x7FF) << 20) | ($code & 0xFFFFF)) as isize
+        ((($error & 1) << 31) | (($module & 0x7FF) << 20) | ($code & 0xFFFFF)) as u32
     };
 }
 
+#[repr(u32)]
 #[rustfmt::skip]
+#[non_exhaustive]
 #[derive(Copy, Clone, Eq, PartialEq)]
-// TODO: Once stable
-//#[non_exhaustive]
-#[repr(C)]
 pub enum Status {
     Success                = make_status!(0, ZYAN_MODULE_ZYCORE, 0x00),
     Failed                 = make_status!(1, ZYAN_MODULE_ZYCORE, 0x01),
@@ -33,51 +32,24 @@ pub enum Status {
     OutOfRange             = make_status!(1, ZYAN_MODULE_ZYCORE, 0x07),
     InsufficientBufferSize = make_status!(1, ZYAN_MODULE_ZYCORE, 0x08),
     NotEnoughMemory        = make_status!(1, ZYAN_MODULE_ZYCORE, 0x09),
-    BadSystemcall          = make_status!(1, ZYAN_MODULE_ZYCORE, 0x0A),
-
-    // Zydis
-    NoMoreData             = make_status!(1, ZYAN_MODULE_ZYDIS, 0x00),
-    DecodingError          = make_status!(1, ZYAN_MODULE_ZYDIS, 0x01),
-    InstructionTooLong     = make_status!(1, ZYAN_MODULE_ZYDIS, 0x02),
-    BadRegister            = make_status!(1, ZYAN_MODULE_ZYDIS, 0x03),
-    IllegalLock            = make_status!(1, ZYAN_MODULE_ZYDIS, 0x04),
-    IllegalLegacyPfx       = make_status!(1, ZYAN_MODULE_ZYDIS, 0x05),
-    IllegalRex             = make_status!(1, ZYAN_MODULE_ZYDIS, 0x06),
-    InvalidMap             = make_status!(1, ZYAN_MODULE_ZYDIS, 0x07),
-    MalformedEvex          = make_status!(1, ZYAN_MODULE_ZYDIS, 0x08),
-    MalformedMvex          = make_status!(1, ZYAN_MODULE_ZYDIS, 0x09),
-    InvalidMask            = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0A),
-
-    // Formatter
-    /// Returning this status code from some formatter callback will cause the
-    /// formatter to omit the corresponding token.
-    ///
-    /// Valid callbacks are:
-    /// - `HookPreOperand`
-    /// - `HookPostOperand`
-    /// - `HookFormatOperandReg`
-    /// - `HookFormatOperandMem`
-    /// - `HookFormatOperandPtr`
-    /// - `HookFormatOperandImm`
-    /// - `HookPrintMemsize`
-    SkipToken = make_status!(0, ZYAN_MODULE_ZYDIS, 0x0B),
-
-    // Encoder
-    /// The requested instruction can't be encoded.
-    ImpossibleInstruction = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0C),
-
-    /// Use this for custom errors that don't fit for any of the other errors.
-    User = make_status!(1, ZYAN_MODULE_USER, 0x00),
-    /// The given bytes were not UTF8 encoded.
-    NotUTF8 = make_status!(1, ZYAN_MODULE_USER, 0x01),
-
-    // TODO: For now ...
-    // Don't use this, it is used so that you always have a `_` in all match patterns, because
-    // otherwise we could hit undefined behaviour.
-    //
-    // 0x7FF... so that this can fit within one isize.
-    #[doc(hidden)]
-    __NoExhaustiveMatching__ = 0x7FFFFFFF,
+    BadSystemCall          = make_status!(1, ZYAN_MODULE_ZYCORE, 0x0A),
+    
+    NoMoreData             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x00),
+    DecodingError          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x01),
+    InstructionTooLong     = make_status!(1, ZYAN_MODULE_ZYDIS,  0x02),
+    BadRegister            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x03),
+    IllegalLock            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x04),
+    IllegalLegacyPfx       = make_status!(1, ZYAN_MODULE_ZYDIS,  0x05),
+    IllegalRex             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x06),
+    InvalidMap             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x07),
+    MalformedEvex          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x08),
+    MalformedMvex          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x09),
+    InvalidMask            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x0A),
+    SkipToken              = make_status!(0, ZYAN_MODULE_ZYDIS,  0x0B),
+    ImpossibleInstruction  = make_status!(1, ZYAN_MODULE_ZYDIS,  0x0C),
+    
+    User                   = make_status!(1, ZYAN_MODULE_USER,   0x00),
+    NotUTF8                = make_status!(1, ZYAN_MODULE_USER,   0x01),
 }
 
 impl Status {
@@ -109,7 +81,7 @@ impl Status {
             Status::OutOfRange => "An index was out of bounds.",
             Status::NotFound => "The requested entity was not found.",
             Status::NotEnoughMemory => "Insufficient memory to perform the operation.",
-            Status::BadSystemcall => "An error occurred during a system call.",
+            Status::BadSystemCall => "An error occurred during a system call.",
             Status::NoMoreData => {
                 "An attempt was made to read data from an input data-source that has no more data \
                  available."
@@ -163,13 +135,13 @@ impl fmt::Display for Status {
 }
 
 impl error::Error for Status {
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-
     fn description(&self) -> &str {
         // Call method not defined in this trait.
         Self::description(*self)
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
     }
 }
 

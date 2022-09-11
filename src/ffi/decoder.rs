@@ -1,5 +1,7 @@
 use super::*;
 
+use core::{fmt, mem, ops, ptr, slice};
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct ZydisDecoder {
@@ -9,11 +11,7 @@ pub struct ZydisDecoder {
 }
 
 #[derive(Clone, Debug)]
-pub struct Decoder {
-    decoder: ZydisDecoder,
-    instruction: DecodedInstruction,
-    operands: [DecodedOperand; MAX_OPERAND_COUNT],
-}
+pub struct Decoder(ZydisDecoder);
 
 impl Decoder {
     /// Creates a new `Decoder` with the given `machine_mode` and `stack_width`.
@@ -25,19 +23,14 @@ impl Decoder {
             if status.is_error() {
                 return Err(status);
             }
-
-            Ok(Self {
-                decoder: decoder.assume_init(),
-                instruction: core::mem::zeroed(),
-                operands: core::mem::zeroed(),
-            })
+            Ok(Self(decoder.assume_init()))
         }
     }
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`:
     #[inline]
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
-        unsafe { check!(ZydisDecoderEnableMode(&mut self.decoder, mode, value as _)) }
+        unsafe { check!(ZydisDecoderEnableMode(&mut self.0, mode, value as _)) }
     }
 
     /// Decodes a single binary instruction.
@@ -55,61 +48,22 @@ impl Decoder {
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
-    pub fn decode(
-        &mut self,
-        buffer: &[u8],
-    ) -> Result<Option<(&DecodedInstruction, &[DecodedOperand])>> {
-        let insn = unsafe { std::mem::transmute(&mut self.instruction) };
-        let operands = unsafe { std::mem::transmute(self.operands.as_mut_slice()) };
-        if Self::decode_into_internal(&self.decoder, buffer, insn, operands)? {
-            let num_ops = usize::from(self.instruction.operand_count);
-            let operands = &self.operands[..num_ops];
-            Ok(Some((&self.instruction, operands)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn decode_into_internal(
-        decoder: &ZydisDecoder,
-        buffer: &[u8],
-        insn: &mut MaybeUninit<DecodedInstruction>,
-        operands: &mut [MaybeUninit<DecodedOperand>],
-    ) -> Result<bool> {
-        if operands.len() > usize::from(u8::MAX) {
-            return Err(Status::InvalidArgument);
-        }
-
-        match unsafe {
-            ZydisDecoderDecodeFull(
-                decoder,
-                buffer.as_ptr() as *const c_void,
+    pub fn decode(&self, buffer: &[u8]) -> Result<Option<Instruction>> {
+        let mut uninit_insn = MaybeUninit::<Instruction>::uninit();
+        let insn_ptr = uninit_insn.as_mut_ptr();
+        unsafe {
+            return match ZydisDecoderDecodeInstruction(
+                &self.0,
+                ptr::addr_of_mut!((*insn_ptr).ctx),
+                buffer.as_ptr() as _,
                 buffer.len(),
-                insn.as_mut_ptr(),
-                operands.as_mut_ptr() as _,
-                operands.len() as u8,
-                DecodingFlags::empty(), // TODO(ath): expose to user
-            )
-        } {
-            x if !x.is_error() => Ok(true),
-            Status::NoMoreData => Ok(false),
-            x => Err(x),
+                ptr::addr_of_mut!((*insn_ptr).insn),
+            ) {
+                Status::NoMoreData => Ok(None),
+                x if x.is_error() => Err(x),
+                x => Ok(Some(uninit_insn.assume_init())),
+            };
         }
-    }
-
-    /// Decodes a single binary instruction without initializing the structs
-    /// first.
-    ///
-    /// Returns `true` if an instruction was decoded, `false` if not (buffer
-    /// empty).
-    #[inline]
-    pub fn decode_into(
-        &self,
-        buffer: &[u8],
-        insn: &mut MaybeUninit<DecodedInstruction>,
-        operands: &mut [MaybeUninit<DecodedOperand>],
-    ) -> Result<bool> {
-        Self::decode_into_internal(&self.decoder, buffer, insn, operands)
     }
 
     /// Returns an iterator over all the instructions in the buffer.
@@ -118,7 +72,7 @@ impl Decoder {
     /// of an error.
     #[inline]
     pub fn instruction_iterator<'decoder, 'buffer>(
-        &'decoder mut self,
+        &'decoder self,
         buffer: &'buffer [u8],
         ip: u64,
     ) -> InstructionIterator<'decoder, 'buffer> {
@@ -130,23 +84,6 @@ impl Decoder {
     }
 }
 
-// TODO(ath): better ideas for what the iterator should yield?
-pub struct FullDecodedInstruction {
-    pub ip: u64,
-    pub insn: DecodedInstruction,
-    operands: [DecodedOperand; MAX_OPERAND_COUNT],
-}
-
-impl FullDecodedInstruction {
-    pub fn operands(&self) -> &[DecodedOperand] {
-        &self.operands[..usize::from(self.insn.operand_count)]
-    }
-
-    pub fn visible_operands(&self) -> &[DecodedOperand] {
-        &self.operands[..usize::from(self.insn.operand_count_visible)]
-    }
-}
-
 pub struct InstructionIterator<'decoder, 'buffer> {
     decoder: &'decoder Decoder,
     buffer: &'buffer [u8],
@@ -154,34 +91,159 @@ pub struct InstructionIterator<'decoder, 'buffer> {
 }
 
 impl Iterator for InstructionIterator<'_, '_> {
-    type Item = Result<FullDecodedInstruction>;
+    type Item = Result<(u64, Instruction)>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let mut insn = MaybeUninit::uninit();
-        let mut operands =
-            unsafe { MaybeUninit::<[MaybeUninit<_>; MAX_OPERAND_COUNT]>::uninit().assume_init() };
-
-        match self
-            .decoder
-            .decode_into(self.buffer, &mut insn, &mut operands)
-        {
-            Ok(true) => {
-                let insn = unsafe { insn.assume_init() };
-
+        match self.decoder.decode(self.buffer) {
+            Ok(Some(insn)) => {
                 self.buffer = &self.buffer[usize::from(insn.length)..];
-                let ip = self.ip;
+                let insn_ip = self.ip;
                 self.ip += u64::from(insn.length);
-
-                Some(Ok(FullDecodedInstruction {
-                    ip,
-                    insn,
-                    operands: unsafe { core::mem::transmute(operands) },
-                }))
+                Some(Ok((insn_ip, insn)))
             }
-            Ok(false) => None,
+            Ok(None) => None,
             Err(e) => Some(Err(e)),
         }
+    }
+}
+
+pub struct Instruction {
+    insn: DecodedInstruction,
+    ctx: DecoderContext,
+}
+
+impl Instruction {
+    pub fn info(&self) -> &DecodedInstruction {
+        &self.insn
+    }
+
+    fn operands_internal<const N: usize>(
+        &self,
+        decoder: &Decoder,
+        num_operands: usize,
+    ) -> Operands<N> {
+        let mut ops = MaybeUninit::<Operands<N>>::uninit();
+        let ops_ptr = ops.as_mut_ptr();
+        unsafe {
+            ptr::write(ptr::addr_of_mut!((*ops_ptr).num_initialized), num_operands);
+            let status = ZydisDecoderDecodeOperands(
+                &decoder.0,
+                &self.ctx,
+                &self.insn,
+                ptr::addr_of_mut!((*ops_ptr).operands) as _,
+                N as u8,
+            );
+            assert!(
+                !status.is_error(),
+                "operand decoding should be infallible for valid arguments",
+            );
+            ops.assume_init()
+        }
+    }
+
+    pub fn operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT> {
+        self.operands_internal::<MAX_OPERAND_COUNT>(decoder, usize::from(self.operand_count))
+    }
+
+    pub fn visible_operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT_VISIBLE> {
+        self.operands_internal::<MAX_OPERAND_COUNT_VISIBLE>(
+            decoder,
+            usize::from(self.operand_count),
+        )
+    }
+
+    /// Calculates the absolute address for the given instruction operand,
+    /// using the given `address` as the address for this instruction.
+    #[inline]
+    pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
+        unsafe {
+            let mut addr = 0u64;
+            check!(
+                ZydisCalcAbsoluteAddress(&self.insn, operand, address, &mut addr),
+                addr
+            )
+        }
+    }
+
+    /// Behaves like `calc_absolute_address`, but takes runtime-known values of
+    /// registers passed in the `context` into account.
+    #[inline]
+    pub fn calc_absolute_address_ex(
+        &self,
+        address: u64,
+        operand: &DecodedOperand,
+        context: &RegisterContext,
+    ) -> Result<u64> {
+        unsafe {
+            let mut addr = 0u64;
+            check!(
+                ZydisCalcAbsoluteAddressEx(&self.insn, operand, address, context, &mut addr),
+                addr
+            )
+        }
+    }
+
+    /// Returns offsets and sizes of all logical instruction segments.
+    #[inline]
+    pub fn segments(&self) -> Result<InstructionSegments> {
+        unsafe {
+            let mut segments = MaybeUninit::uninit();
+            check!(
+                ZydisGetInstructionSegments(&self.insn, segments.as_mut_ptr()),
+                segments.assume_init()
+            )
+        }
+    }
+}
+
+impl ops::Deref for Instruction {
+    type Target = DecodedInstruction;
+
+    fn deref(&self) -> &Self::Target {
+        &self.insn
+    }
+}
+
+impl fmt::Debug for Instruction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (**self).fmt(f)
+    }
+}
+
+pub struct Operands<const MAX_OPERANDS: usize> {
+    operands: [DecodedOperand; MAX_OPERANDS],
+    num_initialized: usize,
+}
+
+impl<const N: usize> fmt::Debug for Operands<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_ref().fmt(f)
+    }
+}
+
+impl<const N: usize> AsRef<[DecodedOperand]> for Operands<N> {
+    fn as_ref(&self) -> &[DecodedOperand] {
+        &self.operands[..self.num_initialized]
+    }
+}
+
+impl<const N: usize> ops::Deref for Operands<N> {
+    type Target = [DecodedOperand];
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+
+impl<const N: usize, I> ops::Index<I> for Operands<N>
+where
+    I: slice::SliceIndex<[DecodedOperand]>,
+{
+    type Output = I::Output;
+
+    fn index(&self, index: I) -> &Self::Output {
+        self.as_ref().index(index)
     }
 }
 
@@ -320,51 +382,6 @@ pub struct DecodedInstruction {
     pub raw: RawInfo,
 }
 
-impl DecodedInstruction {
-    /// Calculates the absolute address for the given instruction operand,
-    /// using the given `address` as the address for this instruction.
-    #[inline]
-    pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
-        unsafe {
-            let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddress(self, operand, address, &mut addr),
-                addr
-            )
-        }
-    }
-
-    /// Behaves like `calc_absolute_address`, but takes runtime-known values of
-    /// registers passed in the `context` into account.
-    #[inline]
-    pub fn calc_absolute_address_ex(
-        &self,
-        address: u64,
-        operand: &DecodedOperand,
-        context: &RegisterContext,
-    ) -> Result<u64> {
-        unsafe {
-            let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr),
-                addr
-            )
-        }
-    }
-
-    /// Returns offsets and sizes of all logical instruction segments.
-    #[inline]
-    pub fn segments(&self) -> Result<InstructionSegments> {
-        unsafe {
-            let mut segments = MaybeUninit::uninit();
-            check!(
-                ZydisGetInstructionSegments(self, segments.as_mut_ptr()),
-                segments.assume_init()
-            )
-        }
-    }
-}
-
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -414,7 +431,7 @@ pub struct MetaInfo {
 /// Detailed info about the `REX` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoRex {
     /// 64-bit operand-size promotion.
@@ -442,7 +459,7 @@ pub struct RawInfoRex {
 /// Detailed info about the `XOP` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoXop {
     /// Extension of the `ModRM.reg` field (inverted).
@@ -470,7 +487,7 @@ pub struct RawInfoXop {
 /// Detailed info about the `VEX` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoVex {
     /// Extension of the `modRM.reg` field (inverted).
@@ -501,7 +518,7 @@ pub struct RawInfoVex {
 /// Detailed info about the `EVEX` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoEvex {
     /// Extension of the `ModRM.reg` field (inverted).
@@ -541,7 +558,7 @@ pub struct RawInfoEvex {
 /// Detailed info about the `MVEX` prefix.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoMvex {
     /// Extension of the `ModRM.reg` field (inverted).
@@ -577,7 +594,7 @@ pub struct RawInfoMvex {
 /// Detailed info about the `ModRM` byte.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoModRm {
     /// The addressing mode.
@@ -594,7 +611,7 @@ pub struct RawInfoModRm {
 /// Detailed info about the `SIB` byte.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoSib {
     /// The scale factor.
@@ -611,22 +628,22 @@ pub struct RawInfoSib {
 /// Detailed info about displacement-bytes.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfoDisp {
     /// The displacement value.
-    pub disp_value: i64,
+    pub value: i64,
     /// The physical displacement size, in bits.
-    pub disp_size: u8,
+    pub size: u8,
     /// The offset of the displacement data, relative to the beginning of the
     /// instruction, in bytes.
-    pub disp_offset: u8,
+    pub offset: u8,
 }
 
 /// Union for raw info from various mutually exclusive vector extensions.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub enum RawInfoKindSpecific {
     // Note: this must match the order in `ZydisInstructionEncoding`.
@@ -640,7 +657,7 @@ pub enum RawInfoKindSpecific {
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[repr(C)] // For consistency with zydis and the Intel docs.
+#[repr(C)]
 #[allow(non_snake_case)]
 pub struct RawInfo {
     /// The number of legacy prefixes.
@@ -696,7 +713,6 @@ pub struct Prefix {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-// For consistency with zydis and the Intel docs.
 #[allow(non_snake_case)]
 pub struct ContextVectorUnified {
     pub W: u8,
@@ -785,7 +801,8 @@ extern "C" {
 
     pub fn ZydisDecoderDecodeOperands(
         decoder: *const ZydisDecoder,
-        context: *mut DecoderContext,
+        context: *const DecoderContext,
+        instruction: *const DecodedInstruction,
         operands: *mut DecodedOperand,
         operand_count: u8,
     ) -> Status;

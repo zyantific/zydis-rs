@@ -15,14 +15,13 @@ fn main() -> Result<()> {
 
     let mut buffer = [0u8; 256];
 
-    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
-        for (ty, val) in formatter.tokenize_instruction(
-            &instruction,
-            &operands,
-            &mut buffer[..],
-            Some(ip),
-            None,
-        )? {
+    for insn in decoder.instruction_iterator(CODE, 0) {
+        let (ip, insn) = insn?;
+        let operands = insn.visible_operands(&decoder);
+
+        for (ty, val) in
+            formatter.tokenize_instruction(&insn, &operands, &mut buffer[..], Some(ip), None)?
+        {
             println!("token type: {}, value: {}", ty, val);
         }
         println!("----");
