@@ -4,12 +4,14 @@
 
 #[macro_use]
 pub mod status;
+mod decoder;
 pub mod enums;
 pub mod ffi;
 
 #[cfg(not(feature = "minimal"))]
 pub mod formatter;
 
+pub use decoder::{Decoder, Operands};
 pub use enums::{
     BranchType, BroadcastMode, ConversionMode, DecoderMode, Decorator, ElementType, ExceptionClass,
     Feature, FormatterStyle, ISAExt, ISASet, InstructionAttributes, InstructionCategory,
@@ -24,8 +26,8 @@ pub use enums::{
 };
 #[allow(deprecated)]
 pub use ffi::{
-    get_version, AddressWidth, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer,
-    FormatterContext, FormatterToken, InstructionIter,
+    get_version, AddressWidth, DecodedInstruction, DecodedOperand, FormatterBuffer,
+    FormatterContext, FormatterToken,
 };
 #[cfg(not(feature = "minimal"))]
 pub use formatter::{
