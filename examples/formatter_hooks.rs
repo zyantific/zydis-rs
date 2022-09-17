@@ -41,7 +41,7 @@ fn print_mnemonic(
     let operands =
         unsafe { core::slice::from_raw_parts(ctx.operands, instruction.operand_count as usize) };
     let user_data = user_data.unwrap();
-    if let Hook::PrintMnemonic(Some(orig_print_mnemonic)) = user_data.orig_print_mnemonic {
+    if let Hook::PrintMnemonic(orig_print_mnemonic) = user_data.orig_print_mnemonic {
         user_data.omit_immediate = true;
 
         let count = instruction.operand_count as usize;
@@ -89,7 +89,7 @@ fn format_operand_imm(
     user_data: Option<&mut UserData>,
 ) -> Result<()> {
     let user_data = user_data.unwrap();
-    if let Hook::FormatOperandImm(Some(orig_format_operand)) = user_data.orig_format_operand {
+    if let Hook::FormatOperandImm(orig_format_operand) = user_data.orig_format_operand {
         if user_data.omit_immediate {
             Err(Status::SkipToken)
         } else {

@@ -143,7 +143,7 @@ macro_rules! wrapped_hook_setter {
         #[inline]
         pub fn $func_name(&mut self, new_func: Box<$field_type>) -> Result<Hook> {
             self.$field_name = Some(new_func);
-            unsafe { self.set_raw_hook($constructor(Some($dispatch_func))) }
+            unsafe { self.set_raw_hook($constructor($dispatch_func)) }
         }
     };
 }

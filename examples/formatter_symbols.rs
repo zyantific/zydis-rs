@@ -37,7 +37,7 @@ fn print_address(
             write!(buffer.get_string()?, "<{}>", symbol).map_err(|_| Status::User)
         }
         None => unsafe {
-            let orig_fn = user_data.unwrap().unwrap();
+            let orig_fn = user_data.unwrap();
             check!((orig_fn)(mem::transmute(formatter), buffer, context))
         },
     }

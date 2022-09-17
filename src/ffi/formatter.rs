@@ -1,31 +1,22 @@
 use super::*;
 use crate::ffi;
 
-pub type FormatterFunc = Option<
-    unsafe extern "C" fn(
-        *const Formatter,
-        *mut FormatterBuffer,
-        *mut FormatterContext,
-    ) -> Status,
->;
+pub type FormatterFunc =
+    unsafe extern "C" fn(*const Formatter, *mut FormatterBuffer, *mut FormatterContext) -> Status;
 
-pub type FormatterDecoratorFunc = Option<
-    unsafe extern "C" fn(
-        *const Formatter,
-        *mut FormatterBuffer,
-        *mut FormatterContext,
-        Decorator,
-    ) -> Status,
->;
+pub type FormatterDecoratorFunc = unsafe extern "C" fn(
+    *const Formatter,
+    *mut FormatterBuffer,
+    *mut FormatterContext,
+    Decorator,
+) -> Status;
 
-pub type FormatterRegisterFunc = Option<
-    unsafe extern "C" fn(
-        *const Formatter,
-        *mut FormatterBuffer,
-        *mut FormatterContext,
-        Register,
-    ) -> Status,
->;
+pub type FormatterRegisterFunc = unsafe extern "C" fn(
+    *const Formatter,
+    *mut FormatterBuffer,
+    *mut FormatterContext,
+    Register,
+) -> Status;
 
 #[derive(Debug)]
 #[repr(C, packed)]
