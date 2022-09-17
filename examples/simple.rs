@@ -10,7 +10,7 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let formatter = Formatter::new(FormatterStyle::INTEL)?;
+    let formatter = Formatter::<()>::new(FormatterStyle::INTEL)?;
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
     // Our actual buffer.

@@ -1,6 +1,6 @@
 //! A completely stupid example for Zydis' formatter hook API.
 
-use std::{any::Any, ffi::CString, fmt::Write, mem};
+use std::{ffi::CString, fmt::Write, mem};
 
 use zydis::{check, ffi::DecodedOperandKind, *};
 
@@ -32,93 +32,78 @@ struct UserData {
 }
 
 fn print_mnemonic(
-    formatter: &Formatter,
+    formatter: &Formatter<UserData>,
     buffer: &mut ffi::FormatterBuffer,
     ctx: &mut ffi::FormatterContext,
-    user_data: Option<&mut dyn Any>,
+    user_data: Option<&mut UserData>,
 ) -> Result<()> {
     let instruction = unsafe { &*ctx.instruction };
     let operands =
         unsafe { core::slice::from_raw_parts(ctx.operands, instruction.operand_count as usize) };
-    match user_data.and_then(|x| x.downcast_mut::<UserData>()) {
-        Some(&mut UserData {
-            ref mut omit_immediate,
-            orig_print_mnemonic: Hook::PrintMnemonic(Some(orig_print_mnemonic)),
-            ..
-        }) => {
-            *omit_immediate = true;
+    let user_data = user_data.unwrap();
+    if let Hook::PrintMnemonic(Some(orig_print_mnemonic)) = user_data.orig_print_mnemonic {
+        user_data.omit_immediate = true;
 
-            let count = instruction.operand_count as usize;
+        let count = instruction.operand_count as usize;
 
-            if count > 0 {
-                if let DecodedOperandKind::Imm(imm) = &operands[count - 1].kind {
-                    let cc = imm.value as usize;
-                    match instruction.mnemonic {
-                        Mnemonic::CMPPS if cc < 8 => {
-                            buffer.append(TOKEN_MNEMONIC)?;
-                            let string = buffer.get_string()?;
-                            return write!(string, "cmp{}ps", CONDITION_CODES[cc])
-                                .map_err(user_err);
-                        }
-                        Mnemonic::CMPPD if cc < 8 => {
-                            buffer.append(TOKEN_MNEMONIC)?;
-                            let string = buffer.get_string()?;
-                            return write!(string, "cmp{}pd", CONDITION_CODES[cc])
-                                .map_err(user_err);
-                        }
-                        Mnemonic::VCMPPS if cc < 0x20 => {
-                            buffer.append(TOKEN_MNEMONIC)?;
-                            let string = buffer.get_string()?;
-                            return write!(string, "vcmp{}ps", CONDITION_CODES[cc])
-                                .map_err(user_err);
-                        }
-                        Mnemonic::VCMPPD if cc < 0x20 => {
-                            buffer.append(TOKEN_MNEMONIC)?;
-                            let string = buffer.get_string()?;
-                            return write!(string, "vcmp{}pd", CONDITION_CODES[cc])
-                                .map_err(user_err);
-                        }
-                        _ => {}
+        if count > 0 {
+            if let DecodedOperandKind::Imm(imm) = &operands[count - 1].kind {
+                let cc = imm.value as usize;
+                match instruction.mnemonic {
+                    Mnemonic::CMPPS if cc < 8 => {
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "cmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
                     }
+                    Mnemonic::CMPPD if cc < 8 => {
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "cmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
+                    }
+                    Mnemonic::VCMPPS if cc < 0x20 => {
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "vcmp{}ps", CONDITION_CODES[cc]).map_err(user_err);
+                    }
+                    Mnemonic::VCMPPD if cc < 0x20 => {
+                        buffer.append(TOKEN_MNEMONIC)?;
+                        let string = buffer.get_string()?;
+                        return write!(string, "vcmp{}pd", CONDITION_CODES[cc]).map_err(user_err);
+                    }
+                    _ => {}
                 }
             }
-
-            *omit_immediate = false;
-            unsafe { check!(orig_print_mnemonic(mem::transmute(formatter), buffer, ctx)) }
         }
-        _ => Ok(()),
+
+        user_data.omit_immediate = false;
+        unsafe { check!(orig_print_mnemonic(mem::transmute(formatter), buffer, ctx)) }
+    } else {
+        Ok(())
     }
 }
 
 fn format_operand_imm(
-    formatter: &Formatter,
+    formatter: &Formatter<UserData>,
     buffer: &mut ffi::FormatterBuffer,
     ctx: &mut ffi::FormatterContext,
-    user_data: Option<&mut dyn Any>,
+    user_data: Option<&mut UserData>,
 ) -> Result<()> {
-    match user_data {
-        Some(x) => match x.downcast_ref::<UserData>() {
-            Some(&UserData {
-                omit_immediate,
-                orig_format_operand: Hook::FormatOperandImm(Some(orig_format_operand)),
-                ..
-            }) => {
-                if omit_immediate {
-                    Err(Status::SkipToken)
-                } else {
-                    unsafe { check!(orig_format_operand(mem::transmute(formatter), buffer, ctx)) }
-                }
-            }
-            _ => Ok(()),
-        },
-        _ => Ok(()),
+    let user_data = user_data.unwrap();
+    if let Hook::FormatOperandImm(Some(orig_format_operand)) = user_data.orig_format_operand {
+        if user_data.omit_immediate {
+            Err(Status::SkipToken)
+        } else {
+            unsafe { check!(orig_format_operand(mem::transmute(formatter), buffer, ctx)) }
+        }
+    } else {
+        Ok(())
     }
 }
 
 fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
-    let mut formatter = Formatter::new(FormatterStyle::INTEL)?;
+    let mut formatter = Formatter::<UserData>::new_custom_userdata(FormatterStyle::INTEL)?;
     formatter.set_property(FormatterProperty::ForceSegment(true))?;
     formatter.set_property(FormatterProperty::ForceSize(true))?;
 

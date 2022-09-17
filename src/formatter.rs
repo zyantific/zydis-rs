@@ -1,7 +1,6 @@
 //! Textual instruction formatting routines.
 
 use core::{
-    any::Any,
     convert::TryInto as _,
     fmt,
     mem::{self, MaybeUninit},
@@ -110,33 +109,33 @@ impl Hook {
 }
 
 #[rustfmt::skip]
-pub type WrappedGeneralFunc = dyn Fn(
-    &Formatter,
+pub type WrappedGeneralFunc<UserData> = dyn Fn(
+    &Formatter<UserData>,
     &mut ffi::FormatterBuffer,
     &mut ffi::FormatterContext,
-    Option<&mut dyn Any>
+    Option<&mut UserData>
 ) -> Result<()>;
 
 #[rustfmt::skip]
-pub type WrappedRegisterFunc = dyn Fn(
-    &Formatter,
+pub type WrappedRegisterFunc<UserData> = dyn Fn(
+    &Formatter<UserData>,
     &mut ffi::FormatterBuffer,
     &mut ffi::FormatterContext,
     Register,
-    Option<&mut dyn Any>
+    Option<&mut UserData>
 ) -> Result<()>;
 
 #[rustfmt::skip]
-pub type WrappedDecoratorFunc = dyn Fn(
-    &Formatter,
+pub type WrappedDecoratorFunc<UserData> = dyn Fn(
+    &Formatter<UserData>,
     &mut ffi::FormatterBuffer,
     &mut ffi::FormatterContext,
     Decorator,
-    Option<&mut dyn Any>
+    Option<&mut UserData>
 ) -> Result<()>;
 
 macro_rules! wrapped_hook_setter {
-    ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:ident, $constructor:expr) => {
+    ($field_name:ident, $field_type:ty, $func_name:ident, $dispatch_func:path, $constructor:expr) => {
         /// Sets the formatter hook to the provided value.
         ///
         /// This function accepts a wrapped version of the raw hook.
@@ -149,62 +148,67 @@ macro_rules! wrapped_hook_setter {
     };
 }
 
-unsafe fn get_user_data<'a>(user_data: *mut c_void) -> Option<&'a mut dyn Any> {
+unsafe fn get_user_data<'a, UserData>(user_data: *mut c_void) -> Option<&'a mut UserData> {
     if user_data.is_null() {
         None
     } else {
-        Some(*(user_data as *mut &mut dyn Any))
+        Some(&mut *(user_data as *mut UserData))
     }
 }
 
 macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
+        unsafe extern "C" fn $func_name<UserData>(
             formatter: *const ffi::ZydisFormatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
         ) -> Status {
-            let formatter = &*(formatter as *const Formatter);
-            let ctx = &mut *ctx;
-            let usr = get_user_data(ctx.user_data);
-            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *buffer, ctx, usr) {
+            let formatter = &*(formatter as *const Formatter<UserData>);
+            match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut *buffer,
+                &mut *ctx,
+                get_user_data((*ctx).user_data),
+            ) {
                 Ok(_) => Status::Success,
                 Err(e) => e,
             }
         }
     };
     (register $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
+        unsafe extern "C" fn $func_name<UserData>(
             formatter: *const ffi::ZydisFormatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
             reg: Register,
         ) -> Status {
-            let formatter = &*(formatter as *const Formatter);
-            let ctx = &mut *ctx;
-            let usr = get_user_data(ctx.user_data);
-            match formatter.$field_name.as_ref().unwrap()(formatter, &mut *buffer, ctx, reg, usr) {
+            let formatter = &*(formatter as *const Formatter<UserData>);
+            match formatter.$field_name.as_ref().unwrap()(
+                formatter,
+                &mut *buffer,
+                &mut *ctx,
+                reg,
+                get_user_data((*ctx).user_data),
+            ) {
                 Ok(_) => Status::Success,
                 Err(e) => e,
             }
         }
     };
     (decorator $field_name:ident, $func_name:ident) => {
-        unsafe extern "C" fn $func_name(
+        unsafe extern "C" fn $func_name<UserData>(
             formatter: *const ffi::ZydisFormatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
             decorator: Decorator,
         ) -> Status {
-            let formatter = &*(formatter as *const Formatter);
-            let ctx = &mut *ctx;
-            let usr = get_user_data(ctx.user_data);
+            let formatter = &*(formatter as *const Formatter<UserData>);
             match formatter.$field_name.as_ref().unwrap()(
                 formatter,
                 &mut *buffer,
-                ctx,
+                &mut *ctx,
                 decorator,
-                usr,
+                get_user_data((*ctx).user_data),
             ) {
                 Ok(_) => Status::Success,
                 Err(e) => e,
@@ -264,10 +268,6 @@ pub enum FormatterProperty<'a> {
     HexSuffix(Option<&'a CStr>),
 }
 
-fn user_data_to_c_void(x: &mut &mut dyn Any) -> *mut c_void {
-    (x as *mut &mut dyn Any) as *mut c_void
-}
-
 fn ip_to_runtime_addr(ip: Option<u64>) -> u64 {
     match ip {
         None => (-1i64) as u64,
@@ -307,176 +307,183 @@ impl fmt::Display for OutputBuffer<'_> {
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].
-pub struct Formatter {
+pub struct Formatter<UserData> {
     formatter: ffi::ZydisFormatter,
 
-    pre_instruction: Option<Box<WrappedGeneralFunc>>,
-    post_instruction: Option<Box<WrappedGeneralFunc>>,
-    pre_operand: Option<Box<WrappedGeneralFunc>>,
-    post_operand: Option<Box<WrappedGeneralFunc>>,
-    format_instruction: Option<Box<WrappedGeneralFunc>>,
-    format_operand_reg: Option<Box<WrappedGeneralFunc>>,
-    format_operand_mem: Option<Box<WrappedGeneralFunc>>,
-    format_operand_ptr: Option<Box<WrappedGeneralFunc>>,
-    format_operand_imm: Option<Box<WrappedGeneralFunc>>,
-    print_mnemonic: Option<Box<WrappedGeneralFunc>>,
-    print_register: Option<Box<WrappedRegisterFunc>>,
-    print_address_abs: Option<Box<WrappedGeneralFunc>>,
-    print_address_rel: Option<Box<WrappedGeneralFunc>>,
-    print_disp: Option<Box<WrappedGeneralFunc>>,
-    print_imm: Option<Box<WrappedGeneralFunc>>,
-    print_typecast: Option<Box<WrappedGeneralFunc>>,
-    print_prefixes: Option<Box<WrappedGeneralFunc>>,
-    print_decorator: Option<Box<WrappedDecoratorFunc>>,
+    pre_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
+    post_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
+    pre_operand: Option<Box<WrappedGeneralFunc<UserData>>>,
+    post_operand: Option<Box<WrappedGeneralFunc<UserData>>>,
+    format_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
+    format_operand_reg: Option<Box<WrappedGeneralFunc<UserData>>>,
+    format_operand_mem: Option<Box<WrappedGeneralFunc<UserData>>>,
+    format_operand_ptr: Option<Box<WrappedGeneralFunc<UserData>>>,
+    format_operand_imm: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_mnemonic: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_register: Option<Box<WrappedRegisterFunc<UserData>>>,
+    print_address_abs: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_address_rel: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_disp: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_imm: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_typecast: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_prefixes: Option<Box<WrappedGeneralFunc<UserData>>>,
+    print_decorator: Option<Box<WrappedDecoratorFunc<UserData>>>,
 }
 
-impl Formatter {
+impl Formatter<()> {
+    /// Creates a new formatter instance (no user-data).
+    pub fn new(style: FormatterStyle) -> Result<Self> {
+        Formatter::<()>::new_custom_userdata(style)
+    }
+}
+
+impl<UserData> Formatter<UserData> {
     wrapped_hook_setter!(
         pre_instruction,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_pre_instruction,
-        dispatch_pre_instruction,
+        dispatch_pre_instruction<UserData>,
         Hook::PreInstruction
     );
 
     wrapped_hook_setter!(
         post_instruction,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_post_instruction,
-        dispatch_post_instruction,
+        dispatch_post_instruction<UserData>,
         Hook::PostInstruction
     );
 
     wrapped_hook_setter!(
         pre_operand,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_pre_operand,
-        dispatch_pre_operand,
+        dispatch_pre_operand<UserData>,
         Hook::PreOperand
     );
 
     wrapped_hook_setter!(
         post_operand,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_post_operand,
-        dispatch_post_operand,
+        dispatch_post_operand<UserData>,
         Hook::PostOperand
     );
 
     wrapped_hook_setter!(
         format_instruction,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_format_instruction,
-        dispatch_format_instruction,
+        dispatch_format_instruction<UserData>,
         Hook::FormatInstruction
     );
 
     wrapped_hook_setter!(
         format_operand_reg,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_format_operand_reg,
-        dispatch_format_operand_reg,
+        dispatch_format_operand_reg<UserData>,
         Hook::FormatOperandReg
     );
 
     wrapped_hook_setter!(
         format_operand_mem,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_format_operand_mem,
-        dispatch_format_operand_mem,
+        dispatch_format_operand_mem<UserData>,
         Hook::FormatOperandMem
     );
 
     wrapped_hook_setter!(
         format_operand_ptr,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_format_operand_ptr,
-        dispatch_format_operand_ptr,
+        dispatch_format_operand_ptr<UserData>,
         Hook::FormatOperandPtr
     );
 
     wrapped_hook_setter!(
         format_operand_imm,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_format_operand_imm,
-        dispatch_format_operand_imm,
+        dispatch_format_operand_imm<UserData>,
         Hook::FormatOperandImm
     );
 
     wrapped_hook_setter!(
         print_mnemonic,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_mnemonic,
-        dispatch_print_mnemonic,
+        dispatch_print_mnemonic<UserData>,
         Hook::PrintMnemonic
     );
 
     wrapped_hook_setter!(
         print_register,
-        WrappedRegisterFunc,
+        WrappedRegisterFunc<UserData>,
         set_print_register,
-        dispatch_print_register,
+        dispatch_print_register<UserData>,
         Hook::PrintRegister
     );
 
     wrapped_hook_setter!(
         print_address_abs,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_address_abs,
-        dispatch_print_address_abs,
+        dispatch_print_address_abs<UserData>,
         Hook::PrintAddressAbs
     );
 
     wrapped_hook_setter!(
         print_address_rel,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_address_rel,
-        dispatch_print_address_rel,
+        dispatch_print_address_rel<UserData>,
         Hook::PrintAddressRel
     );
 
     wrapped_hook_setter!(
         print_disp,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_disp,
-        dispatch_print_disp,
+        dispatch_print_disp<UserData>,
         Hook::PrintDisp
     );
 
     wrapped_hook_setter!(
         print_imm,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_imm,
-        dispatch_print_imm,
+        dispatch_print_imm<UserData>,
         Hook::PrintImm
     );
 
     wrapped_hook_setter!(
         print_typecast,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_typecast,
-        dispatch_print_typecast,
+        dispatch_print_typecast<UserData>,
         Hook::PrintTypecast
     );
 
     wrapped_hook_setter!(
         print_prefixes,
-        WrappedGeneralFunc,
+        WrappedGeneralFunc<UserData>,
         set_print_prefixes,
-        dispatch_print_prefixes,
+        dispatch_print_prefixes<UserData>,
         Hook::PrintPrefixes
     );
 
     wrapped_hook_setter!(
         print_decorator,
-        WrappedDecoratorFunc,
+        WrappedDecoratorFunc<UserData>,
         set_print_decorator,
-        dispatch_print_decorator,
+        dispatch_print_decorator<UserData>,
         Hook::PrintDecorator
     );
 
     /// Creates a new formatter instance.
-    pub fn new(style: FormatterStyle) -> Result<Self> {
+    pub fn new_custom_userdata(style: FormatterStyle) -> Result<Self> {
         unsafe {
             let mut formatter = MaybeUninit::uninit();
             check!(
@@ -589,7 +596,7 @@ impl Formatter {
         operands: &[ffi::DecodedOperand],
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
-        mut user_data: Option<&mut dyn Any>,
+        user_data: Option<&mut UserData>,
     ) -> Result<()> {
         let num_ops: u8 = operands
             .len()
@@ -606,9 +613,8 @@ impl Formatter {
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
                 user_data
-                    .as_mut()
-                    .map(user_data_to_c_void)
-                    .unwrap_or_else(ptr::null_mut),
+                    .map(|x| x as *mut UserData as *mut c_void)
+                    .unwrap_or(ptr::null_mut())
             ))
         }
     }
@@ -628,7 +634,7 @@ impl Formatter {
         operand: &ffi::DecodedOperand,
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
-        mut user_data: Option<&mut dyn Any>,
+        user_data: Option<&mut UserData>,
     ) -> Result<()> {
         unsafe {
             check!(ffi::ZydisFormatterFormatOperandEx(
@@ -639,9 +645,8 @@ impl Formatter {
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
                 user_data
-                    .as_mut()
-                    .map(user_data_to_c_void)
-                    .unwrap_or_else(ptr::null_mut),
+                    .map(|x| x as *mut UserData as *mut c_void)
+                    .unwrap_or(ptr::null_mut())
             ))
         }
     }
@@ -654,7 +659,7 @@ impl Formatter {
         operands: &[ffi::DecodedOperand],
         buffer: &'a mut [u8],
         ip: Option<u64>,
-        mut user_data: Option<&mut dyn Any>,
+        user_data: Option<&mut UserData>,
     ) -> Result<&'a ffi::FormatterToken<'a>> {
         let num_ops: u8 = operands
             .len()
@@ -674,9 +679,8 @@ impl Formatter {
                     ip_to_runtime_addr(ip),
                     token.as_mut_ptr(),
                     user_data
-                        .as_mut()
-                        .map(user_data_to_c_void)
-                        .unwrap_or_else(ptr::null_mut),
+                        .map(|x| x as *mut UserData as *mut c_void)
+                        .unwrap_or(ptr::null_mut()),
                 ),
                 &*{ token.assume_init() }
             )
@@ -714,7 +718,7 @@ impl Formatter {
         operand: &ffi::DecodedOperand,
         buffer: &'a mut [u8],
         ip: Option<u64>,
-        mut user_data: Option<&mut dyn Any>,
+        user_data: Option<&mut UserData>,
     ) -> Result<&'a ffi::FormatterToken<'a>> {
         unsafe {
             let mut token = MaybeUninit::uninit();
@@ -728,9 +732,8 @@ impl Formatter {
                     ip_to_runtime_addr(ip),
                     token.as_mut_ptr(),
                     user_data
-                        .as_mut()
-                        .map(user_data_to_c_void)
-                        .unwrap_or_else(ptr::null_mut)
+                        .map(|x| x as *mut UserData as *mut c_void)
+                        .unwrap_or(ptr::null_mut())
                 ),
                 &*{ token.assume_init() }
             )
@@ -743,47 +746,6 @@ impl Formatter {
     /// This is the raw C style version of the formatter hook mechanism. No
     /// wrapping occurs, your callback will receive raw pointers. You might want
     /// to consider using any of the wrapped variants instead.
-    ///
-    /// To use the raw hooks set by this function when formatting, use the
-    /// functinos in `zydis::ffi`. For example:
-    ///
-    /// ```
-    /// use zydis::{
-    ///     ffi::ZydisFormatterFormatInstructionEx, StackWidth, Decoder, Formatter, FormatterStyle,
-    ///     MachineMode, Status,
-    /// };
-    /// use zydis::enums::MAX_OPERAND_COUNT;
-    /// static INT3: &'static [u8] = &[0xCC];
-    ///
-    /// let mut buffer = [0u8; 200];
-    ///
-    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
-    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
-    ///
-    /// let insn = dec.decode(INT3).unwrap().unwrap();
-    /// let operands = insn.visible_operands(&dec);
-    /// unsafe {
-    ///     let status = ZydisFormatterFormatInstructionEx(
-    ///         &formatter as *const Formatter as *const _,
-    ///         &*insn,
-    ///         operands.as_ptr(),
-    ///         operands.len() as u8,
-    ///         buffer.as_mut_ptr() as *mut _,
-    ///         200,                  // buffer size
-    ///         0,                    // runtime address
-    ///         std::ptr::null_mut(), // arbitrary user data passed directly to the hooks.
-    ///     );
-    ///
-    ///     assert_eq!(status, Status::Success);
-    /// }
-    /// assert_eq!(&buffer[..4], b"int3");
-    /// assert_eq!(buffer[4], 0);
-    /// ```
-    ///
-    /// # Safety
-    ///
-    /// When using any of the wrapped functions here (i.e. `format_instruction`)
-    /// the `user_data` parameters of the hook has the type `*mut &mut Any`.
     #[inline]
     pub unsafe fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
         let mut cb = hook.to_raw();

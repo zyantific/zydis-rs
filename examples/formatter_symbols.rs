@@ -3,7 +3,7 @@ use zydis::{
     OutputBuffer, Result as ZydisResult, StackWidth, Status, TOKEN_SYMBOL,
 };
 
-use std::{any::Any, fmt::Write, mem};
+use std::{fmt::Write, mem};
 
 #[rustfmt::skip]
 const CODE: &'static [u8] = &[
@@ -22,10 +22,10 @@ const SYMBOL_TABLE: &'static [(u64, &'static str)] = &[
 ];
 
 fn print_address(
-    formatter: &Formatter,
+    formatter: &Formatter<ffi::FormatterFunc>,
     buffer: &mut ffi::FormatterBuffer,
     context: &mut ffi::FormatterContext,
-    user_data: Option<&mut dyn Any>,
+    user_data: Option<&mut ffi::FormatterFunc>,
 ) -> ZydisResult<()> {
     let addr = unsafe {
         (*context.instruction).calc_absolute_address(context.runtime_address, &*context.operand)
@@ -37,12 +37,8 @@ fn print_address(
             write!(buffer.get_string()?, "<{}>", symbol).map_err(|_| Status::User)
         }
         None => unsafe {
-            check!((user_data
-                .and_then(|x| x.downcast_ref::<ffi::FormatterFunc>())
-                .unwrap()
-                .unwrap())(
-                mem::transmute(formatter), buffer, context
-            ))
+            let orig_fn = user_data.unwrap().unwrap();
+            check!((orig_fn)(mem::transmute(formatter), buffer, context))
         },
     }
 }
@@ -50,7 +46,8 @@ fn print_address(
 fn main() -> ZydisResult<()> {
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
-    let mut formatter = Formatter::new(FormatterStyle::INTEL)?;
+    let mut formatter =
+        Formatter::<ffi::FormatterFunc>::new_custom_userdata(FormatterStyle::INTEL)?;
     formatter.set_property(FormatterProperty::ForceSegment(true))?;
     formatter.set_property(FormatterProperty::ForceSize(true))?;
 
