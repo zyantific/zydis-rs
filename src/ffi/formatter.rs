@@ -3,7 +3,7 @@ use crate::ffi;
 
 pub type FormatterFunc = Option<
     unsafe extern "C" fn(
-        *const ZydisFormatter,
+        *const Formatter,
         *mut FormatterBuffer,
         *mut FormatterContext,
     ) -> Status,
@@ -11,7 +11,7 @@ pub type FormatterFunc = Option<
 
 pub type FormatterDecoratorFunc = Option<
     unsafe extern "C" fn(
-        *const ZydisFormatter,
+        *const Formatter,
         *mut FormatterBuffer,
         *mut FormatterContext,
         Decorator,
@@ -20,7 +20,7 @@ pub type FormatterDecoratorFunc = Option<
 
 pub type FormatterRegisterFunc = Option<
     unsafe extern "C" fn(
-        *const ZydisFormatter,
+        *const Formatter,
         *mut FormatterBuffer,
         *mut FormatterContext,
         Register,
@@ -169,7 +169,7 @@ pub struct FormatterBufferState(usize);
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct ZydisFormatter {
+pub struct Formatter {
     style: FormatterStyle,
     force_memory_size: bool,
     force_memory_segment: bool,
@@ -245,22 +245,22 @@ pub struct FormatterContext {
 }
 
 extern "C" {
-    pub fn ZydisFormatterInit(formatter: *mut ZydisFormatter, style: FormatterStyle) -> Status;
+    pub fn ZydisFormatterInit(formatter: *mut Formatter, style: FormatterStyle) -> Status;
 
     pub fn ZydisFormatterSetProperty(
-        formatter: *mut ZydisFormatter,
+        formatter: *mut Formatter,
         property: ZydisFormatterProperty,
         value: usize,
     ) -> Status;
 
     pub fn ZydisFormatterSetHook(
-        formatter: *mut ZydisFormatter,
+        formatter: *mut Formatter,
         hook: FormatterFunction,
         callback: *mut *const c_void,
     ) -> Status;
 
     pub fn ZydisFormatterFormatInstruction(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operands: *const DecodedOperand,
         operand_count: u8,
@@ -270,7 +270,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterFormatInstructionEx(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operands: *const DecodedOperand,
         operand_count: u8,
@@ -281,7 +281,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterFormatOperand(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         buffer: *mut c_char,
@@ -290,7 +290,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterFormatOperandEx(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         buffer: *mut c_char,
@@ -300,7 +300,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterTokenizeInstruction(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operands: *const DecodedOperand,
         operand_count: u8,
@@ -311,7 +311,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterTokenizeInstructionEx(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operands: *const DecodedOperand,
         operand_count: u8,
@@ -323,7 +323,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterTokenizeOperand(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         buffer: *mut c_void,
@@ -333,7 +333,7 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisFormatterTokenizeOperandEx(
-        formatter: *const ZydisFormatter,
+        formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         buffer: *mut c_void,

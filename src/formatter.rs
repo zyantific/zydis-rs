@@ -159,7 +159,7 @@ unsafe fn get_user_data<'a, UserData>(user_data: *mut c_void) -> Option<&'a mut 
 macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name<UserData>(
-            formatter: *const ffi::ZydisFormatter,
+            formatter: *const ffi::Formatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
         ) -> Status {
@@ -177,7 +177,7 @@ macro_rules! wrap_func {
     };
     (register $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name<UserData>(
-            formatter: *const ffi::ZydisFormatter,
+            formatter: *const ffi::Formatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
             reg: Register,
@@ -197,7 +197,7 @@ macro_rules! wrap_func {
     };
     (decorator $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name<UserData>(
-            formatter: *const ffi::ZydisFormatter,
+            formatter: *const ffi::Formatter,
             buffer: *mut ffi::FormatterBuffer,
             ctx: *mut ffi::FormatterContext,
             decorator: Decorator,
@@ -308,7 +308,7 @@ impl fmt::Display for OutputBuffer<'_> {
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].
 pub struct Formatter<UserData> {
-    formatter: ffi::ZydisFormatter,
+    formatter: ffi::Formatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
     post_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
