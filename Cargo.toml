@@ -1,16 +1,12 @@
 [package]
-name        = "zydis"
-version     = "4.0.0"
-authors     = [
-    "Joel Höner <joel@zyantific.com>",
-    "Timo von Hartz <th0rex@zyantific.com>"
-]
-
+name = "zydis"
+version = "4.0.0"
+authors = ["Joel Höner <joel@zyantific.com>", "Timo von Hartz <th0rex@zyantific.com>"]
 description = "Bindings for Zydis"
-license     = "MIT"
-keywords    = ["disassembler", "x86", "amd64", "decoder"]
-repository  = "https://github.com/zyantific/zydis-rs/"
-edition     = "2018"
+license = "MIT"
+keywords = ["disassembler", "x86", "amd64", "decoder"]
+repository = "https://github.com/zyantific/zydis-rs/"
+edition = "2018"
 
 [build-dependencies]
 cmake = "0.1"
