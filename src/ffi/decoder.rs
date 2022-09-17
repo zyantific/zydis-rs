@@ -2,7 +2,7 @@ use super::*;
 
 #[repr(C)]
 #[derive(Clone, Debug)]
-pub struct ZydisDecoder {
+pub struct Decoder {
     machine_mode: MachineMode,
     stack_width: StackWidth,
     decoder_mode: [bool; DECODER_MODE_MAX_VALUE + 1],
@@ -551,7 +551,7 @@ pub struct ContextMvex {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-pub struct ZydisDecoderContext {
+pub struct DecoderContext {
     pub definition: *const c_void,
     pub eosz_index: u8,
     pub easz_index: u8,
@@ -564,19 +564,19 @@ pub struct ZydisDecoderContext {
 
 extern "C" {
     pub fn ZydisDecoderInit(
-        decoder: *mut ZydisDecoder,
+        decoder: *mut Decoder,
         machine_mode: MachineMode,
         stack_width: StackWidth,
     ) -> Status;
 
     pub fn ZydisDecoderEnableMode(
-        decoder: *mut ZydisDecoder,
+        decoder: *mut Decoder,
         mode: DecoderMode,
         enabled: bool,
     ) -> Status;
 
     pub fn ZydisDecoderDecodeFull(
-        decoder: *const ZydisDecoder,
+        decoder: *const Decoder,
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
@@ -586,16 +586,16 @@ extern "C" {
     ) -> Status;
 
     pub fn ZydisDecoderDecodeInstruction(
-        decoder: *const ZydisDecoder,
-        context: *mut ZydisDecoderContext,
+        decoder: *const Decoder,
+        context: *mut DecoderContext,
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
     ) -> Status;
 
     pub fn ZydisDecoderDecodeOperands(
-        decoder: *const ZydisDecoder,
-        context: *const ZydisDecoderContext,
+        decoder: *const Decoder,
+        context: *const DecoderContext,
         instruction: *const DecodedInstruction,
         operands: *mut DecodedOperand,
         operand_count: u8,

@@ -12,31 +12,31 @@ use std::{ffi::CStr, os::raw::c_void};
 
 use super::{
     enums::*,
-    ffi::*,
+    ffi,
     status::{Result, Status},
 };
 
 #[derive(Clone)]
 pub enum Hook {
-    PreInstruction(FormatterFunc),
-    PostInstruction(FormatterFunc),
-    PreOperand(FormatterFunc),
-    PostOperand(FormatterFunc),
-    FormatInstruction(FormatterFunc),
-    FormatOperandReg(FormatterFunc),
-    FormatOperandMem(FormatterFunc),
-    FormatOperandPtr(FormatterFunc),
-    FormatOperandImm(FormatterFunc),
-    PrintMnemonic(FormatterFunc),
-    PrintRegister(FormatterRegisterFunc),
-    PrintAddressAbs(FormatterFunc),
-    PrintAddressRel(FormatterFunc),
-    PrintDisp(FormatterFunc),
-    PrintImm(FormatterFunc),
-    PrintTypecast(FormatterFunc),
-    PrintSegment(FormatterFunc),
-    PrintPrefixes(FormatterFunc),
-    PrintDecorator(FormatterDecoratorFunc),
+    PreInstruction(ffi::FormatterFunc),
+    PostInstruction(ffi::FormatterFunc),
+    PreOperand(ffi::FormatterFunc),
+    PostOperand(ffi::FormatterFunc),
+    FormatInstruction(ffi::FormatterFunc),
+    FormatOperandReg(ffi::FormatterFunc),
+    FormatOperandMem(ffi::FormatterFunc),
+    FormatOperandPtr(ffi::FormatterFunc),
+    FormatOperandImm(ffi::FormatterFunc),
+    PrintMnemonic(ffi::FormatterFunc),
+    PrintRegister(ffi::FormatterRegisterFunc),
+    PrintAddressAbs(ffi::FormatterFunc),
+    PrintAddressRel(ffi::FormatterFunc),
+    PrintDisp(ffi::FormatterFunc),
+    PrintImm(ffi::FormatterFunc),
+    PrintTypecast(ffi::FormatterFunc),
+    PrintSegment(ffi::FormatterFunc),
+    PrintPrefixes(ffi::FormatterFunc),
+    PrintDecorator(ffi::FormatterDecoratorFunc),
 }
 
 impl Hook {
@@ -112,16 +112,16 @@ impl Hook {
 #[rustfmt::skip]
 pub type WrappedGeneralFunc = dyn Fn(
     &Formatter,
-    &mut FormatterBuffer,
-    &mut FormatterContext,
+    &mut ffi::FormatterBuffer,
+    &mut ffi::FormatterContext,
     Option<&mut dyn Any>
 ) -> Result<()>;
 
 #[rustfmt::skip]
 pub type WrappedRegisterFunc = dyn Fn(
     &Formatter,
-    &mut FormatterBuffer,
-    &mut FormatterContext,
+    &mut ffi::FormatterBuffer,
+    &mut ffi::FormatterContext,
     Register,
     Option<&mut dyn Any>
 ) -> Result<()>;
@@ -129,8 +129,8 @@ pub type WrappedRegisterFunc = dyn Fn(
 #[rustfmt::skip]
 pub type WrappedDecoratorFunc = dyn Fn(
     &Formatter,
-    &mut FormatterBuffer,
-    &mut FormatterContext,
+    &mut ffi::FormatterBuffer,
+    &mut ffi::FormatterContext,
     Decorator,
     Option<&mut dyn Any>
 ) -> Result<()>;
@@ -160,9 +160,9 @@ unsafe fn get_user_data<'a>(user_data: *mut c_void) -> Option<&'a mut dyn Any> {
 macro_rules! wrap_func {
     (general $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            buffer: *mut FormatterBuffer,
-            ctx: *mut FormatterContext,
+            formatter: *const ffi::ZydisFormatter,
+            buffer: *mut ffi::FormatterBuffer,
+            ctx: *mut ffi::FormatterContext,
         ) -> Status {
             let formatter = &*(formatter as *const Formatter);
             let ctx = &mut *ctx;
@@ -175,9 +175,9 @@ macro_rules! wrap_func {
     };
     (register $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            buffer: *mut FormatterBuffer,
-            ctx: *mut FormatterContext,
+            formatter: *const ffi::ZydisFormatter,
+            buffer: *mut ffi::FormatterBuffer,
+            ctx: *mut ffi::FormatterContext,
             reg: Register,
         ) -> Status {
             let formatter = &*(formatter as *const Formatter);
@@ -191,9 +191,9 @@ macro_rules! wrap_func {
     };
     (decorator $field_name:ident, $func_name:ident) => {
         unsafe extern "C" fn $func_name(
-            formatter: *const ZydisFormatter,
-            buffer: *mut FormatterBuffer,
-            ctx: *mut FormatterContext,
+            formatter: *const ffi::ZydisFormatter,
+            buffer: *mut ffi::FormatterBuffer,
+            ctx: *mut ffi::FormatterContext,
             decorator: Decorator,
         ) -> Status {
             let formatter = &*(formatter as *const Formatter);
@@ -308,7 +308,7 @@ impl fmt::Display for OutputBuffer<'_> {
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].
 pub struct Formatter {
-    formatter: ZydisFormatter,
+    formatter: ffi::ZydisFormatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc>>,
     post_instruction: Option<Box<WrappedGeneralFunc>>,
@@ -479,29 +479,32 @@ impl Formatter {
     pub fn new(style: FormatterStyle) -> Result<Self> {
         unsafe {
             let mut formatter = MaybeUninit::uninit();
-            check!(ZydisFormatterInit(formatter.as_mut_ptr(), style as _,), {
-                Formatter {
-                    formatter: formatter.assume_init(),
-                    pre_instruction: None,
-                    post_instruction: None,
-                    pre_operand: None,
-                    post_operand: None,
-                    format_instruction: None,
-                    format_operand_reg: None,
-                    format_operand_mem: None,
-                    format_operand_ptr: None,
-                    format_operand_imm: None,
-                    print_mnemonic: None,
-                    print_register: None,
-                    print_address_abs: None,
-                    print_address_rel: None,
-                    print_disp: None,
-                    print_imm: None,
-                    print_typecast: None,
-                    print_prefixes: None,
-                    print_decorator: None,
+            check!(
+                ffi::ZydisFormatterInit(formatter.as_mut_ptr(), style as _,),
+                {
+                    Formatter {
+                        formatter: formatter.assume_init(),
+                        pre_instruction: None,
+                        post_instruction: None,
+                        pre_operand: None,
+                        post_operand: None,
+                        format_instruction: None,
+                        format_operand_reg: None,
+                        format_operand_mem: None,
+                        format_operand_ptr: None,
+                        format_operand_imm: None,
+                        print_mnemonic: None,
+                        print_register: None,
+                        print_address_abs: None,
+                        print_address_rel: None,
+                        print_disp: None,
+                        print_imm: None,
+                        print_typecast: None,
+                        print_prefixes: None,
+                        print_decorator: None,
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -545,7 +548,7 @@ impl Formatter {
         };
 
         unsafe {
-            check!(ZydisFormatterSetProperty(
+            check!(ffi::ZydisFormatterSetProperty(
                 &mut self.formatter,
                 property,
                 value
@@ -582,8 +585,8 @@ impl Formatter {
     #[inline]
     pub fn format_instruction(
         &self,
-        instruction: &DecodedInstruction,
-        operands: &[DecodedOperand],
+        instruction: &ffi::DecodedInstruction,
+        operands: &[ffi::DecodedOperand],
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
@@ -594,7 +597,7 @@ impl Formatter {
             .map_err(|_| Status::InvalidArgument)?;
 
         unsafe {
-            check!(ZydisFormatterFormatInstructionEx(
+            check!(ffi::ZydisFormatterFormatInstructionEx(
                 &self.formatter,
                 instruction,
                 operands.as_ptr(),
@@ -621,14 +624,14 @@ impl Formatter {
     #[inline]
     pub fn format_operand(
         &self,
-        instruction: &DecodedInstruction,
-        operand: &DecodedOperand,
+        instruction: &ffi::DecodedInstruction,
+        operand: &ffi::DecodedOperand,
         buffer: &mut OutputBuffer,
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
     ) -> Result<()> {
         unsafe {
-            check!(ZydisFormatterFormatOperandEx(
+            check!(ffi::ZydisFormatterFormatOperandEx(
                 &self.formatter,
                 instruction,
                 operand,
@@ -647,12 +650,12 @@ impl Formatter {
     #[inline]
     pub fn tokenize_instruction<'a>(
         &self,
-        instruction: &DecodedInstruction,
-        operands: &[DecodedOperand],
+        instruction: &ffi::DecodedInstruction,
+        operands: &[ffi::DecodedOperand],
         buffer: &'a mut [u8],
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
-    ) -> Result<&'a FormatterToken<'a>> {
+    ) -> Result<&'a ffi::FormatterToken<'a>> {
         let num_ops: u8 = operands
             .len()
             .try_into()
@@ -661,7 +664,7 @@ impl Formatter {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ZydisFormatterTokenizeInstructionEx(
+                ffi::ZydisFormatterTokenizeInstructionEx(
                     &self.formatter,
                     instruction,
                     operands.as_ptr(),
@@ -707,16 +710,16 @@ impl Formatter {
     #[inline]
     pub fn tokenize_operand<'a>(
         &self,
-        instruction: &DecodedInstruction,
-        operand: &DecodedOperand,
+        instruction: &ffi::DecodedInstruction,
+        operand: &ffi::DecodedOperand,
         buffer: &'a mut [u8],
         ip: Option<u64>,
         mut user_data: Option<&mut dyn Any>,
-    ) -> Result<&'a FormatterToken<'a>> {
+    ) -> Result<&'a ffi::FormatterToken<'a>> {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ZydisFormatterTokenizeOperandEx(
+                ffi::ZydisFormatterTokenizeOperandEx(
                     &self.formatter,
                     instruction,
                     operand,
@@ -787,7 +790,7 @@ impl Formatter {
         let hook_id = hook.to_id();
 
         check!(
-            ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb),
+            ffi::ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb),
             Hook::from_raw(hook_id, cb)
         )
     }

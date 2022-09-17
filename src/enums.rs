@@ -31,6 +31,8 @@ impl Mnemonic {
     }
 }
 
+pub type RegisterWidth = u16;
+
 impl Register {
     /// Returns the ID of this register.
     ///
@@ -78,7 +80,7 @@ impl Register {
     /// let width = Register::DR0.get_width(MachineMode::LEGACY_32);
     /// assert_eq!(32, width);
     /// ```
-    pub fn get_width(self, mode: MachineMode) -> ffi::RegisterWidth {
+    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
         unsafe { ffi::ZydisRegisterGetWidth(mode, self) }
     }
 
@@ -110,7 +112,7 @@ impl RegisterClass {
     }
 
     /// Returns the width of the specified register-class.
-    pub fn get_width(self, mode: MachineMode) -> ffi::RegisterWidth {
+    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
         unsafe { ffi::ZydisRegisterClassGetWidth(mode, self) }
     }
 }

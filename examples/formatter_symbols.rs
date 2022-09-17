@@ -1,7 +1,6 @@
 use zydis::{
-    check, ffi, Decoder, Formatter, FormatterBuffer, FormatterContext, FormatterProperty,
-    FormatterStyle, Hook, MachineMode, OutputBuffer, Result as ZydisResult, StackWidth, Status,
-    TOKEN_SYMBOL,
+    check, ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, MachineMode,
+    OutputBuffer, Result as ZydisResult, StackWidth, Status, TOKEN_SYMBOL,
 };
 
 use std::{any::Any, fmt::Write, mem};
@@ -24,8 +23,8 @@ const SYMBOL_TABLE: &'static [(u64, &'static str)] = &[
 
 fn print_address(
     formatter: &Formatter,
-    buffer: &mut FormatterBuffer,
-    context: &mut FormatterContext,
+    buffer: &mut ffi::FormatterBuffer,
+    context: &mut ffi::FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> ZydisResult<()> {
     let addr = unsafe {

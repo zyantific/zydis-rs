@@ -3,31 +3,10 @@ use super::*;
 #[deprecated(note = "use `StackWidth` instead")]
 pub type AddressWidth = StackWidth;
 
-pub type RegisterWidth = u16;
-
 #[repr(C)]
 pub struct ShortString {
     pub data: *const c_char,
     pub size: u8,
-}
-
-/// Returns the version of the zydis C library as a quadruple
-/// `(major, minor, patch, build)`.
-///
-/// # Examples
-/// ```
-/// use zydis;
-/// let (major, minor, patch, build) = zydis::get_version();
-/// println!("Zydis version: {}.{}.{}.{}", major, minor, patch, build);
-/// assert_eq!(major, 4);
-/// ```
-pub fn get_version() -> (u16, u16, u16, u16) {
-    let combined_ver = unsafe { ZydisGetVersion() };
-    let major = ((combined_ver << 0) >> 48) as u16;
-    let minor = ((combined_ver << 16) >> 48) as u16;
-    let patch = ((combined_ver << 32) >> 48) as u16;
-    let build = ((combined_ver << 48) >> 48) as u16;
-    (major, minor, patch, build)
 }
 
 // Zydis.h

@@ -1,9 +1,5 @@
 //! A completely stupid example for Zydis' formatter hook API.
 
-#![deny(bare_trait_objects)]
-
-extern crate zydis;
-
 use std::{any::Any, ffi::CString, fmt::Write, mem};
 
 use zydis::{check, ffi::DecodedOperandKind, *};
@@ -37,8 +33,8 @@ struct UserData {
 
 fn print_mnemonic(
     formatter: &Formatter,
-    buffer: &mut FormatterBuffer,
-    ctx: &mut FormatterContext,
+    buffer: &mut ffi::FormatterBuffer,
+    ctx: &mut ffi::FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
     let instruction = unsafe { &*ctx.instruction };
@@ -96,8 +92,8 @@ fn print_mnemonic(
 
 fn format_operand_imm(
     formatter: &Formatter,
-    buffer: &mut FormatterBuffer,
-    ctx: &mut FormatterContext,
+    buffer: &mut ffi::FormatterBuffer,
+    ctx: &mut ffi::FormatterContext,
     user_data: Option<&mut dyn Any>,
 ) -> Result<()> {
     match user_data {

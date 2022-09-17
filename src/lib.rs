@@ -1,37 +1,38 @@
 //! The official Rust bindings for the Zyan Disassembler Engine.
 
-#![deny(bare_trait_objects)]
-
 #[macro_use]
 pub mod status;
 mod decoder;
 pub mod enums;
 pub mod ffi;
-
 #[cfg(not(feature = "minimal"))]
 pub mod formatter;
 
 pub use decoder::{Decoder, Operands};
-pub use enums::{
-    BranchType, BroadcastMode, ConversionMode, DecoderMode, Decorator, ElementType, ExceptionClass,
-    Feature, FormatterStyle, ISAExt, ISASet, InstructionAttributes, InstructionCategory,
-    InstructionEncoding, InstructionSegment, MachineMode, MaskMode, MemoryOperandType, Mnemonic,
-    NumericBase, OpcodeMap, OperandAction, OperandEncoding, OperandType, OperandVisibility,
-    Padding, PrefixType, Register, RegisterClass, RoundingMode, Signedness, StackWidth,
-    SwizzleMode, Token, MAX_INSTRUCTION_LENGTH, MAX_INSTRUCTION_SEGMENT_COUNT, MAX_OPERAND_COUNT,
-    MAX_OPERAND_COUNT_VISIBLE, TOKEN_ADDRESS_ABS, TOKEN_ADDRESS_REL, TOKEN_DECORATOR,
-    TOKEN_DELIMITER, TOKEN_DISPLACEMENT, TOKEN_IMMEDIATE, TOKEN_INVALID, TOKEN_MNEMONIC,
-    TOKEN_PARENTHESIS_CLOSE, TOKEN_PARENTHESIS_OPEN, TOKEN_PREFIX, TOKEN_REGISTER, TOKEN_SYMBOL,
-    TOKEN_TYPECAST, TOKEN_USER, TOKEN_WHITESPACE,
-};
-#[allow(deprecated)]
-pub use ffi::{
-    get_version, AddressWidth, DecodedInstruction, DecodedOperand, FormatterBuffer,
-    FormatterContext, FormatterToken,
-};
+pub use enums::*;
+pub use status::{Result, Status};
+
 #[cfg(not(feature = "minimal"))]
 pub use formatter::{
     Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
     WrappedRegisterFunc,
 };
-pub use status::{Result, Status};
+
+/// Returns the version of the zydis C library as a quadruple
+/// `(major, minor, patch, build)`.
+///
+/// # Examples
+/// ```
+/// use zydis;
+/// let (major, minor, patch, build) = zydis::get_version();
+/// println!("Zydis version: {}.{}.{}.{}", major, minor, patch, build);
+/// assert_eq!(major, 4);
+/// ```
+pub fn get_version() -> (u16, u16, u16, u16) {
+    let combined_ver = unsafe { ffi::ZydisGetVersion() };
+    let major = ((combined_ver << 0) >> 48) as u16;
+    let minor = ((combined_ver << 16) >> 48) as u16;
+    let patch = ((combined_ver << 32) >> 48) as u16;
+    let build = ((combined_ver << 48) >> 48) as u16;
+    (major, minor, patch, build)
+}

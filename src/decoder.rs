@@ -6,7 +6,7 @@ use crate::{
 use core::{fmt, mem::MaybeUninit, ops, ptr, slice};
 
 #[derive(Clone, Debug)]
-pub struct Decoder(ffi::ZydisDecoder);
+pub struct Decoder(ffi::Decoder);
 
 impl Decoder {
     /// Creates a new `Decoder`.
@@ -120,7 +120,7 @@ impl Iterator for InstructionAndOperandIter<'_, '_> {
 
 pub struct Instruction {
     insn: ffi::DecodedInstruction,
-    ctx: ffi::ZydisDecoderContext,
+    ctx: ffi::DecoderContext,
 }
 
 impl Instruction {
