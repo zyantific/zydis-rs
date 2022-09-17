@@ -137,8 +137,9 @@ fn main() -> Result<()> {
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
     // First without hooks
-    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
-        formatter.format_instruction(&instruction, &operands, &mut buffer, Some(ip), None)?;
+    for insn in decoder.decode_all(CODE, 0).with_operands() {
+        let (ip, insn, operands) = insn?;
+        formatter.format_instruction(&insn, &operands, &mut buffer, Some(ip), None)?;
         println!("0x{:016X} {}", ip, buffer);
     }
 
@@ -155,9 +156,10 @@ fn main() -> Result<()> {
     };
 
     // And print it with hooks
-    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, 0) {
+    for insn in decoder.decode_all(CODE, 0).with_operands() {
+        let (ip, insn, operands) = insn?;
         formatter.format_instruction(
-            &instruction,
+            &insn,
             &operands,
             &mut buffer,
             Some(ip),

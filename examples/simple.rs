@@ -22,9 +22,8 @@ fn main() -> Result<()> {
     // addresses anyway.
 
     // 0x1337 is the base address for our code.
-    for insn in decoder.instruction_iterator(CODE, 0x1337) {
-        let (ip, insn) = insn?;
-        let operands = insn.visible_operands(&decoder);
+    for insn in decoder.decode_all(CODE, 0x1337).with_operands() {
+        let (ip, insn, operands) = insn?;
 
         // We use Some(ip) here since we want absolute addressing based on the given
         // `ip`. If we would want to have relative addressing, we would use

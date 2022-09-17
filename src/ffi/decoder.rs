@@ -1,9 +1,9 @@
 use super::*;
 
-use core::{fmt, mem, ops, ptr, slice};
+use core::{fmt, ops, ptr, slice};
 
-#[derive(Clone, Debug)]
 #[repr(C)]
+#[derive(Clone, Debug)]
 pub struct ZydisDecoder {
     machine_mode: MachineMode,
     stack_width: StackWidth,
@@ -14,7 +14,7 @@ pub struct ZydisDecoder {
 pub struct Decoder(ZydisDecoder);
 
 impl Decoder {
-    /// Creates a new `Decoder` with the given `machine_mode` and `stack_width`.
+    /// Creates a new `Decoder`.
     #[inline]
     pub fn new(machine_mode: MachineMode, stack_width: StackWidth) -> Result<Self> {
         unsafe {
@@ -33,10 +33,7 @@ impl Decoder {
         unsafe { check!(ZydisDecoderEnableMode(&mut self.0, mode, value as _)) }
     }
 
-    /// Decodes a single binary instruction.
-    ///
-    /// This uses the internal buffers in the decoder instance. Use
-    /// [`decode_into`] to decode into custom buffers instead.
+    /// Decodes the first instruction in the given buffer.
     ///
     /// # Examples
     /// ```
@@ -44,7 +41,7 @@ impl Decoder {
     /// static INT3: &'static [u8] = &[0xCC];
     /// let mut decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let (instruction, operands) = decoder.decode(INT3).unwrap().unwrap();
+    /// let instruction = decoder.decode(INT3).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
@@ -61,22 +58,19 @@ impl Decoder {
             ) {
                 Status::NoMoreData => Ok(None),
                 x if x.is_error() => Err(x),
-                x => Ok(Some(uninit_insn.assume_init())),
+                _ => Ok(Some(uninit_insn.assume_init())),
             };
         }
     }
 
     /// Returns an iterator over all the instructions in the buffer.
-    ///
-    /// The iterator ignores all errors and stops producing values in the case
-    /// of an error.
     #[inline]
-    pub fn instruction_iterator<'decoder, 'buffer>(
+    pub fn decode_all<'decoder, 'buffer>(
         &'decoder self,
         buffer: &'buffer [u8],
         ip: u64,
-    ) -> InstructionIterator<'decoder, 'buffer> {
-        InstructionIterator {
+    ) -> InstructionIter<'decoder, 'buffer> {
+        InstructionIter {
             decoder: self,
             buffer,
             ip,
@@ -84,13 +78,19 @@ impl Decoder {
     }
 }
 
-pub struct InstructionIterator<'decoder, 'buffer> {
+pub struct InstructionIter<'decoder, 'buffer> {
     decoder: &'decoder Decoder,
     buffer: &'buffer [u8],
     ip: u64,
 }
 
-impl Iterator for InstructionIterator<'_, '_> {
+impl<'decoder, 'buffer> InstructionIter<'decoder, 'buffer> {
+    pub fn with_operands(self) -> InstructionAndOperandIter<'decoder, 'buffer> {
+        InstructionAndOperandIter { inner: self }
+    }
+}
+
+impl Iterator for InstructionIter<'_, '_> {
     type Item = Result<(u64, Instruction)>;
 
     #[inline]
@@ -105,6 +105,21 @@ impl Iterator for InstructionIterator<'_, '_> {
             Ok(None) => None,
             Err(e) => Some(Err(e)),
         }
+    }
+}
+
+pub struct InstructionAndOperandIter<'decoder, 'buffer> {
+    inner: InstructionIter<'decoder, 'buffer>,
+}
+
+impl Iterator for InstructionAndOperandIter<'_, '_> {
+    type Item = Result<(u64, Instruction, Operands<MAX_OPERAND_COUNT>)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.inner.next()?.map(|(ip, insn)| {
+            let operands = insn.operands(self.inner.decoder);
+            (ip, insn, operands)
+        }))
     }
 }
 
@@ -142,46 +157,21 @@ impl Instruction {
         }
     }
 
+    /// Decodes all operands, including implicit ones.
+    #[inline]
     pub fn operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT> {
         self.operands_internal::<MAX_OPERAND_COUNT>(decoder, usize::from(self.operand_count))
     }
 
+    /// Decodes all visible operands.
+    ///
+    /// Visible operands are those that are printed by the formatter.
+    #[inline]
     pub fn visible_operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT_VISIBLE> {
         self.operands_internal::<MAX_OPERAND_COUNT_VISIBLE>(
             decoder,
             usize::from(self.operand_count),
         )
-    }
-
-    /// Calculates the absolute address for the given instruction operand,
-    /// using the given `address` as the address for this instruction.
-    #[inline]
-    pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
-        unsafe {
-            let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddress(&self.insn, operand, address, &mut addr),
-                addr
-            )
-        }
-    }
-
-    /// Behaves like `calc_absolute_address`, but takes runtime-known values of
-    /// registers passed in the `context` into account.
-    #[inline]
-    pub fn calc_absolute_address_ex(
-        &self,
-        address: u64,
-        operand: &DecodedOperand,
-        context: &RegisterContext,
-    ) -> Result<u64> {
-        unsafe {
-            let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddressEx(&self.insn, operand, address, context, &mut addr),
-                addr
-            )
-        }
     }
 
     /// Returns offsets and sizes of all logical instruction segments.
@@ -380,6 +370,39 @@ pub struct DecodedInstruction {
     pub meta: MetaInfo,
     /// Detailed information about different instruction-parts.
     pub raw: RawInfo,
+}
+
+impl DecodedInstruction {
+    /// Calculates the absolute address for the given instruction operand,
+    /// using the given `address` as the address for this instruction.
+    #[inline]
+    pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
+        unsafe {
+            let mut addr = 0u64;
+            check!(
+                ZydisCalcAbsoluteAddress(self, operand, address, &mut addr),
+                addr
+            )
+        }
+    }
+
+    /// Behaves like `calc_absolute_address`, but takes runtime-known values of
+    /// registers passed in the `context` into account.
+    #[inline]
+    pub fn calc_absolute_address_ex(
+        &self,
+        address: u64,
+        operand: &DecodedOperand,
+        context: &RegisterContext,
+    ) -> Result<u64> {
+        unsafe {
+            let mut addr = 0u64;
+            check!(
+                ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr),
+                addr
+            )
+        }
+    }
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]

@@ -1,9 +1,7 @@
-extern crate zydis;
-
 use zydis::{
-    check, ffi, AddressWidth, Decoder, Formatter, FormatterBuffer, FormatterContext,
-    FormatterProperty, FormatterStyle, Hook, MachineMode, OutputBuffer, Result as ZydisResult,
-    StackWidth, Status, TOKEN_SYMBOL,
+    check, ffi, Decoder, Formatter, FormatterBuffer, FormatterContext, FormatterProperty,
+    FormatterStyle, Hook, MachineMode, OutputBuffer, Result as ZydisResult, StackWidth, Status,
+    TOKEN_SYMBOL,
 };
 
 use std::{any::Any, fmt::Write, mem};
@@ -70,9 +68,10 @@ fn main() -> ZydisResult<()> {
     let mut buffer = [0u8; 200];
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
-    for (instruction, operands, ip) in decoder.instruction_iterator(CODE, runtime_address) {
+    for insn in decoder.decode_all(CODE, runtime_address).with_operands() {
+        let (ip, insn, operands) = insn?;
         formatter.format_instruction(
-            &instruction,
+            &insn,
             &operands,
             &mut buffer,
             Some(ip),

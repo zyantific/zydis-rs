@@ -15,9 +15,8 @@ fn main() -> Result<()> {
 
     let mut buffer = [0u8; 256];
 
-    for insn in decoder.instruction_iterator(CODE, 0) {
-        let (ip, insn) = insn?;
-        let operands = insn.visible_operands(&decoder);
+    for insn in decoder.decode_all(CODE, 0).with_operands() {
+        let (ip, insn, operands) = insn?;
 
         for (ty, val) in
             formatter.tokenize_instruction(&insn, &operands, &mut buffer[..], Some(ip), None)?

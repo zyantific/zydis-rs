@@ -12,8 +12,9 @@ static CODE: &'static [u8] = &[
 fn main() -> Result<()> {
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
-    for (instruction, operands, _) in decoder.instruction_iterator(CODE, 0) {
-        for segment in &instruction.get_segments()? {
+    for instruction in decoder.decode_all(CODE, 0) {
+        let (_, instruction) = instruction?;
+        for segment in &instruction.segments()? {
             println!(
                 "type: {:?} offset: {} size: {}",
                 segment.ty, segment.offset, segment.size

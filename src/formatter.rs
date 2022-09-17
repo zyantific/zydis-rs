@@ -573,8 +573,9 @@ impl Formatter {
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
     /// let insn = dec.decode(INT3).unwrap().unwrap();
+    /// let operands = insn.visible_operands(&dec);
     /// formatter
-    ///     .format_instruction(&insn, &mut buffer, Some(0), None)
+    ///     .format_instruction(&insn, &operands, &mut buffer, Some(0), None)
     ///     .unwrap();
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
@@ -694,8 +695,9 @@ impl Formatter {
     /// let mut buffer = [0; 256];
     ///
     /// let insn = dec.decode(PUSH).unwrap().unwrap();
+    /// let operands = insn.visible_operands(&dec);
     /// let (ty, val) = formatter
-    ///     .tokenize_operand(&insn, 0, &mut buffer[..], None, None)
+    ///     .tokenize_operand(&insn, &operands[0], &mut buffer[..], None, None)
     ///     .unwrap()
     ///     .get_value()
     ///     .unwrap();
@@ -755,19 +757,20 @@ impl Formatter {
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let mut operands = [DecodedOperand; MAX_OPERAND_COUNT];
-    /// let insn = dec.decode(INT3, &mut operands).unwrap().unwrap();
+    /// let insn = dec.decode(INT3).unwrap().unwrap();
+    /// let operands = insn.visible_operands(&dec);
     /// unsafe {
     ///     let status = ZydisFormatterFormatInstructionEx(
     ///         &formatter as *const Formatter as *const _,
-    ///         &insn,
-    ///         &operands,
-    ///         insn.operand_count_visible,
+    ///         &*insn,
+    ///         operands.as_ptr(),
+    ///         operands.len() as u8,
     ///         buffer.as_mut_ptr() as *mut _,
     ///         200,                  // buffer size
     ///         0,                    // runtime address
     ///         std::ptr::null_mut(), // arbitrary user data passed directly to the hooks.
     ///     );
+    ///
     ///     assert_eq!(status, Status::Success);
     /// }
     /// assert_eq!(&buffer[..4], b"int3");

@@ -25,7 +25,7 @@ pub use enums::{
 #[allow(deprecated)]
 pub use ffi::{
     get_version, AddressWidth, DecodedInstruction, DecodedOperand, Decoder, FormatterBuffer,
-    FormatterContext, FormatterToken, InstructionIterator,
+    FormatterContext, FormatterToken, InstructionIter,
 };
 #[cfg(not(feature = "minimal"))]
 pub use formatter::{

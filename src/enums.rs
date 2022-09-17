@@ -302,7 +302,12 @@ mod tests {
         const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
 
         let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
-        let (_, operands, _) = decoder.instruction_iterator(CODE, 0x0).next().unwrap();
+        let (_, _, operands) = decoder
+            .decode_all(CODE, 0x0)
+            .with_operands()
+            .next()
+            .unwrap()
+            .unwrap();
         assert_eq!(operands[0].encoding, OperandEncoding::JIMM16_32_32);
     }
 }
