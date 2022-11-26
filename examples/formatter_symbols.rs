@@ -3,7 +3,7 @@ use zydis::{
     OutputBuffer, Result as ZydisResult, StackWidth, Status, TOKEN_SYMBOL,
 };
 
-use std::{fmt::Write, mem};
+use std::fmt::Write;
 
 #[rustfmt::skip]
 const CODE: &'static [u8] = &[
@@ -38,7 +38,7 @@ fn print_address(
         }
         None => unsafe {
             let orig_fn = user_data.unwrap();
-            check!((orig_fn)(mem::transmute(formatter), buffer, context))
+            check!((orig_fn)(formatter.raw(), buffer, context))
         },
     }
 }

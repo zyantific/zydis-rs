@@ -482,6 +482,10 @@ impl<UserData> Formatter<UserData> {
         Hook::PrintDecorator
     );
 
+    pub fn raw(&self) -> &ffi::Formatter {
+        &self.formatter
+    }
+
     /// Creates a new formatter instance.
     pub fn new_custom_userdata(style: FormatterStyle) -> Result<Self> {
         unsafe {
