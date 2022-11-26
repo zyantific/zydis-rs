@@ -15,8 +15,8 @@ pub struct InstructionSegments {
 }
 
 impl<'a> IntoIterator for &'a InstructionSegments {
-    type Item = &'a InstructionSegmentsElement;
     type IntoIter = slice::Iter<'a, InstructionSegmentsElement>;
+    type Item = &'a InstructionSegmentsElement;
 
     fn into_iter(self) -> Self::IntoIter {
         (&self.segments[..self.count as usize]).into_iter()

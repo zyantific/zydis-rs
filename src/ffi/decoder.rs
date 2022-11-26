@@ -529,7 +529,8 @@ pub struct ContextVectorUnified {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextRegInfo {
-    /// Signals if the `modrm.mod == 3` or `reg` form is forced for the instruction.
+    /// Signals if the `modrm.mod == 3` or `reg` form is forced for the
+    /// instruction.
     pub is_mod_reg: bool,
     /// The final register id for the `reg` encoded register.
     pub id_reg: u8,
@@ -542,8 +543,8 @@ pub struct ContextRegInfo {
     /// This value is only set, if a memory operand is encoded in `modrm.rm`.
     pub id_base: u8,
     /// The final register id for the index register.
-    /// This value is only set, if a memory operand is encoded in `modrm.rm` and the `SIB` byte
-    /// is present.
+    /// This value is only set, if a memory operand is encoded in `modrm.rm` and
+    /// the `SIB` byte is present.
     pub id_index: u8,
 }
 
@@ -577,7 +578,8 @@ pub struct DecoderContext {
     /// Contains the effective address-size index.
     /// 0 = 16 bit, 1 = 32 bit, 2 = 64 bit
     pub easz_index: u8,
-    /// Contains some cached REX/XOP/VEX/EVEX/MVEX values to provide uniform access.
+    /// Contains some cached REX/XOP/VEX/EVEX/MVEX values to provide uniform
+    /// access.
     pub vector_unified: ContextVectorUnified,
     /// Information about encoded operand registers.
     pub reg_info: ContextRegInfo,
