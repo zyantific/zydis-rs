@@ -85,6 +85,8 @@ pub struct ImmediateInfo {
     pub is_relative: bool,
     /// This is actually an i64 if `is_signed` is true.
     // TODO: Should we use an union?
+    // C definition:
+    //   union ZydisDecodedOperandImmValue_{ ZyanU64 u; ZyanI64 s; } value;
     pub value: u64,
 }
 
@@ -485,6 +487,8 @@ pub struct RawImmediateInfo {
     ///
     /// This is an `i64` if `is_signed` is true.
     // TODO: union?
+    // C definition:
+    //   union ZydisDecodedInstructionRawImmValue_ { ZyanU64 u; ZyanI64 s; } value;
     pub value: u64,
     /// The physical immediate size, in bits.
     pub size: u8,
@@ -525,11 +529,21 @@ pub struct ContextVectorUnified {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextRegInfo {
+    /// Signals if the `modrm.mod == 3` or `reg` form is forced for the instruction.
     pub is_mod_reg: bool,
+    /// The final register id for the `reg` encoded register.
     pub id_reg: u8,
+    /// The final register id for the `rm` encoded register.
+    /// This value is only set, if a register is encoded in `modrm.rm`.
     pub id_rm: u8,
+    /// The final register id for the `ndsndd` (`.vvvv`) encoded register.
     pub id_ndsndd: u8,
+    /// The final register id for the base register.
+    /// This value is only set, if a memory operand is encoded in `modrm.rm`.
     pub id_base: u8,
+    /// The final register id for the index register.
+    /// This value is only set, if a memory operand is encoded in `modrm.rm` and the `SIB` byte
+    /// is present.
     pub id_index: u8,
 }
 
@@ -537,7 +551,9 @@ pub struct ContextRegInfo {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextEvex {
+    /// The EVEX tuple-type.
     pub ty: u8,
+    /// The EVEX element-size.
     pub element_size: u8,
 }
 
@@ -545,6 +561,7 @@ pub struct ContextEvex {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextMvex {
+    /// The MVEX functionality.
     pub functionality: u8,
 }
 
@@ -552,13 +569,23 @@ pub struct ContextMvex {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DecoderContext {
+    /// A pointer to the internal instruction definition.
     pub definition: *const c_void,
+    /// Contains the effective operand-size index.
+    /// 0 = 16 bit, 1 = 32 bit, 2 = 64 bit
     pub eosz_index: u8,
+    /// Contains the effective address-size index.
+    /// 0 = 16 bit, 1 = 32 bit, 2 = 64 bit
     pub easz_index: u8,
+    /// Contains some cached REX/XOP/VEX/EVEX/MVEX values to provide uniform access.
     pub vector_unified: ContextVectorUnified,
+    /// Information about encoded operand registers.
     pub reg_info: ContextRegInfo,
+    /// Internal EVEX-specific information.
     pub evex: ContextEvex,
+    /// Internal MVEX-specific information.
     pub mvex: ContextMvex,
+    /// The scale factor for EVEX/MVEX compressed 8-bit displacement values.
     pub cd8_scal: u8,
 }
 
