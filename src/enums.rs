@@ -14,8 +14,9 @@ use super::ffi;
 
 pub const MAX_INSTRUCTION_LENGTH: usize = 15;
 pub const MAX_OPERAND_COUNT: usize = 10;
-// TODO: Looking through the C code I don't see any code reference to MAX_OPERAND_COUNT_VISIBLE
-//       There is only one reference in the comments of Decoder.h
+// TODO: Looking through the C code I don't see any code reference to
+// MAX_OPERAND_COUNT_VISIBLE       There is only one reference in the comments
+// of Decoder.h
 pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
 pub const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
