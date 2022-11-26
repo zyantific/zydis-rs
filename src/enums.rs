@@ -14,6 +14,8 @@ use super::ffi;
 
 pub const MAX_INSTRUCTION_LENGTH: usize = 15;
 pub const MAX_OPERAND_COUNT: usize = 10;
+// TODO: Looking through the C code I don't see any code reference to MAX_OPERAND_COUNT_VISIBLE
+//       There is only one reference in the comments of Decoder.h
 pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
 pub const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
@@ -172,12 +174,6 @@ impl fmt::Display for Token {
 bitflags! {
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
-    pub struct DecodingFlags: u8 {
-        const VISIBLE_OPERANDS_ONLY = 1 << 0;
-    }
-
-    #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-    #[repr(transparent)]
     pub struct OperandAction: u32 {
         const READ                  = 1 << 0;
         const WRITE                 = 1 << 1;
@@ -231,7 +227,6 @@ bitflags! {
 
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
-    // TODO(ath): recheck
     pub struct InstructionAttributes: u64 {
         const HAS_MODRM                 = 1 << 0;
         const HAS_SIB                   = 1 << 1;
@@ -254,7 +249,7 @@ bitflags! {
         const ACCEPTS_LOCK              = 1 << 16;
         const ACCEPTS_REP               = 1 << 17;
         const ACCEPTS_REPE              = 1 << 18;
-        const ACCEPTS_REPZ              = 1 << 18;
+        const ACCEPTS_REPZ              = Self::ACCEPTS_REPE.bits;
         const ACCEPTS_REPNE             = 1 << 19;
         const ACCEPTS_REPNZ             = Self::ACCEPTS_REPNE.bits;
         const ACCEPTS_BND               = 1 << 20;
