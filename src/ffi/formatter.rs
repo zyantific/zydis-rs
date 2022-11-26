@@ -256,17 +256,7 @@ extern "C" {
         operands: *const DecodedOperand,
         operand_count: u8,
         buffer: *mut c_char,
-        buffer_length: usize,
-        runtime_address: u64,
-    ) -> Status;
-
-    pub fn ZydisFormatterFormatInstructionEx(
-        formatter: *const Formatter,
-        instruction: *const DecodedInstruction,
-        operands: *const DecodedOperand,
-        operand_count: u8,
-        buffer: *mut c_char,
-        buffer_length: usize,
+        length: usize,
         runtime_address: u64,
         user_data: *mut c_void,
     ) -> Status;
@@ -276,16 +266,7 @@ extern "C" {
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
         buffer: *mut c_char,
-        buffer_length: usize,
-        runtime_address: u64,
-    ) -> Status;
-
-    pub fn ZydisFormatterFormatOperandEx(
-        formatter: *const Formatter,
-        instruction: *const DecodedInstruction,
-        operand: *const DecodedOperand,
-        buffer: *mut c_char,
-        buffer_length: usize,
+        length: usize,
         runtime_address: u64,
         user_data: *mut c_void,
     ) -> Status;
@@ -299,31 +280,10 @@ extern "C" {
         length: usize,
         runtime_address: u64,
         token: *mut *const FormatterToken,
-    ) -> Status;
-
-    pub fn ZydisFormatterTokenizeInstructionEx(
-        formatter: *const Formatter,
-        instruction: *const DecodedInstruction,
-        operands: *const DecodedOperand,
-        operand_count: u8,
-        buffer: *mut c_void,
-        length: usize,
-        runtime_address: u64,
-        token: *mut *const FormatterToken,
         user_data: *mut c_void,
     ) -> Status;
 
     pub fn ZydisFormatterTokenizeOperand(
-        formatter: *const Formatter,
-        instruction: *const DecodedInstruction,
-        operand: *const DecodedOperand,
-        buffer: *mut c_void,
-        length: usize,
-        runtime_address: u64,
-        token: *mut *const FormatterToken,
-    ) -> Status;
-
-    pub fn ZydisFormatterTokenizeOperandEx(
         formatter: *const Formatter,
         instruction: *const DecodedInstruction,
         operand: *const DecodedOperand,
