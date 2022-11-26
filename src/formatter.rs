@@ -608,7 +608,7 @@ impl<UserData> Formatter<UserData> {
             .map_err(|_| Status::InvalidArgument)?;
 
         unsafe {
-            check!(ffi::ZydisFormatterFormatInstructionEx(
+            check!(ffi::ZydisFormatterFormatInstruction(
                 &self.formatter,
                 instruction,
                 operands.as_ptr(),
@@ -641,7 +641,7 @@ impl<UserData> Formatter<UserData> {
         user_data: Option<&mut UserData>,
     ) -> Result<()> {
         unsafe {
-            check!(ffi::ZydisFormatterFormatOperandEx(
+            check!(ffi::ZydisFormatterFormatOperand(
                 &self.formatter,
                 instruction,
                 operand,
@@ -673,7 +673,7 @@ impl<UserData> Formatter<UserData> {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ffi::ZydisFormatterTokenizeInstructionEx(
+                ffi::ZydisFormatterTokenizeInstruction(
                     &self.formatter,
                     instruction,
                     operands.as_ptr(),
@@ -727,7 +727,7 @@ impl<UserData> Formatter<UserData> {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(
-                ffi::ZydisFormatterTokenizeOperandEx(
+                ffi::ZydisFormatterTokenizeOperand(
                     &self.formatter,
                     instruction,
                     operand,
