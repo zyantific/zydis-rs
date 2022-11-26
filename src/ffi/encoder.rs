@@ -94,6 +94,13 @@ pub struct Request {
 }
 
 extern "C" {
+    pub fn ZydisEncoderEncodeInstructionAbsolute(
+        request: *const Request,
+        buffer: *mut c_void,
+        length: *mut usize,
+        runtime_address: u64
+    ) -> Status;
+
     pub fn ZydisEncoderEncodeInstruction(
         request: *const Request,
         buffer: *mut c_void,
@@ -105,5 +112,10 @@ extern "C" {
         operands: *const DecodedOperand,
         operand_count: u8,
         request: *mut Request,
+    ) -> Status;
+
+    pub fn ZydisEncoderNopFill(
+        buffer: *mut c_void,
+        length: usize
     ) -> Status;
 }
