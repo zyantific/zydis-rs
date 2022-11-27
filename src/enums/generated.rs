@@ -3238,4 +3238,4 @@ pub enum Feature {
     SEGMENT = 5,
 }
 
-pub const FEATURE_MAX_VALUE: usize = 4;
+pub const FEATURE_MAX_VALUE: usize = 5;
