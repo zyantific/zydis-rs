@@ -1,5 +1,8 @@
 // AUTO-GENERATED USING zydis-bindgen!
 
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
+
 /// Defines the `ZydisInstructionCategory` enum.
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]

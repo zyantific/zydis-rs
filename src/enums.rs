@@ -2,6 +2,9 @@
 //! on them.
 #![allow(non_camel_case_types)]
 
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
+
 use core::fmt;
 
 use bitflags::bitflags;

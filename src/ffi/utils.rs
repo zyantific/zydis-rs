@@ -1,5 +1,8 @@
 use super::*;
 
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
+
 #[repr(C)]
 pub struct RegisterContext {
     pub values: [u64; REGISTER_MAX_VALUE + 1],

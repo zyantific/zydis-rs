@@ -1,5 +1,8 @@
 use super::*;
 
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
+
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Decoder {
@@ -101,7 +104,9 @@ pub struct AccessedFlags<FlagType> {
     undefined: FlagType,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+// NOTE: can't implement `deserialize` due to the static refs (no easy way to
+// recover)
+#[cfg_attr(feature = "serialization", derive(Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DecodedInstruction {
@@ -508,7 +513,6 @@ pub struct Prefix {
     pub value: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 #[allow(non_snake_case)]
@@ -525,7 +529,6 @@ pub struct ContextVectorUnified {
     pub mask: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextRegInfo {
@@ -548,47 +551,50 @@ pub struct ContextRegInfo {
     pub id_index: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextEvex {
     /// The EVEX tuple-type.
-    pub ty: u8,
+    ty: u8,
     /// The EVEX element-size.
-    pub element_size: u8,
+    element_size: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct ContextMvex {
     /// The MVEX functionality.
-    pub functionality: u8,
+    functionality: u8,
 }
 
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+/// Opaque internal instruction definition.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[repr(C)]
+pub struct ContextDefinition(u8 /* dummy */);
+
+/// Internal decoder context kept between instruction and operand decoding.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct DecoderContext {
     /// A pointer to the internal instruction definition.
-    pub definition: *const c_void,
+    definition: *const ContextDefinition,
     /// Contains the effective operand-size index.
     /// 0 = 16 bit, 1 = 32 bit, 2 = 64 bit
-    pub eosz_index: u8,
+    eosz_index: u8,
     /// Contains the effective address-size index.
     /// 0 = 16 bit, 1 = 32 bit, 2 = 64 bit
-    pub easz_index: u8,
+    easz_index: u8,
     /// Contains some cached REX/XOP/VEX/EVEX/MVEX values to provide uniform
     /// access.
-    pub vector_unified: ContextVectorUnified,
+    vector_unified: ContextVectorUnified,
     /// Information about encoded operand registers.
-    pub reg_info: ContextRegInfo,
+    reg_info: ContextRegInfo,
     /// Internal EVEX-specific information.
-    pub evex: ContextEvex,
+    evex: ContextEvex,
     /// Internal MVEX-specific information.
-    pub mvex: ContextMvex,
+    mvex: ContextMvex,
     /// The scale factor for EVEX/MVEX compressed 8-bit displacement values.
-    pub cd8_scal: u8,
+    cd8_scal: u8,
 }
 
 extern "C" {
