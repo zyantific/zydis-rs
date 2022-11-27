@@ -609,9 +609,7 @@ extern "C" {
         buffer: *const c_void,
         length: usize,
         instruction: *mut DecodedInstruction,
-        operands: *mut DecodedOperand,
-        operand_count: u8,
-        flags: DecodingFlags,
+        operands: *mut [DecodedOperand; MAX_OPERAND_COUNT],
     ) -> Status;
 
     pub fn ZydisDecoderDecodeInstruction(
