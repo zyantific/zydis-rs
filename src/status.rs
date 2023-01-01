@@ -5,7 +5,7 @@ use core::{fmt, result};
 use std::error;
 
 /// A convenience alias for a Result, holding either a value or a status.
-pub type Result<T> = result::Result<T, Status>;
+pub type Result<T = ()> = result::Result<T, Status>;
 
 const ZYAN_MODULE_ZYCORE: usize = 0x1;
 const ZYAN_MODULE_ZYDIS: usize = 0x2;

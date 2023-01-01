@@ -3,15 +3,6 @@ Zydis Rust Bindings
 
 Rust language bindings for the [Zydis library](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler.
 
-## Building
-Please make sure you have at least Rust 1.30 installed. Then, just invoke:
-
-```
-cargo build
-```
-
-Or, probably more common, add a dependency to your `Cargo.toml`:
-
 ```toml
 [dependencies]
 zydis = "4.0"
@@ -30,9 +21,9 @@ static CODE: &'static [u8] = &[
     0xDA, 0x02, 0x00,
 ];
 
-fn main() -> Result<()> {
+fn main() -> zydis::Result {
     let formatter = Formatter::new(FormatterStyle::INTEL)?;
-    let decoder = Decoder::new(MachineMode::LONG_64, AddressWidth::_64)?;
+    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
     // Our actual buffer.
     let mut buffer = [0u8; 200];
@@ -40,11 +31,13 @@ fn main() -> Result<()> {
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
     // 0 is the address for our code.
-    for (instruction, ip) in decoder.instruction_iterator(CODE, 0) {
+    for ip_and_instr in decoder.decode_all(CODE, 0).with_operands() {
+        let (ip, instr, operands) = ip_and_instr?;
+        
         // We use Some(ip) here since we want absolute addressing based on the given
         // `ip`. If we would want to have relative addressing, we would use
         // `None` instead.
-        formatter.format_instruction(&instruction, &mut buffer, Some(ip), None)?;
+        formatter.format_instruction(&instr, &operands, &mut buffer, Some(ip), None)?;
         println!("0x{:016X} {}", ip, buffer);
     }
 
@@ -52,8 +45,9 @@ fn main() -> Result<()> {
 }
 ```
 
-#### Output
-```
+### Output
+
+```text
 0x0000000000000000 push rcx
 0x0000000000000001 lea eax, [rbp-0x01]
 0x0000000000000004 push rax
@@ -64,8 +58,7 @@ fn main() -> Result<()> {
 0x0000000000000013 js 0x000000000002DB15
 ```
 
-
-### Version Map
+## Version Map
 
 
 | Bindings | Zydis                                                                                                      |

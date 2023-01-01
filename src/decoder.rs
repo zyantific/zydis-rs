@@ -5,11 +5,14 @@ use crate::{
 
 use core::{fmt, mem::MaybeUninit, ops, ptr, slice};
 
+/// Decoder for X86/X86-64 instructions.
+///
+/// Decodes raw instruction bytes into a machine-processable structure.
 #[derive(Clone, Debug)]
 pub struct Decoder(ffi::Decoder);
 
 impl Decoder {
-    /// Creates a new `Decoder`.
+    /// Creates a new [`Decoder`].
     #[inline]
     pub fn new(machine_mode: MachineMode, stack_width: StackWidth) -> Result<Self> {
         unsafe {
@@ -24,7 +27,7 @@ impl Decoder {
 
     /// Enables or disables (depending on the `value`) the given decoder `mode`:
     #[inline]
-    pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<()> {
+    pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result {
         unsafe { check!(ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _)) }
     }
 
@@ -73,6 +76,10 @@ impl Decoder {
     }
 }
 
+/// Iterator decoding instructions in a buffer.
+///
+/// Created via [`Decoder::decode_all`].
+#[derive(Clone)]
 pub struct InstructionIter<'decoder, 'buffer> {
     decoder: &'decoder Decoder,
     buffer: &'buffer [u8],
@@ -103,6 +110,11 @@ impl Iterator for InstructionIter<'_, '_> {
     }
 }
 
+/// Iterate over instructions and their operands.
+///
+/// Created via [`InstructionIter::with_operands`] or
+/// [`InstructionIter::with_visible_operands`].
+#[derive(Clone)]
 pub struct InstructionAndOperandIter<'decoder, 'buffer> {
     inner: InstructionIter<'decoder, 'buffer>,
 }
@@ -118,6 +130,7 @@ impl Iterator for InstructionAndOperandIter<'_, '_> {
     }
 }
 
+#[derive(Clone)]
 pub struct Instruction {
     insn: ffi::DecodedInstruction,
     ctx: ffi::DecoderContext,
@@ -161,7 +174,7 @@ impl Instruction {
     pub fn visible_operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT_VISIBLE> {
         self.operands_internal::<MAX_OPERAND_COUNT_VISIBLE>(
             decoder,
-            usize::from(self.operand_count),
+            usize::from(self.operand_count_visible),
         )
     }
 

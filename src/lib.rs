@@ -1,4 +1,4 @@
-//! The official Rust bindings for the Zyan Disassembler Engine.
+#![doc = include_str!("../README.md")]
 
 #[macro_use]
 pub mod status;
