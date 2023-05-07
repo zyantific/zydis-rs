@@ -586,7 +586,7 @@ impl<UserData> Formatter<UserData> {
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let insn = dec.decode(INT3).unwrap().unwrap();
+    /// let insn = dec.decode_first(INT3).unwrap().unwrap();
     /// let operands = insn.visible_operands(&dec);
     /// formatter
     ///     .format_instruction(&insn, &operands, &mut buffer, Some(0), None)
@@ -705,7 +705,7 @@ impl<UserData> Formatter<UserData> {
     ///
     /// let mut buffer = [0; 256];
     ///
-    /// let insn = dec.decode(PUSH).unwrap().unwrap();
+    /// let insn = dec.decode_first(PUSH).unwrap().unwrap();
     /// let operands = insn.visible_operands(&dec);
     /// let (ty, val) = formatter
     ///     .tokenize_operand(&insn, &operands[0], &mut buffer[..], None, None)

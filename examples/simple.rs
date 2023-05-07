@@ -22,17 +22,19 @@ fn main() -> Result<()> {
     // addresses anyway.
 
     // 0x1337 is the base address for our code.
-    for insn in decoder.decode_all(CODE, 0x1337).with_operands() {
-        let (ip, insn, operands) = insn?;
+    for insn in decoder.decode_all(CODE, 0x1337) {
+        let insn = insn?;
+        let ip = insn.ip();
+        let full = insn.into_owned::<VisibleOperands>();
 
         // We use Some(ip) here since we want absolute addressing based on the given
         // `ip`. If we would want to have relative addressing, we would use
         // `None` instead.
-        formatter.format_instruction(&insn, &operands, &mut buffer, Some(ip), None)?;
+        formatter.format_instruction(&full, full.operands(), &mut buffer, Some(ip), None)?;
         println!("absolute: 0x{:016X} {}", ip, buffer);
 
         // Show relative format as well
-        formatter.format_instruction(&insn, &operands, &mut buffer, None, None)?;
+        formatter.format_instruction(&full, full.operands(), &mut buffer, None, None)?;
         println!("relative:                    {}", buffer);
     }
 

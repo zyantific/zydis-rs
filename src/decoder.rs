@@ -3,7 +3,7 @@ use crate::{
     MAX_OPERAND_COUNT_VISIBLE,
 };
 
-use core::{fmt, mem::MaybeUninit, ops, ptr, slice};
+use core::{mem::MaybeUninit, ops, ptr};
 
 /// Decoder for X86/X86-64 instructions.
 ///
@@ -39,35 +39,48 @@ impl Decoder {
     /// static INT3: &'static [u8] = &[0xCC];
     /// let mut decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let instruction = decoder.decode(INT3).unwrap().unwrap();
+    /// let instruction = decoder.decode_first(INT3, 0).unwrap().unwrap();
     /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
-    pub fn decode(&self, buffer: &[u8]) -> Result<Option<Instruction>> {
-        let mut uninit_insn = MaybeUninit::<Instruction>::uninit();
-        let insn_ptr = uninit_insn.as_mut_ptr();
+    pub fn decode_first<'this, 'buffer>(
+        &'this self,
+        buffer: &'buffer [u8],
+        ip: u64, // TODO: Option?
+    ) -> Result<Option<Instruction<'this, 'buffer>>> {
+        let mut uninit_ctx = MaybeUninit::<ffi::DecoderContext>::uninit();
+        let mut uninit_insn = MaybeUninit::<ffi::DecodedInstruction>::uninit();
+
         unsafe {
-            return match ffi::ZydisDecoderDecodeInstruction(
+            match ffi::ZydisDecoderDecodeInstruction(
                 &self.0,
-                ptr::addr_of_mut!((*insn_ptr).ctx),
+                uninit_ctx.as_mut_ptr(),
                 buffer.as_ptr() as _,
                 buffer.len(),
-                ptr::addr_of_mut!((*insn_ptr).insn),
+                uninit_insn.as_mut_ptr(),
             ) {
-                Status::NoMoreData => Ok(None),
-                x if x.is_error() => Err(x),
-                _ => Ok(Some(uninit_insn.assume_init())),
-            };
+                Status::NoMoreData => return Ok(None),
+                x if x.is_error() => return Err(x),
+                _ => (),
+            }
+
+            Ok(Some(Instruction {
+                decoder: self,
+                ctx: uninit_ctx.assume_init(),
+                span: buffer,
+                ip,
+                info: uninit_insn.assume_init(),
+            }))
         }
     }
 
     /// Returns an iterator over all the instructions in the buffer.
     #[inline]
-    pub fn decode_all<'decoder, 'buffer>(
-        &'decoder self,
+    pub fn decode_all<'this, 'buffer>(
+        &'this self,
         buffer: &'buffer [u8],
-        ip: u64,
-    ) -> InstructionIter<'decoder, 'buffer> {
+        ip: u64, // TODO: Option?
+    ) -> InstructionIter<'this, 'buffer> {
         InstructionIter {
             decoder: self,
             buffer,
@@ -86,23 +99,16 @@ pub struct InstructionIter<'decoder, 'buffer> {
     ip: u64,
 }
 
-impl<'decoder, 'buffer> InstructionIter<'decoder, 'buffer> {
-    pub fn with_operands(self) -> InstructionAndOperandIter<'decoder, 'buffer> {
-        InstructionAndOperandIter { inner: self }
-    }
-}
-
-impl Iterator for InstructionIter<'_, '_> {
-    type Item = Result<(u64, Instruction)>;
+impl<'decoder, 'buffer> Iterator for InstructionIter<'decoder, 'buffer> {
+    type Item = Result<Instruction<'decoder, 'buffer>>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        match self.decoder.decode(self.buffer) {
+        match self.decoder.decode_first(self.buffer, self.ip) {
             Ok(Some(insn)) => {
                 self.buffer = &self.buffer[usize::from(insn.length)..];
-                let insn_ip = self.ip;
                 self.ip += u64::from(insn.length);
-                Some(Ok((insn_ip, insn)))
+                Some(Ok(insn))
             }
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -110,48 +116,148 @@ impl Iterator for InstructionIter<'_, '_> {
     }
 }
 
-/// Iterate over instructions and their operands.
+/// Basic information about an instruction.
 ///
-/// Created via [`InstructionIter::with_operands`] or
-/// [`InstructionIter::with_visible_operands`].
-#[derive(Clone)]
-pub struct InstructionAndOperandIter<'decoder, 'buffer> {
-    inner: InstructionIter<'decoder, 'buffer>,
+/// Instruction information can be accessed via [`Deref`].
+#[derive(Debug, Clone)]
+pub struct Instruction<'decoder, 'buffer> {
+    decoder: &'decoder Decoder,
+    ctx: ffi::DecoderContext,
+    span: &'buffer [u8],
+    ip: u64,
+    info: ffi::DecodedInstruction,
 }
 
-impl Iterator for InstructionAndOperandIter<'_, '_> {
-    type Item = Result<(u64, Instruction, Operands<MAX_OPERAND_COUNT>)>;
+impl Instruction<'_, '_> {
+    /// Instruction pointer at which the current instruction resides.
+    pub fn ip(&self) -> u64 {
+        self.ip
+    }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(self.inner.next()?.map(|(ip, insn)| {
-            let operands = insn.operands(self.inner.decoder);
-            (ip, insn, operands)
-        }))
+    /// Raw bytes of the instruction.
+    pub fn bytes(&self) -> &[u8] {
+        self.span
+    }
+
+    /// Decode the remaining info according to the given [`OperandDecoder`]
+    /// type and create an instruction object
+    pub fn into_owned<O: OperandDecoder>(self) -> OwnedInstruction<O> {
+        OwnedInstruction {
+            operands: O::decode(&self.decoder.0, &self.ctx, &self.info),
+            info: self.info,
+        }
+    }
+
+    /// Decodes the instruction's operands.
+    pub fn decode_operands<O: OperandDecoder>(&self) -> O {
+        O::decode(&self.decoder.0, &self.ctx, &self.info)
     }
 }
 
-#[derive(Clone)]
-pub struct Instruction {
-    insn: ffi::DecodedInstruction,
-    ctx: ffi::DecoderContext,
+impl ops::Deref for Instruction<'_, '_> {
+    type Target = ffi::DecodedInstruction;
+
+    fn deref(&self) -> &Self::Target {
+        &self.info
+    }
 }
 
-impl Instruction {
-    fn operands_internal<const N: usize>(
-        &self,
-        decoder: &Decoder,
-        num_operands: usize,
-    ) -> Operands<N> {
-        let mut ops = MaybeUninit::<Operands<N>>::uninit();
+/// Fully decoded and owned instruction, including operand information.
+pub struct OwnedInstruction<O: OperandDecoder> {
+    info: ffi::DecodedInstruction,
+    operands: O,
+}
+
+impl<O: OperandDecoder> OwnedInstruction<O> {
+    /// Returns offsets and sizes of all logical instruction segments.
+    #[inline]
+    pub fn segments(&self) -> Result<ffi::InstructionSegments> {
+        unsafe {
+            let mut segments = MaybeUninit::uninit();
+            check!(
+                ffi::ZydisGetInstructionSegments(&self.info, segments.as_mut_ptr()),
+                segments.assume_init()
+            )
+        }
+    }
+
+    /// Retrieve the operand array.
+    ///
+    /// If `O` is [`NoOperands`], this always returns an empty slice.
+    #[inline]
+    pub fn operands(&self) -> &[ffi::DecodedOperand] {
+        self.operands.operands()
+    }
+}
+
+impl<O: OperandDecoder> ops::Deref for OwnedInstruction<O> {
+    type Target = ffi::DecodedInstruction;
+
+    fn deref(&self) -> &Self::Target {
+        &self.info
+    }
+}
+
+/// Defines storage and decoding behavior for operands.
+pub trait OperandDecoder {
+    fn decode(
+        decoder: &ffi::Decoder,
+        ctx: &ffi::DecoderContext,
+        insn: &ffi::DecodedInstruction,
+    ) -> Self;
+
+    fn operands(&self) -> &[ffi::DecodedOperand];
+}
+
+/// Don't decode or store any operands.
+#[derive(Debug, Clone, Copy)]
+pub struct NoOperands;
+
+impl OperandDecoder for NoOperands {
+    fn decode(_: &ffi::Decoder, _: &ffi::DecoderContext, _: &ffi::DecodedInstruction) -> Self {
+        Self
+    }
+
+    fn operands(&self) -> &[ffi::DecodedOperand] {
+        &[]
+    }
+}
+
+/// Decode and store visible operands.
+pub type VisibleOperands = OperandArrayVec<MAX_OPERAND_COUNT_VISIBLE>;
+
+/// Decode and store all (both visible and implicit) operands.
+pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
+
+/// Decode and store operands in a static array buffer.
+pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
+    // TODO: use maybeuninit here
+    operands: [ffi::DecodedOperand; MAX_OPERANDS],
+    num_initialized: usize,
+}
+
+impl<const MAX_OPERANDS: usize> OperandDecoder for OperandArrayVec<MAX_OPERANDS> {
+    fn decode(
+        decoder: &ffi::Decoder,
+        ctx: &ffi::DecoderContext,
+        insn: &ffi::DecodedInstruction,
+    ) -> Self {
+        let num_operands = match MAX_OPERANDS {
+            MAX_OPERAND_COUNT => usize::from(insn.operand_count),
+            MAX_OPERAND_COUNT_VISIBLE => usize::from(insn.operand_count_visible),
+            _ => unreachable!(),
+        };
+
+        let mut ops = MaybeUninit::<Self>::uninit();
         let ops_ptr = ops.as_mut_ptr();
         unsafe {
             ptr::write(ptr::addr_of_mut!((*ops_ptr).num_initialized), num_operands);
             let status = ffi::ZydisDecoderDecodeOperands(
-                &decoder.0,
-                &self.ctx,
-                &self.insn,
+                decoder,
+                ctx,
+                insn,
                 ptr::addr_of_mut!((*ops_ptr).operands) as _,
-                N as u8,
+                MAX_OPERANDS as u8,
             );
             assert!(
                 !status.is_error(),
@@ -161,82 +267,7 @@ impl Instruction {
         }
     }
 
-    /// Decodes all operands, including implicit ones.
-    #[inline]
-    pub fn operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT> {
-        self.operands_internal::<MAX_OPERAND_COUNT>(decoder, usize::from(self.operand_count))
-    }
-
-    /// Decodes all visible operands.
-    ///
-    /// Visible operands are those that are printed by the formatter.
-    #[inline]
-    pub fn visible_operands(&self, decoder: &Decoder) -> Operands<MAX_OPERAND_COUNT_VISIBLE> {
-        self.operands_internal::<MAX_OPERAND_COUNT_VISIBLE>(
-            decoder,
-            usize::from(self.operand_count_visible),
-        )
-    }
-
-    /// Returns offsets and sizes of all logical instruction segments.
-    #[inline]
-    pub fn segments(&self) -> Result<ffi::InstructionSegments> {
-        unsafe {
-            let mut segments = MaybeUninit::uninit();
-            check!(
-                ffi::ZydisGetInstructionSegments(&self.insn, segments.as_mut_ptr()),
-                segments.assume_init()
-            )
-        }
-    }
-}
-
-impl ops::Deref for Instruction {
-    type Target = ffi::DecodedInstruction;
-
-    fn deref(&self) -> &Self::Target {
-        &self.insn
-    }
-}
-
-impl fmt::Debug for Instruction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        (**self).fmt(f)
-    }
-}
-
-pub struct Operands<const MAX_OPERANDS: usize> {
-    operands: [ffi::DecodedOperand; MAX_OPERANDS],
-    num_initialized: usize,
-}
-
-impl<const N: usize> fmt::Debug for Operands<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_ref().fmt(f)
-    }
-}
-
-impl<const N: usize> AsRef<[ffi::DecodedOperand]> for Operands<N> {
-    fn as_ref(&self) -> &[ffi::DecodedOperand] {
+    fn operands(&self) -> &[ffi::DecodedOperand] {
         &self.operands[..self.num_initialized]
-    }
-}
-
-impl<const N: usize> ops::Deref for Operands<N> {
-    type Target = [ffi::DecodedOperand];
-
-    fn deref(&self) -> &Self::Target {
-        self.as_ref()
-    }
-}
-
-impl<const N: usize, I> ops::Index<I> for Operands<N>
-where
-    I: slice::SliceIndex<[ffi::DecodedOperand]>,
-{
-    type Output = I::Output;
-
-    fn index(&self, index: I) -> &Self::Output {
-        self.as_ref().index(index)
     }
 }

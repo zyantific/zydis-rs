@@ -303,12 +303,8 @@ mod tests {
         const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
 
         let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
-        let (_, _, operands) = decoder
-            .decode_all(CODE, 0x0)
-            .with_operands()
-            .next()
-            .unwrap()
-            .unwrap();
-        assert_eq!(operands[0].encoding, OperandEncoding::JIMM16_32_32);
+        let partial = decoder.decode_first(CODE, 0x0).unwrap().unwrap();
+        let insn: OwnedInstruction<AllOperands> = partial.into_owned();
+        assert_eq!(insn.operands()[0].encoding, OperandEncoding::JIMM16_32_32);
     }
 }
