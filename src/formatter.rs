@@ -7,6 +7,7 @@ use core::{
     ptr,
 };
 
+use crate::decoder::{Instruction, OperandArrayVec};
 use std::{ffi::CStr, os::raw::c_void};
 
 use super::{
@@ -565,6 +566,26 @@ impl<UserData> Formatter<UserData> {
                 value
             ))
         }
+    }
+
+    pub fn format<const N: usize>(
+        &self,
+        ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+    ) -> Result<String> {
+        let mut buffer = [0u8; 256];
+        let mut buffer = OutputBuffer::new(&mut buffer);
+        self.format_into(ip, insn, &mut buffer)?;
+        Ok(buffer.as_str()?.to_owned())
+    }
+
+    pub fn format_into<const N: usize>(
+        &self,
+        ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        buffer: &mut OutputBuffer,
+    ) -> Result<()> {
+        self.format_instruction(&*insn, insn.operands(), buffer, ip, None)
     }
 
     /// Formats the given `instruction`, using the given `buffer` for storage.

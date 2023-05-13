@@ -8,7 +8,7 @@ pub mod ffi;
 #[cfg(not(feature = "minimal"))]
 pub mod formatter;
 
-pub use decoder::{AllOperands, Decoder, NoOperands, OwnedInstruction, VisibleOperands};
+pub use decoder::{AllOperands, Decoder, NoOperands, VisibleOperands};
 pub use enums::*;
 pub use status::{Result, Status};
 
