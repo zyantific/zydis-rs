@@ -50,6 +50,7 @@ pub enum Status {
     
     User                   = make_status!(1, ZYAN_MODULE_USER,   0x00),
     NotUTF8                = make_status!(1, ZYAN_MODULE_USER,   0x01),
+    FormatterError         = make_status!(1, ZYAN_MODULE_USER,   0x02),
 }
 
 impl Status {

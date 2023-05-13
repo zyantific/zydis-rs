@@ -16,8 +16,9 @@ static CODE: &'static [u8] = &[
 fn main() -> Result<()> {
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
-    for insn in decoder.decode_all(CODE, 0).with_operands() {
-        let (ip, insn, operands) = insn?;
+    for item in decoder.decode_all::<AllOperands>(CODE, 0) {
+        let (_, raw_bytes, insn) = item?;
+        let operands = insn.operands();
 
         // Max. instruction length for X86 is 15 -- a 16 byte mask does the job.
         let mut mask = 0u16;
@@ -44,9 +45,7 @@ fn main() -> Result<()> {
         }
 
         // Print pattern.
-        let len = insn.length as usize;
-        let ip = ip as usize;
-        for (i, byte) in (&CODE[ip..ip + len]).iter().enumerate() {
+        for (i, byte) in raw_bytes.iter().enumerate() {
             if mask & (1 << i) != 0 {
                 print!("??");
             } else {

@@ -15,11 +15,11 @@ fn main() -> Result<()> {
 
     let mut buffer = [0u8; 256];
 
-    for insn in decoder.decode_all(CODE, 0).with_operands() {
-        let (ip, insn, operands) = insn?;
+    for insn in decoder.decode_all::<VisibleOperands>(CODE, 0) {
+        let (ip, _, insn) = insn?;
 
         for (ty, val) in
-            formatter.tokenize_instruction(&insn, &operands, &mut buffer[..], Some(ip), None)?
+            formatter.tokenize_raw(&insn, insn.operands(), &mut buffer[..], Some(ip), None)?
         {
             println!("token type: {}, value: {}", ty, val);
         }

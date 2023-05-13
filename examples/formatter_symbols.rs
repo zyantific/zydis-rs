@@ -1,6 +1,6 @@
 use zydis::{
     check, ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, MachineMode,
-    OutputBuffer, Result as ZydisResult, StackWidth, Status, TOKEN_SYMBOL,
+    OutputBuffer, Result as ZydisResult, StackWidth, Status, VisibleOperands, TOKEN_SYMBOL,
 };
 
 use std::fmt::Write;
@@ -64,11 +64,12 @@ fn main() -> ZydisResult<()> {
     let mut buffer = [0u8; 200];
     let mut buffer = OutputBuffer::new(&mut buffer[..]);
 
-    for insn in decoder.decode_all(CODE, runtime_address).with_operands() {
-        let (ip, insn, operands) = insn?;
-        formatter.format_instruction(
+    for item in decoder.decode_all::<VisibleOperands>(CODE, runtime_address) {
+        let (ip, _, insn) = item?;
+
+        formatter.format_raw(
             &insn,
-            &operands,
+            insn.operands(),
             &mut buffer,
             Some(ip),
             Some(&mut orig_print_address),

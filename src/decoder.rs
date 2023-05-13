@@ -36,12 +36,12 @@ impl Decoder {
     ///
     /// # Examples
     /// ```
-    /// use zydis::{Decoder, MachineMode, Mnemonic, StackWidth};
-    /// static INT3: &'static [u8] = &[0xCC];
+    /// # use zydis::*;
+    /// static INT3: &[u8] = &[0xCC];
     /// let mut decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let instruction = decoder.decode_first(INT3, 0).unwrap().unwrap();
-    /// assert_eq!(instruction.mnemonic, Mnemonic::INT3);
+    /// let insn = decoder.decode_first::<NoOperands>(INT3).unwrap().unwrap();
+    /// assert_eq!(insn.mnemonic, Mnemonic::INT3);
     /// ```
     #[inline]
     pub fn decode_first<O: Operands>(&self, buffer: &[u8]) -> Result<Option<Instruction<O>>> {
@@ -75,11 +75,14 @@ impl Decoder {
     }
 
     /// Returns an iterator over all the instructions in the buffer.
+    ///
+    /// If you don't know the instruction pointer or simply want to track the
+    /// current offset within the input buffer, pass `0` as `ip`.
     #[inline]
     pub fn decode_all<'this, 'buffer, O: Operands>(
         &'this self,
         buffer: &'buffer [u8],
-        ip: u64, // TODO: Option?
+        ip: u64,
     ) -> InstructionIter<'this, 'buffer, O> {
         InstructionIter {
             decoder: self,
@@ -109,7 +112,7 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
         match self.decoder.decode_first(self.buffer) {
             Ok(Some(insn)) => {
                 let ip = self.ip;
-                let (new_buffer, insn_bytes) = self.buffer.split_at(usize::from(insn.length));
+                let (insn_bytes, new_buffer) = self.buffer.split_at(usize::from(insn.length));
                 self.buffer = new_buffer;
                 self.ip += u64::from(insn.length);
                 Some(Ok((ip, insn_bytes, insn)))
@@ -149,7 +152,7 @@ impl<const N: usize> fmt::Display for Instruction<OperandArrayVec<N>> {
         let fmt = Formatter::new(FormatterStyle::INTEL).unwrap();
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
-        fmt.format_into(None, self, &mut buffer)
+        fmt.format_into_output_buf(None, self, &mut buffer)
             .map_err(|_| fmt::Error)?;
         f.write_str(buffer.as_str().map_err(|_| fmt::Error)?)
     }

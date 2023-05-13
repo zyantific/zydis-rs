@@ -568,6 +568,10 @@ impl<UserData> Formatter<UserData> {
         }
     }
 
+    /// Format an instruction as a [`String`].
+    ///  
+    /// The `ip` may be `None`, in which case relative address formatting is
+    /// used. Otherwise absolute addresses are used.
     pub fn format<const N: usize>(
         &self,
         ip: Option<u64>,
@@ -575,47 +579,74 @@ impl<UserData> Formatter<UserData> {
     ) -> Result<String> {
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
-        self.format_into(ip, insn, &mut buffer)?;
+        self.format_into_output_buf(ip, insn, &mut buffer)?;
         Ok(buffer.as_str()?.to_owned())
     }
 
+    /// Format an instruction and append it to a [`fmt::Formatter`].
+    ///
+    /// The `ip` may be `None`, in which case relative address formatting is
+    /// used. Otherwise absolute addresses are used.
     pub fn format_into<const N: usize>(
+        &self,
+        ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        f: &mut fmt::Formatter<'_>,
+    ) -> Result {
+        let mut buffer = [0u8; 256];
+        let mut buffer = OutputBuffer::new(&mut buffer);
+        self.format_into_output_buf(ip, insn, &mut buffer)?;
+        f.write_str(buffer.as_str()?)
+            .map_err(|_| Status::FormatterError)
+    }
+
+    /// Format an instruction into an [`OutputBuffer`].
+    ///
+    /// The `ip` may be `None`, in which case relative address formatting is
+    /// used. Otherwise absolute addresses are used.
+    pub fn format_into_output_buf<const N: usize>(
         &self,
         ip: Option<u64>,
         insn: &Instruction<OperandArrayVec<N>>,
         buffer: &mut OutputBuffer,
     ) -> Result<()> {
-        self.format_instruction(&*insn, insn.operands(), buffer, ip, None)
+        self.format_raw(&*insn, insn.operands(), buffer, ip, None)
     }
 
-    /// Formats the given `instruction`, using the given `buffer` for storage.
+    /// Formats the given `instruction` using the given `buffer` for storage.
     ///
     /// The `ip` may be `None`, in which case relative address formatting is
     /// used. Otherwise absolute addresses are used.
     ///
-    /// `user_data` may contain any data you wish to pass on to the
-    /// Formatter hooks.
+    /// This variant is "rawer" than the other format function in that it
+    /// accepts the raw FFI structs. It further allows the user to pass a
+    /// custom `user_data` argument` that is passed to the formatter hooks.
     ///
     /// # Examples
+    ///
     /// ```
-    /// use zydis::{StackWidth, Decoder, Formatter, FormatterStyle, MachineMode, OutputBuffer};
+    /// # use zydis::{
+    /// #     StackWidth, Decoder, Formatter, FormatterStyle,
+    /// #     VisibleOperands, MachineMode, OutputBuffer,
+    /// # };
     /// static INT3: &'static [u8] = &[0xCC];
     ///
-    /// let mut buffer = [0u8; 200];
+    /// let mut buffer = [0u8; 256];
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     ///
-    /// let insn = dec.decode_first(INT3).unwrap().unwrap();
-    /// let operands = insn.visible_operands(&dec);
+    /// let insn = dec.decode_first::<VisibleOperands>(INT3).unwrap().unwrap();
+    ///
     /// formatter
-    ///     .format_instruction(&insn, &operands, &mut buffer, Some(0), None)
+    ///     .format_raw(&insn, insn.operands(), &mut buffer, Some(0), None)
     ///     .unwrap();
+    ///
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
     #[inline]
-    pub fn format_instruction(
+    pub fn format_raw(
         &self,
         instruction: &ffi::DecodedInstruction,
         operands: &[ffi::DecodedOperand],
@@ -650,8 +681,7 @@ impl<UserData> Formatter<UserData> {
     /// The `ip` may be `None`, in which case relative address formatting is
     /// used. Otherwise absolute addresses are used.
     ///
-    /// `user_data` may contain any data you wish to pass on to the Formatter
-    /// hooks.
+    /// `user_data` may contain any data to pass on to the formatter hooks.
     #[inline]
     pub fn format_operand(
         &self,
@@ -676,16 +706,19 @@ impl<UserData> Formatter<UserData> {
         }
     }
 
-    /// The recommended amount of memory to allocate is 256 bytes.
+    /// Tokenize the given instruction.
+    ///
+    /// This currently doesn't have a higher-level wrapper. The recommended
+    /// amount of memory to allocate is 256 bytes.
     #[inline]
-    pub fn tokenize_instruction<'a>(
+    pub fn tokenize_raw<'buffer>(
         &self,
         instruction: &ffi::DecodedInstruction,
         operands: &[ffi::DecodedOperand],
-        buffer: &'a mut [u8],
+        buffer: &'buffer mut [u8],
         ip: Option<u64>,
         user_data: Option<&mut UserData>,
-    ) -> Result<&'a ffi::FormatterToken<'a>> {
+    ) -> Result<&'buffer ffi::FormatterToken<'buffer>> {
         let num_ops: u8 = operands
             .len()
             .try_into()
@@ -716,20 +749,18 @@ impl<UserData> Formatter<UserData> {
     /// See also the `tokens` example in the `examples` directory.
     ///
     /// # Examples
+    ///
     /// ```
-    /// use zydis::{StackWidth, Decoder, Formatter, FormatterStyle, MachineMode, TOKEN_REGISTER};
-    /// // push rcx
-    /// static PUSH: &'static [u8] = &[0x51];
+    /// # use zydis::*;
+    /// static PUSH: &'static [u8] = &[0x51]; // push rcx
     ///
     /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     ///
     /// let mut buffer = [0; 256];
-    ///
-    /// let insn = dec.decode_first(PUSH).unwrap().unwrap();
-    /// let operands = insn.visible_operands(&dec);
+    /// let insn = dec.decode_first::<VisibleOperands>(PUSH).unwrap().unwrap();
     /// let (ty, val) = formatter
-    ///     .tokenize_operand(&insn, &operands[0], &mut buffer[..], None, None)
+    ///     .tokenize_operand(&insn, &insn.operands()[0], &mut buffer[..], None, None)
     ///     .unwrap()
     ///     .get_value()
     ///     .unwrap();
@@ -737,14 +768,14 @@ impl<UserData> Formatter<UserData> {
     /// assert_eq!(val, "rcx");
     /// ```
     #[inline]
-    pub fn tokenize_operand<'a>(
+    pub fn tokenize_operand<'buffer>(
         &self,
         instruction: &ffi::DecodedInstruction,
         operand: &ffi::DecodedOperand,
-        buffer: &'a mut [u8],
+        buffer: &'buffer mut [u8],
         ip: Option<u64>,
         user_data: Option<&mut UserData>,
-    ) -> Result<&'a ffi::FormatterToken<'a>> {
+    ) -> Result<&'buffer ffi::FormatterToken<'buffer>> {
         unsafe {
             let mut token = MaybeUninit::uninit();
             check!(

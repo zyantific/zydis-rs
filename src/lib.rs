@@ -22,8 +22,8 @@ pub use formatter::{
 /// `(major, minor, patch, build)`.
 ///
 /// # Examples
+///
 /// ```
-/// use zydis;
 /// let (major, minor, patch, build) = zydis::get_version();
 /// println!("Zydis version: {}.{}.{}.{}", major, minor, patch, build);
 /// assert_eq!(major, 4);

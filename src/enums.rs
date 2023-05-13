@@ -2,24 +2,17 @@
 //! on them.
 #![allow(non_camel_case_types)]
 
-#[cfg(feature = "serialization")]
-use serde::{Deserialize, Serialize};
-
-use core::fmt;
-
-use bitflags::bitflags;
-
 pub mod generated;
 
 pub use self::generated::*;
-
 use super::ffi;
+use bitflags::bitflags;
+use core::fmt;
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 
 pub const MAX_INSTRUCTION_LENGTH: usize = 15;
 pub const MAX_OPERAND_COUNT: usize = 10;
-// TODO: Looking through the C code I don't see any code reference to
-// MAX_OPERAND_COUNT_VISIBLE       There is only one reference in the comments
-// of Decoder.h
 pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
 pub const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
@@ -300,11 +293,11 @@ mod tests {
 
     #[test]
     fn test_encoding() {
-        const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
+        // TODO: move this test case to decoder?
 
+        const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
         let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
-        let partial = decoder.decode_first(CODE, 0x0).unwrap().unwrap();
-        let insn: OwnedInstruction<AllOperands> = partial.into_owned();
+        let insn = decoder.decode_first::<AllOperands>(CODE).unwrap().unwrap();
         assert_eq!(insn.operands()[0].encoding, OperandEncoding::JIMM16_32_32);
     }
 }

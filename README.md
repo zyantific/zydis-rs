@@ -22,23 +22,16 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> zydis::Result {
-    let formatter = Formatter::new(FormatterStyle::INTEL)?;
-    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
-
-    // Our actual buffer.
-    let mut buffer = [0u8; 200];
-    // A wrapped version of the buffer allowing nicer access.
-    let mut buffer = OutputBuffer::new(&mut buffer[..]);
+    let fmt = Formatter::new(FormatterStyle::INTEL)?;
+    let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
     // 0 is the address for our code.
-    for ip_and_instr in decoder.decode_all(CODE, 0).with_operands() {
-        let (ip, instr, operands) = ip_and_instr?;
+    for ip_and_instr in dec.decode_all::<VisibleOperands>(CODE, 0) {
+        let (ip, _raw_bytes, insn) = ip_and_instr?;
         
         // We use Some(ip) here since we want absolute addressing based on the given
-        // `ip`. If we would want to have relative addressing, we would use
-        // `None` instead.
-        formatter.format_instruction(&instr, &operands, &mut buffer, Some(ip), None)?;
-        println!("0x{:016X} {}", ip, buffer);
+        // instruction pointer. If we wanted relative addressing, we'd use `None` instead.
+        println!("0x{:016X} {}", ip, fmt.format(Some(ip), &insn)?);
     }
 
     Ok(())

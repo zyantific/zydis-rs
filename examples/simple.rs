@@ -10,32 +10,17 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let formatter = Formatter::<()>::new(FormatterStyle::INTEL)?;
+    let fmt = Formatter::<()>::new(FormatterStyle::INTEL)?;
     let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
-    // Our actual buffer.
-    let mut buffer = [0u8; 200];
-    // A wrapped version of the buffer allowing nicer access.
-    let mut buffer = OutputBuffer::new(&mut buffer[..]);
-
-    // TODO: There should be a way to omit the address if the user wants relative
-    // addresses anyway.
-
     // 0x1337 is the base address for our code.
-    for insn in decoder.decode_all(CODE, 0x1337) {
-        let insn = insn?;
-        let ip = insn.ip();
-        let full = insn.into_owned::<VisibleOperands>();
+    for item in decoder.decode_all::<VisibleOperands>(CODE, 0x1337) {
+        let (ip, _raw_bytes, insn) = item?;
 
-        // We use Some(ip) here since we want absolute addressing based on the given
-        // `ip`. If we would want to have relative addressing, we would use
-        // `None` instead.
-        formatter.format_instruction(&full, full.operands(), &mut buffer, Some(ip), None)?;
-        println!("absolute: 0x{:016X} {}", ip, buffer);
-
-        // Show relative format as well
-        formatter.format_instruction(&full, full.operands(), &mut buffer, None, None)?;
-        println!("relative:                    {}", buffer);
+        // We use `Some(ip)` if we want absolute addressing based on the given
+        // instruction pointer, or `None` for relative addressing.
+        println!("absolute: 0x{:016X} {}", ip, fmt.format(Some(ip), &insn)?);
+        println!("relative:                    {}", fmt.format(None, &insn)?);
     }
 
     Ok(())
