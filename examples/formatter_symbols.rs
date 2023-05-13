@@ -1,6 +1,6 @@
 use zydis::{
-    check, ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, MachineMode,
-    OutputBuffer, Result as ZydisResult, StackWidth, Status, VisibleOperands, TOKEN_SYMBOL,
+    check, ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, OutputBuffer,
+    Result as ZydisResult, Status, VisibleOperands, TOKEN_SYMBOL,
 };
 
 use std::fmt::Write;
@@ -44,7 +44,7 @@ fn print_address(
 }
 
 fn main() -> ZydisResult<()> {
-    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
+    let decoder = Decoder::new64()?;
 
     let mut formatter =
         Formatter::<ffi::FormatterFunc>::new_custom_userdata(FormatterStyle::INTEL)?;

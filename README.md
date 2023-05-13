@@ -26,8 +26,8 @@ fn main() -> zydis::Result {
     let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
 
     // 0 is the address for our code.
-    for ip_and_instr in dec.decode_all::<VisibleOperands>(CODE, 0) {
-        let (ip, _raw_bytes, insn) = ip_and_instr?;
+    for insn_info in dec.decode_all::<VisibleOperands>(CODE, 0) {
+        let (ip, _raw_bytes, insn) = insn_info?;
         
         // We use Some(ip) here since we want absolute addressing based on the given
         // instruction pointer. If we wanted relative addressing, we'd use `None` instead.

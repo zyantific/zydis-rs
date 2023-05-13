@@ -13,7 +13,7 @@ use std::{fmt, marker::PhantomData};
 pub struct Decoder(ffi::Decoder);
 
 impl Decoder {
-    /// Creates a new [`Decoder`].
+    /// Creates a new [`Decoder`] with custom machine mode and stack width.
     #[inline]
     pub fn new(machine_mode: MachineMode, stack_width: StackWidth) -> Result<Self> {
         unsafe {
@@ -26,7 +26,24 @@ impl Decoder {
         }
     }
 
-    /// Enables or disables (depending on the `value`) the given decoder `mode`:
+    /// Creating a typical 32 bit decoder.
+    ///
+    /// Machine mode is `MachineMode::LONG_COMPAT_32` and stack width is
+    /// `StackWidth::_32`.
+    #[inline]
+    pub fn new32() -> Result<Self> {
+        Self::new(MachineMode::LONG_COMPAT_32, StackWidth::_32)
+    }
+
+    /// Creating a typical 64 bit decoder.
+    ///
+    /// Machine mode is `MachineMode::LONG_64` and stack width is
+    /// `StackWidth::_64`.
+    pub fn new64() -> Result<Self> {
+        Self::new(MachineMode::LONG_64, StackWidth::_64)
+    }
+
+    /// Enables or disables decoder modes.
     #[inline]
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result {
         unsafe { check!(ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _)) }
@@ -38,7 +55,7 @@ impl Decoder {
     /// ```
     /// # use zydis::*;
     /// static INT3: &[u8] = &[0xCC];
-    /// let mut decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
+    /// let mut decoder = Decoder::new64().unwrap();
     ///
     /// let insn = decoder.decode_first::<NoOperands>(INT3).unwrap().unwrap();
     /// assert_eq!(insn.mnemonic, Mnemonic::INT3);

@@ -10,7 +10,7 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
+    let decoder = Decoder::new64()?;
 
     for item in decoder.decode_all::<VisibleOperands>(CODE, 0) {
         let (_, _, insn) = item?;
