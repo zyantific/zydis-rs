@@ -85,6 +85,7 @@ fn build_library() {
 
     if env::var("CARGO_FEATURE_MINIMAL").is_ok() {
         config.define("ZYDIS_MINIMAL_MODE", "ON");
+        config.define("ZYDIS_FEATURE_ENCODER", "OFF");
     }
 
     if env::var("CARGO_FEATURE_NOLIBC").is_ok() {
