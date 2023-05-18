@@ -18,39 +18,38 @@ macro_rules! make_status {
 }
 
 #[repr(u32)]
-#[rustfmt::skip]
 #[non_exhaustive]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Status {
-    Success                = make_status!(0, ZYAN_MODULE_ZYCORE, 0x00),
-    Failed                 = make_status!(1, ZYAN_MODULE_ZYCORE, 0x01),
-    True                   = make_status!(0, ZYAN_MODULE_ZYCORE, 0x02),
-    False                  = make_status!(0, ZYAN_MODULE_ZYCORE, 0x03),
-    InvalidArgument        = make_status!(1, ZYAN_MODULE_ZYCORE, 0x04),
-    InvalidOperation       = make_status!(1, ZYAN_MODULE_ZYCORE, 0x05),
-    NotFound               = make_status!(1, ZYAN_MODULE_ZYCORE, 0x06),
-    OutOfRange             = make_status!(1, ZYAN_MODULE_ZYCORE, 0x07),
+    Success = make_status!(0, ZYAN_MODULE_ZYCORE, 0x00),
+    Failed = make_status!(1, ZYAN_MODULE_ZYCORE, 0x01),
+    True = make_status!(0, ZYAN_MODULE_ZYCORE, 0x02),
+    False = make_status!(0, ZYAN_MODULE_ZYCORE, 0x03),
+    InvalidArgument = make_status!(1, ZYAN_MODULE_ZYCORE, 0x04),
+    InvalidOperation = make_status!(1, ZYAN_MODULE_ZYCORE, 0x05),
+    NotFound = make_status!(1, ZYAN_MODULE_ZYCORE, 0x06),
+    OutOfRange = make_status!(1, ZYAN_MODULE_ZYCORE, 0x07),
     InsufficientBufferSize = make_status!(1, ZYAN_MODULE_ZYCORE, 0x08),
-    NotEnoughMemory        = make_status!(1, ZYAN_MODULE_ZYCORE, 0x09),
-    BadSystemCall          = make_status!(1, ZYAN_MODULE_ZYCORE, 0x0A),
-    
-    NoMoreData             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x00),
-    DecodingError          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x01),
-    InstructionTooLong     = make_status!(1, ZYAN_MODULE_ZYDIS,  0x02),
-    BadRegister            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x03),
-    IllegalLock            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x04),
-    IllegalLegacyPfx       = make_status!(1, ZYAN_MODULE_ZYDIS,  0x05),
-    IllegalRex             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x06),
-    InvalidMap             = make_status!(1, ZYAN_MODULE_ZYDIS,  0x07),
-    MalformedEvex          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x08),
-    MalformedMvex          = make_status!(1, ZYAN_MODULE_ZYDIS,  0x09),
-    InvalidMask            = make_status!(1, ZYAN_MODULE_ZYDIS,  0x0A),
-    SkipToken              = make_status!(0, ZYAN_MODULE_ZYDIS,  0x0B),
-    ImpossibleInstruction  = make_status!(1, ZYAN_MODULE_ZYDIS,  0x0C),
-    
-    User                   = make_status!(1, ZYAN_MODULE_USER,   0x00),
-    NotUTF8                = make_status!(1, ZYAN_MODULE_USER,   0x01),
-    FormatterError         = make_status!(1, ZYAN_MODULE_USER,   0x02),
+    NotEnoughMemory = make_status!(1, ZYAN_MODULE_ZYCORE, 0x09),
+    BadSystemCall = make_status!(1, ZYAN_MODULE_ZYCORE, 0x0A),
+
+    NoMoreData = make_status!(1, ZYAN_MODULE_ZYDIS, 0x00),
+    DecodingError = make_status!(1, ZYAN_MODULE_ZYDIS, 0x01),
+    InstructionTooLong = make_status!(1, ZYAN_MODULE_ZYDIS, 0x02),
+    BadRegister = make_status!(1, ZYAN_MODULE_ZYDIS, 0x03),
+    IllegalLock = make_status!(1, ZYAN_MODULE_ZYDIS, 0x04),
+    IllegalLegacyPfx = make_status!(1, ZYAN_MODULE_ZYDIS, 0x05),
+    IllegalRex = make_status!(1, ZYAN_MODULE_ZYDIS, 0x06),
+    InvalidMap = make_status!(1, ZYAN_MODULE_ZYDIS, 0x07),
+    MalformedEvex = make_status!(1, ZYAN_MODULE_ZYDIS, 0x08),
+    MalformedMvex = make_status!(1, ZYAN_MODULE_ZYDIS, 0x09),
+    InvalidMask = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0A),
+    SkipToken = make_status!(0, ZYAN_MODULE_ZYDIS, 0x0B),
+    ImpossibleInstruction = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0C),
+
+    User = make_status!(1, ZYAN_MODULE_USER, 0x00),
+    NotUTF8 = make_status!(1, ZYAN_MODULE_USER, 0x01),
+    FormatterError = make_status!(1, ZYAN_MODULE_USER, 0x02),
 }
 
 impl Status {

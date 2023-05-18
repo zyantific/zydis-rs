@@ -173,40 +173,40 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct OperandAction: u32 {
-        const READ                  = 1 << 0;
-        const WRITE                 = 1 << 1;
-        const CONDREAD              = 1 << 2;
-        const CONDWRITE             = 1 << 3;
+        const READ = 1 << 0;
+        const WRITE = 1 << 1;
+        const CONDREAD = 1 << 2;
+        const CONDWRITE = 1 << 3;
 
-        const READWRITE             = Self::READ.bits() | Self::WRITE.bits();
-        const CONDREAD_CONDWRITE    = Self::CONDREAD.bits() | Self::CONDWRITE.bits();
-        const READ_CONDWRITE        = Self::READ.bits() | Self::CONDWRITE.bits();
-        const CONDREAD_WRITE        = Self::CONDREAD.bits() | Self::WRITE.bits();
-        const MASK_READ             = Self::CONDREAD.bits() | Self::READ.bits();
-        const MASK_WRITE            = Self::CONDWRITE.bits() | Self::WRITE.bits();
+        const READWRITE = Self::READ.bits() | Self::WRITE.bits();
+        const CONDREAD_CONDWRITE = Self::CONDREAD.bits() | Self::CONDWRITE.bits();
+        const READ_CONDWRITE = Self::READ.bits() | Self::CONDWRITE.bits();
+        const CONDREAD_WRITE = Self::CONDREAD.bits() | Self::WRITE.bits();
+        const MASK_READ = Self::CONDREAD.bits() | Self::READ.bits();
+        const MASK_WRITE = Self::CONDWRITE.bits() | Self::WRITE.bits();
     }
 
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct CpuFlag: u32 {
-        const CF   = 1 <<  0;
-        const PF   = 1 <<  2;
-        const AF   = 1 <<  4;
-        const ZF   = 1 <<  6;
-        const SF   = 1 <<  7;
-        const TF   = 1 <<  8;
-        const IF   = 1 <<  9;
-        const DF   = 1 << 10;
-        const OF   = 1 << 11;
+        const CF = 1 <<  0;
+        const PF = 1 <<  2;
+        const AF = 1 <<  4;
+        const ZF = 1 <<  6;
+        const SF = 1 <<  7;
+        const TF = 1 <<  8;
+        const IF = 1 <<  9;
+        const DF = 1 << 10;
+        const OF = 1 << 11;
         const IOPL = 1 << 12;
-        const NT   = 1 << 14;
-        const RF   = 1 << 16;
-        const VM   = 1 << 17;
-        const AC   = 1 << 18;
-        const VIF  = 1 << 19;
-        const VIP  = 1 << 20;
-        const ID   = 1 << 21;
+        const NT = 1 << 14;
+        const RF = 1 << 16;
+        const VM = 1 << 17;
+        const AC = 1 << 18;
+        const VIF = 1 << 19;
+        const VIP = 1 << 20;
+        const ID = 1 << 21;
     }
 
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -230,55 +230,55 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct InstructionAttributes: u64 {
-        const HAS_MODRM                 = 1 << 0;
-        const HAS_SIB                   = 1 << 1;
-        const HAS_REX                   = 1 << 2;
-        const HAS_XOP                   = 1 << 3;
-        const HAS_VEX                   = 1 << 4;
-        const HAS_EVEX                  = 1 << 5;
-        const HAS_MVEX                  = 1 << 6;
-        const IS_RELATIVE               = 1 << 7;
-        const IS_PRIVILEGED             = 1 << 8;
+        const HAS_MODRM = 1 << 0;
+        const HAS_SIB = 1 << 1;
+        const HAS_REX = 1 << 2;
+        const HAS_XOP = 1 << 3;
+        const HAS_VEX = 1 << 4;
+        const HAS_EVEX = 1 << 5;
+        const HAS_MVEX = 1 << 6;
+        const IS_RELATIVE = 1 << 7;
+        const IS_PRIVILEGED = 1 << 8;
 
-        const CPUFLAG_ACCESS            = 1 << 9;
-        const CPU_STATE_CR              = 1 << 10;
-        const CPU_STATE_CW              = 1 << 11;
-        const FPU_STATE_CR              = 1 << 12;
-        const FPU_STATE_CW              = 1 << 13;
-        const XMM_STATE_CR              = 1 << 14;
-        const XMM_STATE_CW              = 1 << 15;
+        const CPUFLAG_ACCESS = 1 << 9;
+        const CPU_STATE_CR = 1 << 10;
+        const CPU_STATE_CW = 1 << 11;
+        const FPU_STATE_CR = 1 << 12;
+        const FPU_STATE_CW = 1 << 13;
+        const XMM_STATE_CR = 1 << 14;
+        const XMM_STATE_CW = 1 << 15;
 
-        const ACCEPTS_LOCK              = 1 << 16;
-        const ACCEPTS_REP               = 1 << 17;
-        const ACCEPTS_REPE              = 1 << 18;
-        const ACCEPTS_REPZ              = Self::ACCEPTS_REPE.bits();
-        const ACCEPTS_REPNE             = 1 << 19;
-        const ACCEPTS_REPNZ             = Self::ACCEPTS_REPNE.bits();
-        const ACCEPTS_BND               = 1 << 20;
-        const ACCEPTS_XACQUIRE          = 1 << 21;
-        const ACCEPTS_XRELEASE          = 1 << 22;
-        const ACCEPTS_HLE_WITHOUT_LOCK  = 1 << 23;
-        const ACCEPTS_BRANCH_HINTS      = 1 << 24;
-        const ACCEPTS_NOTRACK           = 1 << 25;
-        const ACCEPTS_SEGMENT           = 1 << 26;
-        const HAS_LOCK                  = 1 << 27;
-        const HAS_REP                   = 1 << 28;
-        const HAS_REPE                  = 1 << 29;
-        const HAS_REPZ                  = Self::HAS_REPE.bits();
-        const HAS_REPNE                 = 1 << 30;
-        const HAS_REPNZ                 = Self::HAS_REPNE.bits();
-        const HAS_BND                   = 1 << 31;
-        const HAS_XACQUIRE              = 1 << 32;
-        const HAS_XRELEASE              = 1 << 33;
-        const HAS_BRANCH_NOT_TAKEN      = 1 << 34;
-        const HAS_BRANCH_TAKEN          = 1 << 35;
-        const HAS_NOTRACK               = 1 << 36;
-        const HAS_SEGMENT_CS            = 1 << 37;
-        const HAS_SEGMENT_SS            = 1 << 38;
-        const HAS_SEGMENT_DS            = 1 << 39;
-        const HAS_SEGMENT_ES            = 1 << 40;
-        const HAS_SEGMENT_FS            = 1 << 41;
-        const HAS_SEGMENT_GS            = 1 << 42;
+        const ACCEPTS_LOCK = 1 << 16;
+        const ACCEPTS_REP = 1 << 17;
+        const ACCEPTS_REPE = 1 << 18;
+        const ACCEPTS_REPZ = Self::ACCEPTS_REPE.bits();
+        const ACCEPTS_REPNE = 1 << 19;
+        const ACCEPTS_REPNZ = Self::ACCEPTS_REPNE.bits();
+        const ACCEPTS_BND = 1 << 20;
+        const ACCEPTS_XACQUIRE = 1 << 21;
+        const ACCEPTS_XRELEASE = 1 << 22;
+        const ACCEPTS_HLE_WITHOUT_LOCK = 1 << 23;
+        const ACCEPTS_BRANCH_HINTS = 1 << 24;
+        const ACCEPTS_NOTRACK = 1 << 25;
+        const ACCEPTS_SEGMENT = 1 << 26;
+        const HAS_LOCK = 1 << 27;
+        const HAS_REP = 1 << 28;
+        const HAS_REPE = 1 << 29;
+        const HAS_REPZ = Self::HAS_REPE.bits();
+        const HAS_REPNE = 1 << 30;
+        const HAS_REPNZ = Self::HAS_REPNE.bits();
+        const HAS_BND = 1 << 31;
+        const HAS_XACQUIRE = 1 << 32;
+        const HAS_XRELEASE = 1 << 33;
+        const HAS_BRANCH_NOT_TAKEN = 1 << 34;
+        const HAS_BRANCH_TAKEN = 1 << 35;
+        const HAS_NOTRACK = 1 << 36;
+        const HAS_SEGMENT_CS = 1 << 37;
+        const HAS_SEGMENT_SS = 1 << 38;
+        const HAS_SEGMENT_DS = 1 << 39;
+        const HAS_SEGMENT_ES = 1 << 40;
+        const HAS_SEGMENT_FS = 1 << 41;
+        const HAS_SEGMENT_GS = 1 << 42;
         const HAS_SEGMENT
             = Self::HAS_SEGMENT_CS.bits()
             | Self::HAS_SEGMENT_SS.bits()
@@ -286,9 +286,9 @@ bitflags! {
             | Self::HAS_SEGMENT_ES.bits()
             | Self::HAS_SEGMENT_FS.bits()
             | Self::HAS_SEGMENT_GS.bits();
-        const HAS_OPERANDSIZE           = 1 << 43;
-        const HAS_ADDRESSIZE            = 1 << 44;
-        const HAS_EVEX_B                = 1 << 45;
+        const HAS_OPERANDSIZE = 1 << 43;
+        const HAS_ADDRESSIZE = 1 << 44;
+        const HAS_EVEX_B = 1 << 45;
     }
 }
 
