@@ -1,5 +1,3 @@
-extern crate cmake;
-
 use std::env;
 
 /// Determine the CMAKE_BUILD_TYPE profile that will be used given the current

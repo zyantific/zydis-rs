@@ -1,7 +1,6 @@
 //! A completely stupid example for Zydis' formatter hook API.
 
 use std::{ffi::CString, fmt::Write, mem};
-
 use zydis::{check, ffi::DecodedOperandKind, *};
 
 #[rustfmt::skip]

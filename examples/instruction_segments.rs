@@ -1,5 +1,3 @@
-extern crate zydis;
-
 use zydis::*;
 
 #[rustfmt::skip]

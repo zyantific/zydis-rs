@@ -10,8 +10,6 @@ zydis = "4.0"
 
 ## Example
 ```rust
-extern crate zydis;
-
 use zydis::*;
 
 #[rustfmt::skip]

@@ -2,8 +2,6 @@
 //! that commonly change during recompilation (displacements and immediates
 //! of branch instructions).
 
-extern crate zydis;
-
 use zydis::{ffi::DecodedOperandKind, *};
 
 #[rustfmt::skip]
