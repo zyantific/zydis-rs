@@ -22,7 +22,7 @@ impl<'a> IntoIterator for &'a InstructionSegments {
     type Item = &'a InstructionSegmentsElement;
 
     fn into_iter(self) -> Self::IntoIter {
-        (&self.segments[..self.count as usize]).into_iter()
+        self.segments[..self.count as usize].iter()
     }
 }
 

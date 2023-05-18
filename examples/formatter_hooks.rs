@@ -4,7 +4,7 @@ use std::{ffi::CString, fmt::Write, mem};
 use zydis::{check, ffi::DecodedOperandKind, *};
 
 #[rustfmt::skip]
-static CODE: &'static [u8] = &[
+static CODE: &[u8] = &[
     // cmpps xmm1, xmm4, 0x03
     0x0F, 0xC2, 0xCC, 0x03,
     // vcmppd xmm1, xmm2, xmm3, 0x17
@@ -13,7 +13,7 @@ static CODE: &'static [u8] = &[
     0x62, 0xF1, 0x6C, 0x5F, 0xC2, 0x54, 0x98, 0x40, 0x0F
 ];
 
-static CONDITION_CODES: &'static [&'static str] = &[
+static CONDITION_CODES: &[&str] = &[
     "eq", "lt", "le", "unord", "neq", "nlt", "nle", "ord", "eq_uq", "nge", "ngt", "false", "oq",
     "ge", "gt", "true", "eq_os", "lt_oq", "le_oq", "unord_s", "neq_us", "nlt_uq", "nle_uq",
     "ord_s", "eq_us", "nge_uq", "ngt_uq", "false_os", "neg_os", "ge_oq", "gt_oq", "true_us",

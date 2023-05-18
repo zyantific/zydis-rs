@@ -200,7 +200,7 @@ pub const TOKEN_SYMBOL: Token = Token(0xE);
 /// The base for user defined tokens.
 pub const TOKEN_USER: Token = Token(0x80);
 
-static TOKEN_NAMES: [&'static str; 0xF] = [
+static TOKEN_NAMES: [&str; 0xF] = [
     "invalid",
     "whitespace",
     "delimiter",
@@ -362,7 +362,7 @@ mod tests {
     fn test_encoding() {
         // TODO: move this test case to decoder?
 
-        const CODE: &'static [u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
+        const CODE: &[u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
         let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
         let insn = decoder.decode_first::<AllOperands>(CODE).unwrap().unwrap();
         assert_eq!(insn.operands()[0].encoding, OperandEncoding::JIMM16_32_32);

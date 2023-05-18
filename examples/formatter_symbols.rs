@@ -6,7 +6,7 @@ use zydis::{
 use std::fmt::Write;
 
 #[rustfmt::skip]
-const CODE: &'static [u8] = &[
+const CODE: &[u8] = &[
     0x48, 0x8B, 0x05, 0x39, 0x00, 0x13, 0x00, // mov rax, qword ptr ds:[<SomeModule.SomeData>]
     0x50,                                     // push rax
     0xFF, 0x15, 0xF2, 0x10, 0x00, 0x00,       // call qword ptr ds:[<SomeModule.SomeFunction>]
@@ -15,7 +15,7 @@ const CODE: &'static [u8] = &[
     0xE9, 0xE5, 0x0F, 0x00, 0x00              // jmp <SomeModule.EntryPoint>
 ];
 
-const SYMBOL_TABLE: &'static [(u64, &'static str)] = &[
+const SYMBOL_TABLE: &[(u64, &str)] = &[
     (0x007FFFFFFF401000, "SomeModule.EntryPoint"),
     (0x007FFFFFFF530040, "SomeModule.SomeData"),
     (0x007FFFFFFF401100, "SomeModule.SomeFunction"),

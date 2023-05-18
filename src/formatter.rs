@@ -8,7 +8,7 @@ use core::{
 };
 
 use crate::decoder::{Instruction, OperandArrayVec};
-use std::{ffi::CStr, os::raw::c_void};
+use core::ffi::{c_void, CStr};
 
 use super::{
     enums::*,
@@ -74,10 +74,10 @@ impl Hook {
             | PrintMnemonic(x) | PreOperand(x) | PostOperand(x) | FormatOperandReg(x)
             | FormatOperandMem(x) | FormatOperandPtr(x) | FormatOperandImm(x)
             | PrintAddressAbs(x) | PrintAddressRel(x) | PrintDisp(x) | PrintImm(x)
-            | PrintTypecast(x) | PrintSegment(x) => mem::transmute(x),
+            | PrintTypecast(x) | PrintSegment(x) => x as *const c_void,
 
-            PrintRegister(x) => mem::transmute(x),
-            PrintDecorator(x) => mem::transmute(x),
+            PrintRegister(x) => x as *const c_void,
+            PrintDecorator(x) => x as *const c_void,
         }
     }
 
@@ -612,7 +612,7 @@ impl<UserData> Formatter<UserData> {
         insn: &Instruction<OperandArrayVec<N>>,
         buffer: &mut OutputBuffer,
     ) -> Result<()> {
-        self.format_raw(&*insn, insn.operands(), buffer, ip, None)
+        self.format_raw(insn, insn.operands(), buffer, ip, None)
     }
 
     /// Formats the given `instruction` using the given `buffer` for storage.

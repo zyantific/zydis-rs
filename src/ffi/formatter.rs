@@ -1,5 +1,4 @@
 use super::*;
-use crate::ffi;
 
 pub type FormatterFunc =
     unsafe extern "C" fn(*const Formatter, *mut FormatterBuffer, *mut FormatterContext) -> Status;
@@ -229,10 +228,10 @@ pub struct FormatterContext {
     // TODO: Can we do some things with Option<NonNull<T>> here for nicer usage?
     //       But how would we enforce constness then?
     /// The instruction being formatted.
-    pub instruction: *const ffi::DecodedInstruction,
-    pub operands: *const ffi::DecodedOperand,
+    pub instruction: *const DecodedInstruction,
+    pub operands: *const DecodedOperand,
     /// The current operand being formatted.
-    pub operand: *const ffi::DecodedOperand,
+    pub operand: *const DecodedOperand,
     /// The runtime address of the instruction.
     ///
     /// If invalid, this is equal to u64::max_value()
