@@ -29,7 +29,7 @@ pub struct FormatterToken<'a> {
 impl<'a> FormatterToken<'a> {
     /// Returns the value and type of this token.
     #[inline]
-    pub fn get_value(&self) -> Result<(Token, &'a str)> {
+    pub fn value(&self) -> Result<(Token, &'a str)> {
         unsafe {
             let mut ty = MaybeUninit::uninit();
             let mut val = MaybeUninit::uninit();
@@ -45,6 +45,12 @@ impl<'a> FormatterToken<'a> {
 
             Ok((ty.assume_init(), val))
         }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `value()` instead")]
+    pub fn get_value(&self) -> Result<(Token, &'a str)> {
+        self.value()
     }
 
     /// Returns the next token.
@@ -83,7 +89,7 @@ impl<'a> Iterator for FormatterTokenIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let res = self.next;
         self.next = self.next.and_then(|x| x.next().ok());
-        res.and_then(|x| x.get_value().ok())
+        res.and_then(|x| x.value().ok())
     }
 }
 

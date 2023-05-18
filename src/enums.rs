@@ -23,16 +23,22 @@ pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
 pub(crate) const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
 impl Mnemonic {
-    /// Returns a string corresponding to this mnemonic.
+    /// Returns the static string corresponding to this mnemonic.
     ///
     /// # Examples
     /// ```
     /// use zydis::Mnemonic;
-    /// let str = Mnemonic::CMOVP.get_string().unwrap();
+    /// let str = Mnemonic::CMOVP.static_string().unwrap();
     /// assert_eq!("cmovp", str);
     /// ```
-    pub fn get_string(self) -> Option<&'static str> {
+    pub fn static_string(self) -> Option<&'static str> {
         unsafe { check_string!(ffi::ZydisMnemonicGetString(self)) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `static_string()` instead")]
+    pub fn get_string(self) -> Option<&'static str> {
+        self.static_string()
     }
 }
 
@@ -44,10 +50,16 @@ impl Register {
     /// # Examples
     /// ```
     /// use zydis::Register;
-    /// assert_eq!(0, Register::RAX.get_id());
+    /// assert_eq!(0, Register::RAX.id());
     /// ```
-    pub fn get_id(self) -> u8 {
+    pub fn id(self) -> u8 {
         unsafe { ffi::ZydisRegisterGetId(self) as u8 }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `id()` instead")]
+    pub fn get_id(self) -> u8 {
+        self.id()
     }
 
     /// Returns the register-class of this register.
@@ -56,11 +68,17 @@ impl Register {
     /// ```
     /// use zydis::{Register, RegisterClass};
     ///
-    /// let class = Register::ECX.get_class();
+    /// let class = Register::ECX.class();
     /// assert_eq!(RegisterClass::GPR32, class);
     /// ```
-    pub fn get_class(self) -> RegisterClass {
+    pub fn class(self) -> RegisterClass {
         unsafe { ffi::ZydisRegisterGetClass(self) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `class()` instead")]
+    pub fn get_class(self) -> RegisterClass {
+        self.class()
     }
 
     /// Returns the textual representation of this register.
@@ -69,11 +87,17 @@ impl Register {
     /// ```
     /// use zydis::Register;
     ///
-    /// let str = Register::EAX.get_string().unwrap();
+    /// let str = Register::EAX.static_string().unwrap();
     /// assert_eq!("eax", str);
     /// ```
-    pub fn get_string(self) -> Option<&'static str> {
+    pub fn static_string(self) -> Option<&'static str> {
         unsafe { check_string!(ffi::ZydisRegisterGetString(self)) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `static_string()` instead")]
+    pub fn get_string(self) -> Option<&'static str> {
+        self.static_string()
     }
 
     /// Returns the width of this register, in bits.
@@ -82,11 +106,17 @@ impl Register {
     /// ```
     /// use zydis::{MachineMode, Register};
     ///
-    /// let width = Register::DR0.get_width(MachineMode::LEGACY_32);
+    /// let width = Register::DR0.width(MachineMode::LEGACY_32);
     /// assert_eq!(32, width);
     /// ```
-    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
+    pub fn width(self, mode: MachineMode) -> RegisterWidth {
         unsafe { ffi::ZydisRegisterGetWidth(mode, self) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `width()` instead")]
+    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
+        self.width(mode)
     }
 
     /// Returns the largest enclosing register of the given register.
@@ -95,11 +125,17 @@ impl Register {
     /// ```
     /// use zydis::{MachineMode, Register};
     ///
-    /// let reg = Register::EAX.get_largest_enclosing(MachineMode::LONG_64);
+    /// let reg = Register::EAX.largest_enclosing(MachineMode::LONG_64);
     /// assert_eq!(reg, Register::RAX);
     /// ```
-    pub fn get_largest_enclosing(self, mode: MachineMode) -> Register {
+    pub fn largest_enclosing(self, mode: MachineMode) -> Register {
         unsafe { ffi::ZydisRegisterGetLargestEnclosing(mode, self) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `largest_enclosing()` instead")]
+    pub fn get_largest_enclosing(self, mode: MachineMode) -> Register {
+        self.largest_enclosing(mode)
     }
 }
 
@@ -117,8 +153,14 @@ impl RegisterClass {
     }
 
     /// Returns the width of the specified register-class.
-    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
+    pub fn width(self, mode: MachineMode) -> RegisterWidth {
         unsafe { ffi::ZydisRegisterClassGetWidth(mode, self) }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "4.0.0", note = "use `width()` instead")]
+    pub fn get_width(self, mode: MachineMode) -> RegisterWidth {
+        self.width(mode)
     }
 }
 
