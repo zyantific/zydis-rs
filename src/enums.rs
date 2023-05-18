@@ -22,6 +22,9 @@ pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
 /// Maximum number of instruction segments.
 pub(crate) const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
+/// Maximum number of encoder operands.
+pub const ENCODER_MAX_OPERANDS: usize = 5;
+
 impl Mnemonic {
     /// Returns the static string corresponding to this mnemonic.
     ///

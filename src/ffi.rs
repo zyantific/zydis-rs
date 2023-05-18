@@ -16,14 +16,14 @@ use super::{
 };
 
 pub mod decoder;
-// pub mod encoder;
+pub mod encoder;
 pub mod formatter;
 pub mod misc;
 pub mod utils;
 pub mod zycore;
 
 pub use decoder::*;
-// pub use encoder::*;
+pub use encoder::*;
 pub use formatter::*;
 pub use misc::*;
 pub use utils::*;

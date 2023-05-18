@@ -1,16 +1,7 @@
-use core::{fmt, marker::PhantomData, mem::MaybeUninit, slice};
-
-// TODO: use libc maybe, or wait for this to move into core?
-use std::{
-    ffi::CStr,
-    os::raw::{c_char, c_void},
-};
-
-use crate::{
-    enums::*,
-    ffi::*,
-    status::{Result, Status},
-};
+use crate::{ffi::*, status::Status};
+use core::ffi::c_void;
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -87,8 +78,7 @@ pub struct Request {
     pub address_size_hint: AddressSizeHint,
     pub operand_size_hint: OperandSizeHint,
     pub operand_count: u8,
-    // ZYDIS_ENCODER_MAX_OPERANDS,
-    pub operands: [Operand; 4],
+    pub operands: [Operand; ENCODER_MAX_OPERANDS],
     pub evex: EvexFeatures,
     pub mvex: MvexFeatures,
 }
@@ -98,7 +88,7 @@ extern "C" {
         request: *const Request,
         buffer: *mut c_void,
         length: *mut usize,
-        runtime_address: u64
+        runtime_address: u64,
     ) -> Status;
 
     pub fn ZydisEncoderEncodeInstruction(
@@ -114,8 +104,5 @@ extern "C" {
         request: *mut Request,
     ) -> Status;
 
-    pub fn ZydisEncoderNopFill(
-        buffer: *mut c_void,
-        length: usize
-    ) -> Status;
+    pub fn ZydisEncoderNopFill(buffer: *mut c_void, length: usize) -> Status;
 }
