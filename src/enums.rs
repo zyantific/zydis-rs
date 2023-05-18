@@ -1,5 +1,4 @@
-//! Contains definition for all enums used in zydis and some utility functions
-//! on them.
+//! Contains enum definitions and some utility functions on them.
 #![allow(non_camel_case_types)]
 
 pub mod generated;
@@ -11,10 +10,17 @@ use core::fmt;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 
+/// Maximum length of an instruction in bytes.
 pub const MAX_INSTRUCTION_LENGTH: usize = 15;
+
+/// Maximum number of operands (visible and hidden).
 pub const MAX_OPERAND_COUNT: usize = 10;
+
+/// Maximum number of visible operands.
 pub const MAX_OPERAND_COUNT_VISIBLE: usize = 5;
-pub const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
+
+/// Maximum number of instruction segments.
+pub(crate) const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 
 impl Mnemonic {
     /// Returns a string corresponding to this mnemonic.

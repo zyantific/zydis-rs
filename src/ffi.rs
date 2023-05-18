@@ -1,12 +1,13 @@
-//! Provides type aliases, struct definitions and the unsafe function
-//! declarations.
+//! Provides the types, enums, constants and functions of the raw, unwrapped C library.
+//!
+//! This is essentially what would usually be in a separate `...-sys` crate.
 
-use core::{fmt, marker::PhantomData, mem::MaybeUninit, slice};
-
-// TODO: use libc maybe, or wait for this to move into core?
-use std::{
-    ffi::CStr,
-    os::raw::{c_char, c_void},
+use core::{
+    ffi::{c_char, c_void, CStr},
+    fmt,
+    marker::PhantomData,
+    mem::MaybeUninit,
+    slice,
 };
 
 use super::{
