@@ -12,12 +12,12 @@ edition = "2021"
 cmake = "0.1"
 
 [dependencies]
-bitflags = "1.0"
+bitflags = "2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
 default = []
 minimal = []
-serialization = ["serde"]
+serialization = ["serde", "bitflags/serde"]
 nolibc = []
 wasm = ["nolibc"]
