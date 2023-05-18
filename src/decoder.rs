@@ -178,7 +178,7 @@ impl<const N: usize> fmt::Display for Instruction<OperandArrayVec<N>> {
 /// Minimal instruction formatting printing just the mnemonic.
 impl fmt::Display for Instruction<NoOperands> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.mnemonic.static_string().ok_or(fmt::Error)?)
+        self.mnemonic.fmt(f)
     }
 }
 

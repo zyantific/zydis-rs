@@ -42,6 +42,12 @@ impl Mnemonic {
     }
 }
 
+impl fmt::Display for Mnemonic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.static_string().ok_or(fmt::Error)?)
+    }
+}
+
 pub type RegisterWidth = u16;
 
 impl Register {
@@ -139,6 +145,12 @@ impl Register {
     }
 }
 
+impl fmt::Display for Register {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.static_string().ok_or(fmt::Error)?)
+    }
+}
+
 impl RegisterClass {
     /// Returns the register specified by this register class and `id`.
     ///
@@ -209,7 +221,9 @@ static TOKEN_NAMES: [&'static str; 0xF] = [
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if usize::from(self.0) < TOKEN_NAMES.len() {
-            write!(f, "{}", TOKEN_NAMES[self.0 as usize])
+            f.write_str(TOKEN_NAMES[self.0 as usize])
+        } else if self.0 >= TOKEN_USER.0 {
+            write!(f, "<user token {:02X}>", self.0)
         } else {
             write!(f, "<unknown>")
         }
