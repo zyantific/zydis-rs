@@ -532,7 +532,10 @@ impl<UserData> Formatter<UserData> {
     }
 
     /// Sets the given FormatterProperty on this formatter instance.
-    pub fn set_property(&mut self, prop: FormatterProperty<'_>) -> Result<()> {
+    pub fn set_property<'this, 'b: 'this>(
+        &'this mut self,
+        prop: FormatterProperty<'b>,
+    ) -> Result<()> {
         use FormatterProperty::*;
         let (property, value) = match prop {
             ForceSize(v) => (ZydisFormatterProperty::FORCE_SIZE, v as usize),
