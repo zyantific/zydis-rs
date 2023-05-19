@@ -1,5 +1,5 @@
 use zydis::{
-    check, ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, OutputBuffer,
+    ffi, Decoder, Formatter, FormatterProperty, FormatterStyle, Hook, OutputBuffer,
     Result as ZydisResult, Status, VisibleOperands, TOKEN_SYMBOL,
 };
 
@@ -38,7 +38,7 @@ fn print_address(
         }
         None => unsafe {
             let orig_fn = user_data.unwrap();
-            check!((orig_fn)(formatter.raw(), buffer, context))
+            (orig_fn)(formatter.raw(), buffer, context).as_result()
         },
     }
 }

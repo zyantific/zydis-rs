@@ -32,16 +32,10 @@ impl<'a> FormatterToken<'a> {
         unsafe {
             let mut ty = MaybeUninit::uninit();
             let mut val = MaybeUninit::uninit();
-            check!(ZydisFormatterTokenGetValue(
-                self,
-                ty.as_mut_ptr(),
-                val.as_mut_ptr()
-            ))?;
-
+            ZydisFormatterTokenGetValue(self, ty.as_mut_ptr(), val.as_mut_ptr()).as_result()?;
             let val = CStr::from_ptr(val.assume_init() as *const _)
                 .to_str()
                 .map_err(|_| Status::NotUTF8)?;
-
             Ok((ty.assume_init(), val))
         }
     }
@@ -57,7 +51,7 @@ impl<'a> FormatterToken<'a> {
     pub fn next(&self) -> Result<&'a Self> {
         unsafe {
             let mut res = self as *const _;
-            check!(ZydisFormatterTokenNext(&mut res))?;
+            ZydisFormatterTokenNext(&mut res).as_result()?;
 
             if res.is_null() {
                 Err(Status::User)
@@ -110,7 +104,7 @@ impl FormatterBuffer {
     pub fn get_string(&mut self) -> Result<&mut ZyanString> {
         unsafe {
             let mut str = MaybeUninit::uninit();
-            check!(ZydisFormatterBufferGetString(self, str.as_mut_ptr()))?;
+            ZydisFormatterBufferGetString(self, str.as_mut_ptr()).as_result()?;
 
             let str = str.assume_init();
             if str.is_null() {
@@ -126,17 +120,15 @@ impl FormatterBuffer {
     pub fn get_token(&self) -> Result<&FormatterToken<'_>> {
         unsafe {
             let mut res = MaybeUninit::uninit();
-            check!(
-                ZydisFormatterBufferGetToken(self, res.as_mut_ptr()),
-                &*res.assume_init()
-            )
+            ZydisFormatterBufferGetToken(self, res.as_mut_ptr()).as_result()?;
+            Ok(&*res.assume_init())
         }
     }
 
     /// Appends a new token to this buffer.
     #[inline]
     pub fn append(&mut self, token: Token) -> Result<()> {
-        unsafe { check!(ZydisFormatterBufferAppend(self, token)) }
+        unsafe { ZydisFormatterBufferAppend(self, token).into() }
     }
 
     /// Returns a snapshot of the buffer-state.
@@ -144,17 +136,15 @@ impl FormatterBuffer {
     pub fn remember(&self) -> Result<FormatterBufferState> {
         unsafe {
             let mut res = MaybeUninit::uninit();
-            check!(
-                ZydisFormatterBufferRemember(self, res.as_mut_ptr()),
-                res.assume_init()
-            )
+            ZydisFormatterBufferRemember(self, res.as_mut_ptr()).as_result()?;
+            Ok(res.assume_init())
         }
     }
 
     /// Restores a previously saved buffer-state.
     #[inline]
     pub fn restore(&mut self, state: FormatterBufferState) -> Result<()> {
-        unsafe { check!(ZydisFormatterBufferRestore(self, state)) }
+        unsafe { ZydisFormatterBufferRestore(self, state).into() }
     }
 }
 

@@ -22,11 +22,8 @@ impl ZyanString {
     pub fn new_ptr(buffer: *mut u8, capacity: usize) -> Result<Self> {
         unsafe {
             let mut string = MaybeUninit::uninit();
-            check!(ZyanStringInitCustomBuffer(
-                string.as_mut_ptr(),
-                buffer as *mut c_char,
-                capacity
-            ))?;
+            ZyanStringInitCustomBuffer(string.as_mut_ptr(), buffer as *mut c_char, capacity)
+                .as_result()?;
             Ok(string.assume_init())
         }
     }
@@ -38,11 +35,11 @@ impl ZyanString {
     /// byte, to the buffer. Therefore, the buffer should be interpreted as
     /// UTF-8 when later being printed.
     #[inline]
-    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result<()> {
+    pub fn append<S: AsRef<str> + ?Sized>(&mut self, s: &S) -> Result {
         unsafe {
             let bytes = s.as_ref().as_bytes();
             let view = ZyanStringView::new(bytes)?;
-            check!(ZyanStringAppend(self, &view))
+            ZyanStringAppend(self, &view).into()
         }
     }
 }
@@ -65,11 +62,12 @@ impl ZyanStringView {
     pub fn new(buffer: &[u8]) -> Result<Self> {
         unsafe {
             let mut view = MaybeUninit::uninit();
-            check!(ZyanStringViewInsideBufferEx(
+            ZyanStringViewInsideBufferEx(
                 view.as_mut_ptr(),
                 buffer.as_ptr() as *const c_char,
-                buffer.len()
-            ))?;
+                buffer.len(),
+            )
+            .as_result()?;
             Ok(view.assume_init())
         }
     }

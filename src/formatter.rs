@@ -488,32 +488,29 @@ impl<UserData> Formatter<UserData> {
     pub fn new_custom_userdata(style: FormatterStyle) -> Result<Self> {
         unsafe {
             let mut formatter = MaybeUninit::uninit();
-            check!(
-                ffi::ZydisFormatterInit(formatter.as_mut_ptr(), style as _,),
-                {
-                    Formatter {
-                        formatter: formatter.assume_init(),
-                        pre_instruction: None,
-                        post_instruction: None,
-                        pre_operand: None,
-                        post_operand: None,
-                        format_instruction: None,
-                        format_operand_reg: None,
-                        format_operand_mem: None,
-                        format_operand_ptr: None,
-                        format_operand_imm: None,
-                        print_mnemonic: None,
-                        print_register: None,
-                        print_address_abs: None,
-                        print_address_rel: None,
-                        print_disp: None,
-                        print_imm: None,
-                        print_typecast: None,
-                        print_prefixes: None,
-                        print_decorator: None,
-                    }
-                }
-            )
+            ffi::ZydisFormatterInit(formatter.as_mut_ptr(), style as _).as_result()?;
+
+            Ok(Formatter {
+                formatter: formatter.assume_init(),
+                pre_instruction: None,
+                post_instruction: None,
+                pre_operand: None,
+                post_operand: None,
+                format_instruction: None,
+                format_operand_reg: None,
+                format_operand_mem: None,
+                format_operand_ptr: None,
+                format_operand_imm: None,
+                print_mnemonic: None,
+                print_register: None,
+                print_address_abs: None,
+                print_address_rel: None,
+                print_disp: None,
+                print_imm: None,
+                print_typecast: None,
+                print_prefixes: None,
+                print_decorator: None,
+            })
         }
     }
 
@@ -563,13 +560,7 @@ impl<UserData> Formatter<UserData> {
             HexSuffix(_) => (ZydisFormatterProperty::HEX_SUFFIX, 0),
         };
 
-        unsafe {
-            check!(ffi::ZydisFormatterSetProperty(
-                &mut self.formatter,
-                property,
-                value
-            ))
-        }
+        unsafe { ffi::ZydisFormatterSetProperty(&mut self.formatter, property, value).into() }
     }
 
     /// Format an instruction as a [`String`].
@@ -664,7 +655,7 @@ impl<UserData> Formatter<UserData> {
             .map_err(|_| Status::InvalidArgument)?;
 
         unsafe {
-            check!(ffi::ZydisFormatterFormatInstruction(
+            ffi::ZydisFormatterFormatInstruction(
                 &self.formatter,
                 instruction,
                 operands.as_ptr(),
@@ -674,8 +665,9 @@ impl<UserData> Formatter<UserData> {
                 ip_to_runtime_addr(ip),
                 user_data
                     .map(|x| x as *mut UserData as *mut c_void)
-                    .unwrap_or(ptr::null_mut())
-            ))
+                    .unwrap_or(ptr::null_mut()),
+            )
+            .into()
         }
     }
 
@@ -696,7 +688,7 @@ impl<UserData> Formatter<UserData> {
         user_data: Option<&mut UserData>,
     ) -> Result<()> {
         unsafe {
-            check!(ffi::ZydisFormatterFormatOperand(
+            ffi::ZydisFormatterFormatOperand(
                 &self.formatter,
                 instruction,
                 operand,
@@ -705,8 +697,9 @@ impl<UserData> Formatter<UserData> {
                 ip_to_runtime_addr(ip),
                 user_data
                     .map(|x| x as *mut UserData as *mut c_void)
-                    .unwrap_or(ptr::null_mut())
-            ))
+                    .unwrap_or(ptr::null_mut()),
+            )
+            .into()
         }
     }
 
@@ -730,22 +723,21 @@ impl<UserData> Formatter<UserData> {
 
         unsafe {
             let mut token = MaybeUninit::uninit();
-            check!(
-                ffi::ZydisFormatterTokenizeInstruction(
-                    &self.formatter,
-                    instruction,
-                    operands.as_ptr(),
-                    num_ops.min(instruction.operand_count_visible),
-                    buffer.as_mut_ptr() as *mut _,
-                    buffer.len(),
-                    ip_to_runtime_addr(ip),
-                    token.as_mut_ptr(),
-                    user_data
-                        .map(|x| x as *mut UserData as *mut c_void)
-                        .unwrap_or(ptr::null_mut()),
-                ),
-                &*{ token.assume_init() }
+            ffi::ZydisFormatterTokenizeInstruction(
+                &self.formatter,
+                instruction,
+                operands.as_ptr(),
+                num_ops.min(instruction.operand_count_visible),
+                buffer.as_mut_ptr() as *mut _,
+                buffer.len(),
+                ip_to_runtime_addr(ip),
+                token.as_mut_ptr(),
+                user_data
+                    .map(|x| x as *mut UserData as *mut c_void)
+                    .unwrap_or(ptr::null_mut()),
             )
+            .as_result()?;
+            Ok(&*{ token.assume_init() })
         }
     }
 
@@ -766,7 +758,7 @@ impl<UserData> Formatter<UserData> {
     /// let (ty, val) = formatter
     ///     .tokenize_operand(&insn, &insn.operands()[0], &mut buffer[..], None, None)
     ///     .unwrap()
-    ///     .get_value()
+    ///     .value()
     ///     .unwrap();
     /// assert_eq!(ty, TOKEN_REGISTER);
     /// assert_eq!(val, "rcx");
@@ -782,21 +774,20 @@ impl<UserData> Formatter<UserData> {
     ) -> Result<&'buffer ffi::FormatterToken<'buffer>> {
         unsafe {
             let mut token = MaybeUninit::uninit();
-            check!(
-                ffi::ZydisFormatterTokenizeOperand(
-                    &self.formatter,
-                    instruction,
-                    operand,
-                    buffer.as_mut_ptr() as *mut _,
-                    buffer.len(),
-                    ip_to_runtime_addr(ip),
-                    token.as_mut_ptr(),
-                    user_data
-                        .map(|x| x as *mut UserData as *mut c_void)
-                        .unwrap_or(ptr::null_mut())
-                ),
-                &*{ token.assume_init() }
+            ffi::ZydisFormatterTokenizeOperand(
+                &self.formatter,
+                instruction,
+                operand,
+                buffer.as_mut_ptr() as *mut _,
+                buffer.len(),
+                ip_to_runtime_addr(ip),
+                token.as_mut_ptr(),
+                user_data
+                    .map(|x| x as *mut UserData as *mut c_void)
+                    .unwrap_or(ptr::null_mut()),
             )
+            .as_result()?;
+            Ok(&*{ token.assume_init() })
         }
     }
 
@@ -810,10 +801,7 @@ impl<UserData> Formatter<UserData> {
     pub unsafe fn set_raw_hook(&mut self, hook: Hook) -> Result<Hook> {
         let mut cb = hook.to_raw();
         let hook_id = hook.to_id();
-
-        check!(
-            ffi::ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb),
-            Hook::from_raw(hook_id, cb)
-        )
+        ffi::ZydisFormatterSetHook(&mut self.formatter, hook_id as _, &mut cb).as_result()?;
+        Ok(Hook::from_raw(hook_id, cb))
     }
 }

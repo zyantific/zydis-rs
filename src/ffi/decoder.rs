@@ -157,10 +157,8 @@ impl DecodedInstruction {
     pub fn calc_absolute_address(&self, address: u64, operand: &DecodedOperand) -> Result<u64> {
         unsafe {
             let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddress(self, operand, address, &mut addr),
-                addr
-            )
+            ZydisCalcAbsoluteAddress(self, operand, address, &mut addr).as_result()?;
+            Ok(addr)
         }
     }
 
@@ -175,10 +173,8 @@ impl DecodedInstruction {
     ) -> Result<u64> {
         unsafe {
             let mut addr = 0u64;
-            check!(
-                ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr),
-                addr
-            )
+            ZydisCalcAbsoluteAddressEx(self, operand, address, context, &mut addr).as_result()?;
+            Ok(addr)
         }
     }
 }

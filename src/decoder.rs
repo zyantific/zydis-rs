@@ -39,8 +39,10 @@ impl Decoder {
     /// Enables or disables decoder modes.
     #[inline]
     pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<&mut Self> {
-        unsafe { check!(ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _))? }
-        Ok(self)
+        unsafe {
+            ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _).as_result()?;
+            Ok(self)
+        }
     }
 
     /// Decodes the first instruction in the given buffer.
@@ -192,10 +194,8 @@ impl<O: Operands> Instruction<O> {
     pub fn segments(&self) -> Result<ffi::InstructionSegments> {
         unsafe {
             let mut segments = MaybeUninit::uninit();
-            check!(
-                ffi::ZydisGetInstructionSegments(&self.info, segments.as_mut_ptr()),
-                segments.assume_init()
-            )
+            ffi::ZydisGetInstructionSegments(&self.info, segments.as_mut_ptr()).as_result()?;
+            Ok(segments.assume_init())
         }
     }
 
@@ -256,6 +256,8 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
         ctx: &ffi::DecoderContext,
         insn: &ffi::DecodedInstruction,
     ) -> Self {
+        use core::ptr;
+
         let num_operands = match MAX_OPERANDS {
             MAX_OPERAND_COUNT => usize::from(insn.operand_count),
             MAX_OPERAND_COUNT_VISIBLE => usize::from(insn.operand_count_visible),
@@ -265,19 +267,18 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
         let mut ops = MaybeUninit::<Self>::uninit();
         let ops_ptr = ops.as_mut_ptr();
         unsafe {
-            use core::ptr;
             ptr::write(ptr::addr_of_mut!((*ops_ptr).num_initialized), num_operands);
-            let status = ffi::ZydisDecoderDecodeOperands(
+
+            ffi::ZydisDecoderDecodeOperands(
                 decoder,
                 ctx,
                 insn,
                 ptr::addr_of_mut!((*ops_ptr).operands) as _,
                 MAX_OPERANDS as u8,
-            );
-            assert!(
-                !status.is_error(),
-                "operand decoding should be infallible for valid arguments",
-            );
+            )
+            .as_result()
+            .expect("operand decoding should be infallible for valid arguments");
+
             ops.assume_init()
         }
     }

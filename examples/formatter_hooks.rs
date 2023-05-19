@@ -1,7 +1,7 @@
 //! A completely stupid example for Zydis' formatter hook API.
 
 use std::{ffi::CString, fmt::Write, mem};
-use zydis::{check, ffi::DecodedOperandKind, *};
+use zydis::{ffi::DecodedOperandKind, *};
 
 #[rustfmt::skip]
 static CODE: &[u8] = &[
@@ -75,7 +75,7 @@ fn print_mnemonic(
         }
 
         user_data.omit_immediate = false;
-        unsafe { check!(orig_print_mnemonic(mem::transmute(formatter), buffer, ctx)) }
+        unsafe { orig_print_mnemonic(mem::transmute(formatter), buffer, ctx).into() }
     } else {
         Ok(())
     }
@@ -92,7 +92,7 @@ fn format_operand_imm(
         if user_data.omit_immediate {
             Err(Status::SkipToken)
         } else {
-            unsafe { check!(orig_format_operand(mem::transmute(formatter), buffer, ctx)) }
+            unsafe { orig_format_operand(mem::transmute(formatter), buffer, ctx).as_result() }
         }
     } else {
         Ok(())

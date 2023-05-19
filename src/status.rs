@@ -161,19 +161,6 @@ impl error::Error for Status {
     }
 }
 
-#[macro_export]
-macro_rules! check {
-    ($expression:expr) => {
-        check!($expression, ())
-    };
-    ($expression:expr, $ok:expr) => {
-        match $expression {
-            x if !x.is_error() => Ok($ok),
-            x => Err(x),
-        }
-    };
-}
-
 macro_rules! check_string {
     ($expression:expr) => {{
         use std::ffi::CStr;
