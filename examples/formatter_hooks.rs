@@ -119,7 +119,7 @@ fn main() -> Result<()> {
     // First without hooks
     for item in decoder.decode_all::<VisibleOperands>(CODE, 0) {
         let (ip, _, insn) = item?;
-        formatter.format_raw(&insn, insn.operands(), &mut buffer, Some(ip), None)?;
+        formatter.format_ex(Some(ip), &insn, &mut buffer, None)?;
         println!("0x{:016X} {}", ip, buffer);
     }
 
@@ -138,13 +138,7 @@ fn main() -> Result<()> {
     // And print it with hooks
     for item in decoder.decode_all::<VisibleOperands>(CODE, 0) {
         let (ip, _, insn) = item?;
-        formatter.format_raw(
-            &insn,
-            insn.operands(),
-            &mut buffer,
-            Some(ip),
-            Some(&mut user_data),
-        )?;
+        formatter.format_ex(Some(ip), &insn, &mut buffer, Some(&mut user_data))?;
         println!("0x{:016X} {}", ip, buffer);
     }
 

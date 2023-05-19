@@ -1,7 +1,6 @@
 //! Textual instruction formatting routines.
 
 use core::{
-    convert::TryInto as _,
     fmt,
     mem::{self, MaybeUninit},
     ptr,
@@ -594,7 +593,7 @@ impl<UserData> Formatter<UserData> {
     ) -> Result<String> {
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
-        self.format_into_output_buf(ip, insn, &mut buffer)?;
+        self.format_ex(ip, insn, &mut buffer, None)?;
         Ok(buffer.as_str()?.to_owned())
     }
 
@@ -610,25 +609,12 @@ impl<UserData> Formatter<UserData> {
     ) -> Result {
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
-        self.format_into_output_buf(ip, insn, &mut buffer)?;
+        self.format_ex(ip, insn, &mut buffer, None)?;
         f.write_str(buffer.as_str()?)
             .map_err(|_| Status::FormatterError)
     }
 
     /// Format an instruction into an [`OutputBuffer`].
-    ///
-    /// The `ip` may be `None`, in which case relative address formatting is
-    /// used. Otherwise absolute addresses are used.
-    pub fn format_into_output_buf<const N: usize>(
-        &self,
-        ip: Option<u64>,
-        insn: &Instruction<OperandArrayVec<N>>,
-        buffer: &mut OutputBuffer,
-    ) -> Result<()> {
-        self.format_raw(insn, insn.operands(), buffer, ip, None)
-    }
-
-    /// Formats the given `instruction` using the given `buffer` for storage.
     ///
     /// The `ip` may be `None`, in which case relative address formatting is
     /// used. Otherwise absolute addresses are used.
@@ -640,10 +626,7 @@ impl<UserData> Formatter<UserData> {
     /// # Examples
     ///
     /// ```
-    /// # use zydis::{
-    /// #     StackWidth, Decoder, Formatter, FormatterStyle,
-    /// #     VisibleOperands, MachineMode, OutputBuffer,
-    /// # };
+    /// # use zydis::*;
     /// static INT3: &'static [u8] = &[0xCC];
     ///
     /// let mut buffer = [0u8; 256];
@@ -655,31 +638,25 @@ impl<UserData> Formatter<UserData> {
     /// let insn = dec.decode_first::<VisibleOperands>(INT3).unwrap().unwrap();
     ///
     /// formatter
-    ///     .format_raw(&insn, insn.operands(), &mut buffer, Some(0), None)
+    ///     .format_ex(Some(0), &insn, &mut buffer, None)
     ///     .unwrap();
     ///
     /// assert_eq!(buffer.as_str().unwrap(), "int3");
     /// ```
     #[inline]
-    pub fn format_raw(
+    pub fn format_ex<const N: usize>(
         &self,
-        instruction: &ffi::DecodedInstruction,
-        operands: &[ffi::DecodedOperand],
-        buffer: &mut OutputBuffer,
         ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        buffer: &mut OutputBuffer,
         user_data: Option<&mut UserData>,
     ) -> Result<()> {
-        let num_ops: u8 = operands
-            .len()
-            .try_into()
-            .map_err(|_| Status::InvalidArgument)?;
-
         unsafe {
             ffi::ZydisFormatterFormatInstruction(
                 &self.formatter,
-                instruction,
-                operands.as_ptr(),
-                num_ops.min(instruction.operand_count_visible),
+                &**insn,
+                insn.operands().as_ptr(),
+                insn.operands().len() as u8,
                 buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -698,20 +675,24 @@ impl<UserData> Formatter<UserData> {
     /// used. Otherwise absolute addresses are used.
     ///
     /// `user_data` may contain any data to pass on to the formatter hooks.
+    ///
+    /// # Panics
+    ///
+    /// If `operand_index` is out of bounds.
     #[inline]
-    pub fn format_operand(
+    pub fn format_operand<const N: usize>(
         &self,
-        instruction: &ffi::DecodedInstruction,
-        operand: &ffi::DecodedOperand,
-        buffer: &mut OutputBuffer,
         ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        buffer: &mut OutputBuffer,
+        operand_index: usize,
         user_data: Option<&mut UserData>,
     ) -> Result<()> {
         unsafe {
             ffi::ZydisFormatterFormatOperand(
                 &self.formatter,
-                instruction,
-                operand,
+                &**insn,
+                &insn.operands()[operand_index],
                 buffer.buffer.as_mut_ptr() as *mut _,
                 buffer.buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -725,29 +706,22 @@ impl<UserData> Formatter<UserData> {
 
     /// Tokenize the given instruction.
     ///
-    /// This currently doesn't have a higher-level wrapper. The recommended
-    /// amount of memory to allocate is 256 bytes.
+    /// The recommended amount of memory to allocate is 256 bytes.
     #[inline]
-    pub fn tokenize_raw<'buffer>(
+    pub fn tokenize<'buffer, const N: usize>(
         &self,
-        instruction: &ffi::DecodedInstruction,
-        operands: &[ffi::DecodedOperand],
-        buffer: &'buffer mut [u8],
         ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        buffer: &'buffer mut [u8],
         user_data: Option<&mut UserData>,
     ) -> Result<&'buffer ffi::FormatterToken<'buffer>> {
-        let num_ops: u8 = operands
-            .len()
-            .try_into()
-            .map_err(|_| Status::InvalidArgument)?;
-
         unsafe {
             let mut token = MaybeUninit::uninit();
             ffi::ZydisFormatterTokenizeInstruction(
                 &self.formatter,
-                instruction,
-                operands.as_ptr(),
-                num_ops.min(instruction.operand_count_visible),
+                &**insn,
+                insn.operands().as_ptr(),
+                insn.operands().len() as u8,
                 buffer.as_mut_ptr() as *mut _,
                 buffer.len(),
                 ip_to_runtime_addr(ip),
@@ -761,8 +735,7 @@ impl<UserData> Formatter<UserData> {
         }
     }
 
-    /// Tokenizes the given operand at the `index` of the given `instruction`.
-    /// See also the `tokens` example in the `examples` directory.
+    /// Tokenizes the given operand at `operand_index`.
     ///
     /// # Examples
     ///
@@ -776,7 +749,7 @@ impl<UserData> Formatter<UserData> {
     /// let mut buffer = [0; 256];
     /// let insn = dec.decode_first::<VisibleOperands>(PUSH).unwrap().unwrap();
     /// let (ty, val) = formatter
-    ///     .tokenize_operand(&insn, &insn.operands()[0], &mut buffer[..], None, None)
+    ///     .tokenize_operand(None, &insn, &mut buffer[..], 0, None)
     ///     .unwrap()
     ///     .value()
     ///     .unwrap();
@@ -784,21 +757,25 @@ impl<UserData> Formatter<UserData> {
     /// assert_eq!(ty, TOKEN_REGISTER);
     /// assert_eq!(val, "rcx");
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// If `operand_index` is out of bounds.
     #[inline]
-    pub fn tokenize_operand<'buffer>(
+    pub fn tokenize_operand<'buffer, const N: usize>(
         &self,
-        instruction: &ffi::DecodedInstruction,
-        operand: &ffi::DecodedOperand,
-        buffer: &'buffer mut [u8],
         ip: Option<u64>,
+        insn: &Instruction<OperandArrayVec<N>>,
+        buffer: &'buffer mut [u8],
+        operand_index: usize,
         user_data: Option<&mut UserData>,
     ) -> Result<&'buffer ffi::FormatterToken<'buffer>> {
         unsafe {
             let mut token = MaybeUninit::uninit();
             ffi::ZydisFormatterTokenizeOperand(
                 &self.formatter,
-                instruction,
-                operand,
+                &**insn,
+                &insn.operands()[operand_index],
                 buffer.as_mut_ptr() as *mut _,
                 buffer.len(),
                 ip_to_runtime_addr(ip),

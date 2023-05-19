@@ -166,7 +166,7 @@ impl<const N: usize> fmt::Display for Instruction<OperandArrayVec<N>> {
         let fmt = Formatter::intel();
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
-        fmt.format_into_output_buf(None, self, &mut buffer)
+        fmt.format_ex(None, self, &mut buffer, None)
             .map_err(|_| fmt::Error)?;
         f.write_str(buffer.as_str().map_err(|_| fmt::Error)?)
     }

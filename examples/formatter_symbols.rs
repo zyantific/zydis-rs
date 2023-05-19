@@ -65,15 +65,7 @@ fn main() -> ZydisResult<()> {
 
     for item in decoder.decode_all::<VisibleOperands>(CODE, runtime_address) {
         let (ip, _, insn) = item?;
-
-        formatter.format_raw(
-            &insn,
-            insn.operands(),
-            &mut buffer,
-            Some(ip),
-            Some(&mut orig_print_address),
-        )?;
-
+        formatter.format_ex(Some(ip), &insn, &mut buffer, Some(&mut orig_print_address))?;
         println!("0x{:016X} {}", ip, buffer);
     }
 

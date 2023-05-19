@@ -16,9 +16,7 @@ fn main() -> Result<()> {
     for insn in decoder.decode_all::<VisibleOperands>(CODE, 0) {
         let (ip, _, insn) = insn?;
 
-        for (ty, val) in
-            formatter.tokenize_raw(&insn, insn.operands(), &mut buffer[..], Some(ip), None)?
-        {
+        for (ty, val) in formatter.tokenize(Some(ip), &insn, &mut buffer[..], None)? {
             println!("token type: {}, value: {}", ty, val);
         }
         println!("----");
