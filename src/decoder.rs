@@ -24,16 +24,18 @@ impl Decoder {
     /// Machine mode is `MachineMode::LONG_COMPAT_32` and stack width is
     /// `StackWidth::_32`.
     #[inline]
-    pub fn new32() -> Result<Self> {
+    pub fn new32() -> Self {
         Self::new(MachineMode::LONG_COMPAT_32, StackWidth::_32)
+            .expect("init with valid mode combination cannot fail")
     }
 
     /// Creating a typical 64 bit decoder.
     ///
     /// Machine mode is `MachineMode::LONG_64` and stack width is
     /// `StackWidth::_64`.
-    pub fn new64() -> Result<Self> {
+    pub fn new64() -> Self {
         Self::new(MachineMode::LONG_64, StackWidth::_64)
+            .expect("init with valid mode combination cannot fail")
     }
 
     /// Enables or disables decoder modes.
@@ -51,7 +53,7 @@ impl Decoder {
     /// ```
     /// # use zydis::*;
     /// static INT3: &[u8] = &[0xCC];
-    /// let mut decoder = Decoder::new64().unwrap();
+    /// let mut decoder = Decoder::new64();
     ///
     /// let insn = decoder.decode_first::<NoOperands>(INT3).unwrap().unwrap();
     /// assert_eq!(insn.mnemonic, Mnemonic::INT3);

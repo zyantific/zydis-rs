@@ -647,7 +647,7 @@ impl<UserData> Formatter<UserData> {
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::intel();
-    /// let dec = Decoder::new64().unwrap();
+    /// let dec = Decoder::new64();
     ///
     /// let insn = dec.decode_first::<VisibleOperands>(INT3).unwrap().unwrap();
     ///
@@ -767,7 +767,7 @@ impl<UserData> Formatter<UserData> {
     /// # use zydis::*;
     /// static PUSH: &'static [u8] = &[0x51]; // push rcx
     ///
-    /// let dec = Decoder::new64().unwrap();
+    /// let dec = Decoder::new64();
     /// let formatter = Formatter::intel();
     ///
     /// let mut buffer = [0; 256];

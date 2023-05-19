@@ -8,7 +8,7 @@ static CODE: &[u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new64()?;
+    let decoder = Decoder::new64();
     let formatter = Formatter::intel();
 
     let mut buffer = [0u8; 256];

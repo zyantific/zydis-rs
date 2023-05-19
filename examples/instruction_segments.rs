@@ -8,7 +8,7 @@ static CODE: &[u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let decoder = Decoder::new64()?;
+    let decoder = Decoder::new64();
 
     for item in decoder.decode_all::<VisibleOperands>(CODE, 0) {
         let (_, _, insn) = item?;

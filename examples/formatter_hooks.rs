@@ -111,7 +111,7 @@ fn main() -> Result<()> {
     // set h as suffix
     formatter.set_property(FormatterProperty::HexSuffix(Some(s.as_c_str())))?;
 
-    let decoder = Decoder::new64()?;
+    let decoder = Decoder::new64();
 
     let mut buffer = [0u8; 200];
     let mut buffer = OutputBuffer::new(&mut buffer[..]);

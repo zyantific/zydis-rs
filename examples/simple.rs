@@ -9,7 +9,7 @@ static CODE: &[u8] = &[
 
 fn main() -> Result<()> {
     let fmt = Formatter::intel();
-    let decoder = Decoder::new64()?;
+    let decoder = Decoder::new64();
 
     // 0x1337 is the base address for our code.
     for item in decoder.decode_all::<VisibleOperands>(CODE, 0x1337) {
