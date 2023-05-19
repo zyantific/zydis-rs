@@ -16,14 +16,14 @@ use super::{
     status::{Result, Status},
 };
 
-pub mod decoder;
+mod decoder;
 #[cfg(feature = "encoder")]
-pub mod encoder;
+mod encoder;
 #[cfg(feature = "formatter")]
-pub mod formatter;
-pub mod misc;
-pub mod utils;
-pub mod zycore;
+mod formatter;
+mod misc;
+mod utils;
+mod zycore;
 
 pub use decoder::*;
 #[cfg(feature = "encoder")]

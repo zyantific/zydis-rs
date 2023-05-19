@@ -1,7 +1,7 @@
 //! Contains enum definitions and some utility functions on them.
 #![allow(non_camel_case_types)]
 
-pub mod generated;
+mod generated;
 
 pub use self::generated::*;
 use super::ffi;
