@@ -45,8 +45,9 @@ impl Decoder {
 
     /// Enables or disables decoder modes.
     #[inline]
-    pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result {
-        unsafe { check!(ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _)) }
+    pub fn enable_mode(&mut self, mode: DecoderMode, value: bool) -> Result<&mut Self> {
+        unsafe { check!(ffi::ZydisDecoderEnableMode(&mut self.0, mode, value as _))? }
+        Ok(self)
     }
 
     /// Decodes the first instruction in the given buffer.
