@@ -21,7 +21,7 @@ static CODE: &'static [u8] = &[
 
 fn main() -> zydis::Result {
     let fmt = Formatter::new(FormatterStyle::INTEL)?;
-    let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64)?;
+    let dec = Decoder::new64()?;
 
     // 0 is the address for our code.
     for insn_info in dec.decode_all::<VisibleOperands>(CODE, 0) {

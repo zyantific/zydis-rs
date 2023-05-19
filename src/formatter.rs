@@ -630,7 +630,7 @@ impl<UserData> Formatter<UserData> {
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
-    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
+    /// let dec = Decoder::new64().unwrap();
     ///
     /// let insn = dec.decode_first::<VisibleOperands>(INT3).unwrap().unwrap();
     ///
@@ -750,7 +750,7 @@ impl<UserData> Formatter<UserData> {
     /// # use zydis::*;
     /// static PUSH: &'static [u8] = &[0x51]; // push rcx
     ///
-    /// let dec = Decoder::new(MachineMode::LONG_64, StackWidth::_64).unwrap();
+    /// let dec = Decoder::new64().unwrap();
     /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
     ///
     /// let mut buffer = [0; 256];
@@ -760,6 +760,7 @@ impl<UserData> Formatter<UserData> {
     ///     .unwrap()
     ///     .value()
     ///     .unwrap();
+    ///
     /// assert_eq!(ty, TOKEN_REGISTER);
     /// assert_eq!(val, "rcx");
     /// ```
