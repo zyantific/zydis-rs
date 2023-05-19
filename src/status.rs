@@ -17,6 +17,7 @@ macro_rules! make_status {
     };
 }
 
+/// Status code indicating either success or failure.
 #[repr(u32)]
 #[non_exhaustive]
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -119,6 +120,21 @@ impl Status {
             Status::NotUTF8 => "invalid utf8 data was passed to rust",
             _ => "unknown error",
         }
+    }
+
+    /// Turns the status into a result.
+    pub fn as_result(self) -> Result {
+        if self.is_error() {
+            Err(self)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl From<Status> for Result {
+    fn from(x: Status) -> Self {
+        x.as_result()
     }
 }
 
