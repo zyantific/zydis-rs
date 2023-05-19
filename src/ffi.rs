@@ -2,6 +2,7 @@
 //!
 //! This is essentially what would usually be in a separate `...-sys` crate.
 
+#[allow(unused_imports)]
 use core::{
     ffi::{c_char, c_void, CStr},
     fmt,
@@ -16,14 +17,18 @@ use super::{
 };
 
 pub mod decoder;
+#[cfg(feature = "encoder")]
 pub mod encoder;
+#[cfg(feature = "formatter")]
 pub mod formatter;
 pub mod misc;
 pub mod utils;
 pub mod zycore;
 
 pub use decoder::*;
+#[cfg(feature = "encoder")]
 pub use encoder::*;
+#[cfg(feature = "formatter")]
 pub use formatter::*;
 pub use misc::*;
 pub use utils::*;

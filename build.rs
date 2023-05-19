@@ -1,20 +1,37 @@
 use std::env;
 
+fn bool2cmake(x: bool) -> &'static str {
+    if x {
+        "ON"
+    } else {
+        "OFF"
+    }
+}
+
 fn build_library() {
     let mut config = cmake::Config::new("zydis-c");
 
     config
         .define("ZYDIS_BUILD_EXAMPLES", "OFF")
-        .define("ZYDIS_BUILD_TOOLS", "OFF");
+        .define("ZYDIS_BUILD_TOOLS", "OFF")
+        .define("ZYDIS_FEATURE_DECODER", "ON");
 
-    if env::var("CARGO_FEATURE_MINIMAL").is_ok() {
-        config.define("ZYDIS_MINIMAL_MODE", "ON");
-        config.define("ZYDIS_FEATURE_ENCODER", "OFF");
-    }
-
-    if env::var("CARGO_FEATURE_NOLIBC").is_ok() {
-        config.define("ZYAN_NO_LIBC", "ON");
-    }
+    config.define(
+        "ZYDIS_MINIMAL_MODE",
+        bool2cmake(!env::var("CARGO_FEATURE_FULL_DECODER").is_ok()),
+    );
+    config.define(
+        "ZYDIS_FEATURE_FORMATTER",
+        bool2cmake(env::var("CARGO_FEATURE_FORMATTER").is_ok()),
+    );
+    config.define(
+        "ZYDIS_FEATURE_ENCODER",
+        bool2cmake(env::var("CARGO_FEATURE_ENCODER").is_ok()),
+    );
+    config.define(
+        "ZYAN_NO_LIBC",
+        bool2cmake(env::var("CARGO_FEATURE_NOLIBC").is_ok()),
+    );
 
     let dst = config.build();
 

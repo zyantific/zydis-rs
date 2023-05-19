@@ -16,7 +16,33 @@ bitflags = "2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
-default = []
-minimal = []
+default = ["full-decoder", "formatter"]
+full-decoder = []
+formatter = ["full-decoder"]
+encoder = ["full-decoder"]
 serialization = ["serde", "bitflags/serde"]
 nolibc = []
+
+[[example]]
+name = "pattern"
+required-features = ["full-decoder"]
+
+[[example]]
+name = "simple"
+required-features = ["formatter"]
+
+[[example]]
+name = "tokens"
+required-features = ["formatter"]
+
+[[example]]
+name = "formatter_hooks"
+required-features = ["formatter"]
+
+[[example]]
+name = "formatter_symbols"
+required-features = ["formatter"]
+
+[[example]]
+name = "instruction_segments"
+required-features = ["full-decoder"]

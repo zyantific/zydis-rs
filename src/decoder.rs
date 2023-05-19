@@ -1,10 +1,5 @@
-use crate::{
-    ffi, DecoderMode, MachineMode, Result, StackWidth, Status, MAX_OPERAND_COUNT,
-    MAX_OPERAND_COUNT_VISIBLE,
-};
-
-use core::{mem::MaybeUninit, ops, ptr};
-use std::{fmt, marker::PhantomData};
+use crate::*;
+use core::{fmt, marker::PhantomData, mem::MaybeUninit, ops};
 
 /// Decoder for X86/X86-64 instructions.
 ///
@@ -163,10 +158,9 @@ impl<O: Operands> ops::Deref for Instruction<O> {
 /// For more control over formatting prefer using [`crate::Formatter`] directly.
 /// This also isn't terribly efficient because it instantiates a new formatter
 /// on every call.
-#[cfg(not(feature = "minimal"))]
+#[cfg(feature = "formatter")]
 impl<const N: usize> fmt::Display for Instruction<OperandArrayVec<N>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::{Formatter, FormatterStyle, OutputBuffer};
         let fmt = Formatter::new(FormatterStyle::INTEL).unwrap();
         let mut buffer = [0u8; 256];
         let mut buffer = OutputBuffer::new(&mut buffer);
@@ -183,6 +177,7 @@ impl fmt::Display for Instruction<NoOperands> {
     }
 }
 
+#[cfg(feature = "full-decoder")]
 impl<const N: usize> Instruction<OperandArrayVec<N>> {
     /// Drops the operands, turning it into [`Instruction<NoOperands>`].
     pub fn drop_operands(self) -> Instruction<NoOperands> {
@@ -241,18 +236,22 @@ impl Operands for NoOperands {
 }
 
 /// Decode and store visible operands.
+#[cfg(feature = "full-decoder")]
 pub type VisibleOperands = OperandArrayVec<MAX_OPERAND_COUNT_VISIBLE>;
 
 /// Decode and store all (both visible and implicit) operands.
+#[cfg(feature = "full-decoder")]
 pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
 
 /// Decode and store operands in a static array buffer.
+#[cfg(feature = "full-decoder")]
 pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
     // TODO: use maybeuninit here
     operands: [ffi::DecodedOperand; MAX_OPERANDS],
     num_initialized: usize,
 }
 
+#[cfg(feature = "full-decoder")]
 impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
     fn decode(
         decoder: &ffi::Decoder,
@@ -268,6 +267,7 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
         let mut ops = MaybeUninit::<Self>::uninit();
         let ops_ptr = ops.as_mut_ptr();
         unsafe {
+            use core::ptr;
             ptr::write(ptr::addr_of_mut!((*ops_ptr).num_initialized), num_operands);
             let status = ffi::ZydisDecoderDecodeOperands(
                 decoder,

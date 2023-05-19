@@ -1,22 +1,21 @@
-#![doc = include_str!("../README.md")]
+// The doc-test in README.md needs formatter
+#![cfg_attr(feature = "formatter", doc = include_str!("../README.md"))]
 
 #[macro_use]
-pub mod status;
+mod status;
 mod decoder;
-pub mod enums;
+mod enums;
 pub mod ffi;
-#[cfg(not(feature = "minimal"))]
-pub mod formatter;
+#[cfg(feature = "formatter")]
+mod formatter;
 
-pub use decoder::{AllOperands, Decoder, NoOperands, VisibleOperands};
+#[cfg(feature = "full-decoder")]
+pub use decoder::{AllOperands, VisibleOperands};
+pub use decoder::{Decoder, NoOperands};
 pub use enums::*;
-pub use status::{Result, Status};
-
-#[cfg(not(feature = "minimal"))]
-pub use formatter::{
-    Formatter, FormatterProperty, Hook, OutputBuffer, WrappedDecoratorFunc, WrappedGeneralFunc,
-    WrappedRegisterFunc,
-};
+#[cfg(feature = "formatter")]
+pub use formatter::*;
+pub use status::*;
 
 /// Returns the version of the zydis C library as a quadruple
 /// `(major, minor, patch, build)`.

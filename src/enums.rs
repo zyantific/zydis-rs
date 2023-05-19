@@ -359,12 +359,12 @@ bitflags! {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
-
     #[test]
+    #[cfg(feature = "full-decoder")]
     fn test_encoding() {
         // TODO: move this test case to decoder?
 
+        use crate::*;
         const CODE: &[u8] = &[0xE8, 0xFB, 0xFF, 0xFF, 0xFF];
         let decoder = Decoder::new(MachineMode::LONG_COMPAT_32, StackWidth::_32).unwrap();
         let insn = decoder.decode_first::<AllOperands>(CODE).unwrap().unwrap();
