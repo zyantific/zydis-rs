@@ -1,9 +1,7 @@
 use crate::*;
 use core::{fmt, marker::PhantomData, mem::MaybeUninit, ops};
 
-/// Decoder for X86/X86-64 instructions.
-///
-/// Decodes raw instruction bytes into a machine-processable structure.
+/// Decodes raw instruction bytes into a machine-readable struct.
 #[derive(Clone, Debug)]
 pub struct Decoder(ffi::Decoder);
 

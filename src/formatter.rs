@@ -232,6 +232,7 @@ wrap_func!(general print_address_rel, dispatch_print_address_rel);
 wrap_func!(register print_register, dispatch_print_register);
 wrap_func!(decorator print_decorator, dispatch_print_decorator);
 
+/// State of a formatter setting knob.
 #[derive(Clone, Copy)]
 pub enum FormatterProperty<'a> {
     ForceSize(bool),
@@ -300,6 +301,7 @@ impl fmt::Display for OutputBuffer<'_> {
     }
 }
 
+/// Formats decoded instructions to human-readable text.
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].

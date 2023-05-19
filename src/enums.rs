@@ -234,6 +234,7 @@ impl fmt::Display for Token {
 }
 
 bitflags! {
+    /// Describes how an operand is accessed.
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -251,6 +252,7 @@ bitflags! {
         const MASK_WRITE = Self::CONDWRITE.bits() | Self::WRITE.bits();
     }
 
+    /// Identifies a CPU flag.
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -274,6 +276,7 @@ bitflags! {
         const ID = 1 << 21;
     }
 
+    /// Identifies an FPU flag.
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -284,6 +287,7 @@ bitflags! {
         const C3 = 1 << 3;
     }
 
+    /// Attributes of an operand.
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -291,6 +295,7 @@ bitflags! {
         const IS_MULTISOURCE4 = 1 << 0;
     }
 
+    /// Attributes of an instruction.
     #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
