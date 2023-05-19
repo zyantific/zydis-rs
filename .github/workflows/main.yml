@@ -3,12 +3,30 @@ on: [push, pull_request]
 
 jobs:
   build_and_test:
-    name: zydis-rs
+    name: "${{ matrix.name }}"
     runs-on: "${{ matrix.image_name }}"
 
     strategy:
       matrix:
-        image_name: ["macOS-latest", "windows-2022", "ubuntu-22.04"]
+        include:
+          - name: "macOS"
+            image_name: "macOS-latest"
+          - name: "Windows"
+            image_name: "windows-2022"
+          - name: "Linux (default features)"
+            image_name: "ubuntu-22.04"
+          - name: "Linux (all features)"
+            image_name: "ubuntu-22.04"
+            extra_args: "--all-features"
+          - name: "Linux (minimal)"
+            image_name: "ubuntu-22.04"
+            extra_args: "--no-default-features"
+          - name: "Linux (decoder only)"
+            image_name: "ubuntu-22.04"
+            extra_args: "--no-default-features --features full-decoder"
+          - name: "Linux (encoder)"
+            image_name: "ubuntu-22.04"
+            extra_args: "--features encoder"
 
     steps:
       - name: Checkout
@@ -17,6 +35,6 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Build
-        run: cargo build
+        run: cargo build ${{ matrix.extra_args }}
       - name: Test
-        run: cargo test
+        run: cargo test ${{ matrix.extra_args }}
