@@ -1,11 +1,11 @@
 Zydis Rust Bindings
 ===================
 
-Rust language bindings for the [Zydis library](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler.
+Rust language bindings for [Zydis](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler library.
 
 ```toml
 [dependencies]
-zydis = "4.0"
+zydis = "4.0-beta.1"
 ```
 
 ## Example
@@ -51,12 +51,18 @@ fn main() -> zydis::Result {
 
 ## Version Map
 
+Since version 3.0.0 the binding's major and minor versions are tethered to the Zydis version. The binding's patch 
+version is independent of the Zydis version and can be bumped for binding-only changes. Every cargo crate release
+has a corresponding git tag.
+
+<details>
+  <summary>Version map for older releases</summary>
 
 | Bindings | Zydis                                                                                                      |
 |----------|------------------------------------------------------------------------------------------------------------|
-| v4.0.0   | [v4.0.0](https://github.com/zyantific/zydis/releases/tag/v4.0.0)                                           |
-| v3.0.0   | [v3.0.0](https://github.com/zyantific/zydis/releases/tag/v3.0.0)                                           |
 | v0.0.4   | [v2.0.2](https://github.com/zyantific/zydis/tree/v2.0.2)                                                   |
 | v0.0.3   | [v2.0.0-develop@e967510](https://github.com/zyantific/zydis/tree/e967510fb251cf39a3556942b58218a9dcac5554) |
 | v0.0.2   | [v2.0.0-alpha2](https://github.com/zyantific/zydis/tree/v2.0.0-alpha2)                                     |
 | v0.0.1   | [v2.0.0-develop@4a79d57](https://github.com/zyantific/zydis/tree/4a79d5762ea7f15a5961733cc6d3a7704d3d5206) |
+
+</details>
