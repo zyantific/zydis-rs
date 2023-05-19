@@ -46,8 +46,7 @@ fn print_address(
 fn main() -> ZydisResult<()> {
     let decoder = Decoder::new64()?;
 
-    let mut formatter =
-        Formatter::<ffi::FormatterFunc>::new_custom_userdata(FormatterStyle::INTEL)?;
+    let mut formatter = Formatter::<ffi::FormatterFunc>::new_custom_userdata(FormatterStyle::INTEL);
     formatter.set_property(FormatterProperty::ForceSegment(true))?;
     formatter.set_property(FormatterProperty::ForceSize(true))?;
 

@@ -20,7 +20,7 @@ static CODE: &'static [u8] = &[
 ];
 
 fn main() -> zydis::Result {
-    let fmt = Formatter::new(FormatterStyle::INTEL)?;
+    let fmt = Formatter::intel();
     let dec = Decoder::new64()?;
 
     // 0 is the address for our code.

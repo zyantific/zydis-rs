@@ -330,8 +330,22 @@ pub struct Formatter<UserData> {
 
 impl Formatter<()> {
     /// Creates a new formatter instance (no user-data).
-    pub fn new(style: FormatterStyle) -> Result<Self> {
+    pub fn new(style: FormatterStyle) -> Self {
         Formatter::<()>::new_custom_userdata(style)
+    }
+
+    /// Creates a new formatter for Intel syntax.
+    ///
+    /// Convenience wrapper for `Self::new(FormatterStyle::INTEL)`.
+    pub fn intel() -> Self {
+        Self::new(FormatterStyle::INTEL)
+    }
+
+    /// Creates a new formatter for AT&T syntax.
+    ///
+    /// Convenience wrapper for `Self::new(FormatterStyle::ATT)`.
+    pub fn att() -> Self {
+        Self::new(FormatterStyle::ATT)
     }
 }
 
@@ -485,12 +499,15 @@ impl<UserData> Formatter<UserData> {
     }
 
     /// Creates a new formatter instance.
-    pub fn new_custom_userdata(style: FormatterStyle) -> Result<Self> {
+    pub fn new_custom_userdata(style: FormatterStyle) -> Self {
         unsafe {
             let mut formatter = MaybeUninit::uninit();
-            ffi::ZydisFormatterInit(formatter.as_mut_ptr(), style as _).as_result()?;
 
-            Ok(Formatter {
+            ffi::ZydisFormatterInit(formatter.as_mut_ptr(), style as _)
+                .as_result()
+                .expect("init call with valid style cannot fail");
+
+            Formatter {
                 formatter: formatter.assume_init(),
                 pre_instruction: None,
                 post_instruction: None,
@@ -510,7 +527,7 @@ impl<UserData> Formatter<UserData> {
                 print_typecast: None,
                 print_prefixes: None,
                 print_decorator: None,
-            })
+            }
         }
     }
 
@@ -629,7 +646,7 @@ impl<UserData> Formatter<UserData> {
     /// let mut buffer = [0u8; 256];
     /// let mut buffer = OutputBuffer::new(&mut buffer[..]);
     ///
-    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
+    /// let formatter = Formatter::intel();
     /// let dec = Decoder::new64().unwrap();
     ///
     /// let insn = dec.decode_first::<VisibleOperands>(INT3).unwrap().unwrap();
@@ -751,7 +768,7 @@ impl<UserData> Formatter<UserData> {
     /// static PUSH: &'static [u8] = &[0x51]; // push rcx
     ///
     /// let dec = Decoder::new64().unwrap();
-    /// let formatter = Formatter::new(FormatterStyle::INTEL).unwrap();
+    /// let formatter = Formatter::intel();
     ///
     /// let mut buffer = [0; 256];
     /// let insn = dec.decode_first::<VisibleOperands>(PUSH).unwrap().unwrap();

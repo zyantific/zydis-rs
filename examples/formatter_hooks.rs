@@ -102,7 +102,7 @@ fn format_operand_imm(
 fn main() -> Result<()> {
     let s = CString::new("h").unwrap();
 
-    let mut formatter = Formatter::<UserData>::new_custom_userdata(FormatterStyle::INTEL)?;
+    let mut formatter = Formatter::<UserData>::new_custom_userdata(FormatterStyle::INTEL);
     formatter.set_property(FormatterProperty::ForceSegment(true))?;
     formatter.set_property(FormatterProperty::ForceSize(true))?;
 

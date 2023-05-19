@@ -8,7 +8,7 @@ static CODE: &[u8] = &[
 ];
 
 fn main() -> Result<()> {
-    let fmt = Formatter::<()>::new(FormatterStyle::INTEL)?;
+    let fmt = Formatter::intel();
     let decoder = Decoder::new64()?;
 
     // 0x1337 is the base address for our code.
