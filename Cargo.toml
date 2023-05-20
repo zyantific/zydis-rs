@@ -16,9 +16,10 @@ bitflags = "2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
-default = ["full-decoder", "formatter"]
+default = ["std", "full-decoder", "formatter"]
+std = []
 full-decoder = []
-formatter = ["full-decoder"]
+formatter = ["std", "full-decoder"]
 encoder = ["full-decoder"]
 serialization = ["serde", "bitflags/serde"]
 nolibc = []

@@ -1,5 +1,6 @@
 // The doc-test in README.md needs formatter
 #![cfg_attr(feature = "formatter", doc = include_str!("../README.md"))]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
 mod status;
