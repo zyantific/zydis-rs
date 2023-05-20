@@ -17,7 +17,7 @@ Rust language bindings for [Zydis][zydis], a fast and lightweight x86/x86-64 dis
 
 ```toml
 [dependencies]
-zydis = "4.0-beta.1"
+zydis = "4.0.0-beta.1"
 ```
 
 ## Example
