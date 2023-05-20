@@ -1,7 +1,19 @@
 Zydis Rust Bindings
 ===================
 
-Rust language bindings for [Zydis](https://github.com/zyantific/zydis), a fast and lightweight x86/x86-64 disassembler library.
+[![Crates.io][crates-badge]][crates-url]
+[![docs.rs][docs-badge]][docs-url]
+[![MIT licensed][mit-badge]][mit-url]
+
+Rust language bindings for [Zydis][zydis], a fast and lightweight x86/x86-64 disassembler library.
+
+[crates-badge]: https://img.shields.io/crates/v/zydis.svg
+[crates-url]: https://crates.io/crates/zydis
+[docs-badge]: https://docs.rs/zydis/badge.svg
+[docs-url]: https://docs.rs/zydis/
+[mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[mit-url]: https://github.com/zyantific/zydis-rs/blob/master/LICENSE
+[zydis]: https://github.com/zyantific/zydis
 
 ```toml
 [dependencies]
