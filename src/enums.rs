@@ -4,7 +4,7 @@
 mod generated;
 
 pub use self::generated::*;
-use super::ffi;
+use super::{ffi, EncoderRequest};
 use bitflags::bitflags;
 use core::fmt;
 #[cfg(feature = "serialization")]
@@ -25,6 +25,24 @@ pub(crate) const MAX_INSTRUCTION_SEGMENT_COUNT: usize = 9;
 /// Maximum number of encoder operands.
 pub const ENCODER_MAX_OPERANDS: usize = 5;
 
+/// Combination of all user-encodable prefixes.
+pub const ENCODABLE_PREFIXES: u64 = InstructionAttributes::HAS_LOCK.bits()
+    | InstructionAttributes::HAS_REP.bits()
+    | InstructionAttributes::HAS_REPE.bits()
+    | InstructionAttributes::HAS_REPNE.bits()
+    | InstructionAttributes::HAS_BND.bits()
+    | InstructionAttributes::HAS_XACQUIRE.bits()
+    | InstructionAttributes::HAS_XRELEASE.bits()
+    | InstructionAttributes::HAS_BRANCH_NOT_TAKEN.bits()
+    | InstructionAttributes::HAS_BRANCH_TAKEN.bits()
+    | InstructionAttributes::HAS_NOTRACK.bits()
+    | InstructionAttributes::HAS_SEGMENT_CS.bits()
+    | InstructionAttributes::HAS_SEGMENT_SS.bits()
+    | InstructionAttributes::HAS_SEGMENT_DS.bits()
+    | InstructionAttributes::HAS_SEGMENT_ES.bits()
+    | InstructionAttributes::HAS_SEGMENT_FS.bits()
+    | InstructionAttributes::HAS_SEGMENT_GS.bits();
+
 impl Mnemonic {
     /// Returns the static string corresponding to this mnemonic.
     ///
@@ -42,6 +60,18 @@ impl Mnemonic {
     #[deprecated(since = "4.0.0", note = "use `static_string()` instead")]
     pub fn get_string(self) -> Option<&'static str> {
         self.static_string()
+    }
+
+    /// Shorthand for `EncoderRequest::new32(mnem)`.
+    #[cfg(feature = "encoder")]
+    pub fn build32(self) -> EncoderRequest {
+        EncoderRequest::new32(self)
+    }
+
+    /// Shorthand for `EncoderRequest::new64(mnem)`.
+    #[cfg(feature = "encoder")]
+    pub fn build64(self) -> EncoderRequest {
+        EncoderRequest::new64(self)
     }
 }
 

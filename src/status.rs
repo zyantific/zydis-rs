@@ -116,6 +116,7 @@ impl Status {
             Status::SkipToken => "skip this token",
             Status::User => "user error",
             Status::NotUTF8 => "invalid utf8 data was passed to rust",
+            Status::ImpossibleInstruction => "requested impossible instruction",
             _ => "unknown error",
         }
     }

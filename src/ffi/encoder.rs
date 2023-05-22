@@ -33,7 +33,7 @@ pub struct OperandPointer {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-pub struct Operand {
+pub struct EncoderOperand {
     pub ty: OperandType,
     pub reg: OperandRegister,
     pub mem: OperandMemory,
@@ -68,7 +68,7 @@ pub struct MvexFeatures {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-pub struct Request {
+pub struct EncoderRequest {
     pub machine_mode: MachineMode,
     pub allowed_encodings: EncodableEncoding,
     pub mnemonic: Mnemonic,
@@ -77,22 +77,22 @@ pub struct Request {
     pub branch_width: BranchWidth,
     pub address_size_hint: AddressSizeHint,
     pub operand_size_hint: OperandSizeHint,
-    pub operand_count: u8,
-    pub operands: [Operand; ENCODER_MAX_OPERANDS],
+    pub(crate) operand_count: u8,
+    pub(crate) operands: [EncoderOperand; ENCODER_MAX_OPERANDS],
     pub evex: EvexFeatures,
     pub mvex: MvexFeatures,
 }
 
 extern "C" {
     pub fn ZydisEncoderEncodeInstructionAbsolute(
-        request: *const Request,
+        request: *const EncoderRequest,
         buffer: *mut c_void,
         length: *mut usize,
         runtime_address: u64,
     ) -> Status;
 
     pub fn ZydisEncoderEncodeInstruction(
-        request: *const Request,
+        request: *const EncoderRequest,
         buffer: *mut c_void,
         length: *mut usize,
     ) -> Status;
@@ -101,7 +101,7 @@ extern "C" {
         instruction: *const DecodedInstruction,
         operands: *const DecodedOperand,
         operand_count: u8,
-        request: *mut Request,
+        request: *mut EncoderRequest,
     ) -> Status;
 
     pub fn ZydisEncoderNopFill(buffer: *mut c_void, length: usize) -> Status;

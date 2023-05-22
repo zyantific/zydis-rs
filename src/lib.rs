@@ -5,12 +5,16 @@
 #[macro_use]
 mod status;
 mod decoder;
+#[cfg(feature = "encoder")]
+mod encoder;
 mod enums;
 pub mod ffi;
 #[cfg(feature = "formatter")]
 mod formatter;
 
 pub use decoder::*;
+#[cfg(feature = "encoder")]
+pub use encoder::*;
 pub use enums::*;
 #[cfg(feature = "formatter")]
 pub use formatter::*;
