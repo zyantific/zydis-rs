@@ -15,6 +15,7 @@ pub struct Decoder {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum DecodedOperandKind {
+    Unused,
     Reg(Register),
     Mem(MemoryInfo),
     Ptr(PointerInfo),
