@@ -10,9 +10,7 @@ pub mod ffi;
 #[cfg(feature = "formatter")]
 mod formatter;
 
-#[cfg(feature = "full-decoder")]
-pub use decoder::{AllOperands, OperandArrayVec, Operands, VisibleOperands};
-pub use decoder::{Decoder, NoOperands};
+pub use decoder::*;
 pub use enums::*;
 #[cfg(feature = "formatter")]
 pub use formatter::*;
