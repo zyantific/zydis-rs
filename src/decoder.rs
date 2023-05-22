@@ -140,7 +140,7 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
 
 /// Basic information about an instruction.
 ///
-/// Instruction information can be accessed via [`Deref`].
+/// Instruction information can be accessed via [`core::ops::Deref`].
 #[derive(Debug, Clone)]
 pub struct Instruction<O: Operands> {
     info: ffi::DecodedInstruction,
