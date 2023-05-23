@@ -140,7 +140,28 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
 
 /// Basic information about an instruction.
 ///
-/// Instruction information can be accessed via [`core::ops::Deref`].
+/// Instruction information can be accessed via [`core::ops::Deref`]. Please 
+/// refer to [`ffi::DecodedInstruction`] for a list of available fields.
+#[cfg_attr(feature = "full-decoder", doc = r##"
+# Example
+
+```rust
+# use zydis::*;
+let ins: Instruction<VisibleOperands> = Decoder::new64()
+    .decode_first(b"\xEB\xFE")
+    .unwrap()
+    .unwrap();
+
+assert_eq!(ins.mnemonic, Mnemonic::JMP); // `.mnemonic` accessed via Deref impl!
+assert_eq!(ins.operands().len(), 1);
+
+let ffi::DecodedOperandKind::Imm(imm) = &ins.operands()[0].kind else {
+    unreachable!() 
+};
+
+assert_eq!(imm.value, -2i64 as u64);
+```
+"##)]
 #[derive(Debug, Clone)]
 pub struct Instruction<O: Operands> {
     info: ffi::DecodedInstruction,
@@ -181,7 +202,7 @@ impl fmt::Display for Instruction<NoOperands> {
 
 #[cfg(feature = "full-decoder")]
 impl<const N: usize> Instruction<OperandArrayVec<N>> {
-    /// Drops the operands, turning it into [`Instruction<NoOperands>`].
+    /// Drops the operands, turning this object into [`Instruction<NoOperands>`].
     pub fn drop_operands(self) -> Instruction<NoOperands> {
         Instruction {
             info: self.info,
