@@ -266,6 +266,7 @@ pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
 
 /// Decode and store operands in a static array buffer.
 #[cfg(feature = "full-decoder")]
+#[derive(Debug, Clone)]
 pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
     // TODO: use maybeuninit here
     operands: [ffi::DecodedOperand; MAX_OPERANDS],
