@@ -266,7 +266,7 @@ pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
 
 /// Decode and store operands in a static array buffer.
 #[cfg(feature = "full-decoder")]
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Hash)]
 pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
     // TODO: use maybeuninit here
     operands: [ffi::DecodedOperand; MAX_OPERANDS],
@@ -311,3 +311,11 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
         &self.operands[..self.num_initialized]
     }
 }
+
+impl<const MAX_OPERANDS: usize> PartialEq for OperandArrayVec<MAX_OPERANDS> {
+    fn eq(&self, other: &Self) -> bool {
+        self.operands().eq(other.operands())
+    }
+}
+
+impl<const MAX_OPERANDS: usize> Eq for OperandArrayVec<MAX_OPERANDS> {}
