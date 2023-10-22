@@ -162,7 +162,7 @@ let ffi::DecodedOperandKind::Imm(imm) = &ins.operands()[0].kind else {
 assert_eq!(imm.value, -2i64 as u64);
 ```
 "##)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Instruction<O: Operands> {
     info: ffi::DecodedInstruction,
     operands: O,
@@ -243,7 +243,7 @@ pub trait Operands {
 }
 
 /// Don't decode or store any operands.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NoOperands;
 
 impl Operands for NoOperands {
@@ -266,7 +266,7 @@ pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
 
 /// Decode and store operands in a static array buffer.
 #[cfg(feature = "full-decoder")]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
     // TODO: use maybeuninit here
     operands: [ffi::DecodedOperand; MAX_OPERANDS],
