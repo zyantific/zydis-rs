@@ -312,10 +312,12 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
     }
 }
 
+#[cfg(feature = "full-decoder")]
 impl<const MAX_OPERANDS: usize> PartialEq for OperandArrayVec<MAX_OPERANDS> {
     fn eq(&self, other: &Self) -> bool {
         self.operands().eq(other.operands())
     }
 }
 
+#[cfg(feature = "full-decoder")]
 impl<const MAX_OPERANDS: usize> Eq for OperandArrayVec<MAX_OPERANDS> {}
