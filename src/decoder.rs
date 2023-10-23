@@ -1,5 +1,5 @@
 use crate::*;
-use core::{fmt, marker::PhantomData, mem::MaybeUninit, ops};
+use core::{fmt, hash, marker::PhantomData, mem, mem::MaybeUninit, ops, ptr};
 
 /// Decodes raw instruction bytes into a machine-readable struct.
 #[derive(Clone, Debug)]
@@ -269,10 +269,8 @@ pub type AllOperands = OperandArrayVec<MAX_OPERAND_COUNT>;
 
 /// Decode and store operands in a static array buffer.
 #[cfg(feature = "full-decoder")]
-#[derive(Debug, Clone, Hash)]
 pub struct OperandArrayVec<const MAX_OPERANDS: usize> {
-    // TODO: use maybeuninit here
-    operands: [ffi::DecodedOperand; MAX_OPERANDS],
+    operands: [MaybeUninit<ffi::DecodedOperand>; MAX_OPERANDS],
     num_initialized: usize,
 }
 
@@ -283,35 +281,34 @@ impl<const MAX_OPERANDS: usize> Operands for OperandArrayVec<MAX_OPERANDS> {
         ctx: &ffi::DecoderContext,
         insn: &ffi::DecodedInstruction,
     ) -> Self {
-        use core::ptr;
-
         let num_operands = match MAX_OPERANDS {
             MAX_OPERAND_COUNT => usize::from(insn.operand_count),
             MAX_OPERAND_COUNT_VISIBLE => usize::from(insn.operand_count_visible),
             _ => unreachable!(),
         };
 
-        let mut ops = MaybeUninit::<Self>::uninit();
-        let ops_ptr = ops.as_mut_ptr();
         unsafe {
-            ptr::write(ptr::addr_of_mut!((*ops_ptr).num_initialized), num_operands);
+            let mut ops = OperandArrayVec {
+                num_initialized: num_operands,
+                operands: MaybeUninit::uninit().assume_init(),
+            };
 
             ffi::ZydisDecoderDecodeOperands(
                 decoder,
                 ctx,
                 insn,
-                ptr::addr_of_mut!((*ops_ptr).operands) as _,
+                ops.operands.as_mut_ptr() as _,
                 MAX_OPERANDS as u8,
             )
             .as_result()
             .expect("operand decoding should be infallible for valid arguments");
 
-            ops.assume_init()
+            ops
         }
     }
 
     fn operands(&self) -> &[ffi::DecodedOperand] {
-        &self.operands[..self.num_initialized]
+        unsafe { mem::transmute(&self.operands[..self.num_initialized]) }
     }
 }
 
@@ -324,3 +321,40 @@ impl<const MAX_OPERANDS: usize> PartialEq for OperandArrayVec<MAX_OPERANDS> {
 
 #[cfg(feature = "full-decoder")]
 impl<const MAX_OPERANDS: usize> Eq for OperandArrayVec<MAX_OPERANDS> {}
+
+#[cfg(feature = "full-decoder")]
+impl<const MAX_OPERANDS: usize> hash::Hash for OperandArrayVec<MAX_OPERANDS> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.operands().hash(state);
+    }
+}
+
+#[cfg(feature = "full-decoder")]
+impl<const MAX_OPERANDS: usize> Clone for OperandArrayVec<MAX_OPERANDS> {
+    fn clone(&self) -> Self {
+        unsafe {
+            let mut operands: [MaybeUninit<ffi::DecodedOperand>; MAX_OPERANDS] =
+                MaybeUninit::uninit().assume_init();
+
+            ptr::copy_nonoverlapping(
+                self.operands.as_ptr(),
+                operands.as_mut_ptr(),
+                self.num_initialized,
+            );
+
+            Self {
+                num_initialized: self.num_initialized,
+                operands,
+            }
+        }
+    }
+}
+
+#[cfg(feature = "full-decoder")]
+impl<const MAX_OPERANDS: usize> fmt::Debug for OperandArrayVec<MAX_OPERANDS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("OperandArrayVec")
+            .field(&self.operands())
+            .finish()
+    }
+}
