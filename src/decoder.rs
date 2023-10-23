@@ -140,9 +140,11 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
 
 /// Basic information about an instruction.
 ///
-/// Instruction information can be accessed via [`core::ops::Deref`]. Please 
+/// Instruction information can be accessed via [`core::ops::Deref`]. Please
 /// refer to [`ffi::DecodedInstruction`] for a list of available fields.
-#[cfg_attr(feature = "full-decoder", doc = r##"
+#[cfg_attr(
+    feature = "full-decoder",
+    doc = r##"
 # Example
 
 ```rust
@@ -161,7 +163,8 @@ let ffi::DecodedOperandKind::Imm(imm) = &ins.operands()[0].kind else {
 
 assert_eq!(imm.value, -2i64 as u64);
 ```
-"##)]
+"##
+)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Instruction<O: Operands> {
     info: ffi::DecodedInstruction,
