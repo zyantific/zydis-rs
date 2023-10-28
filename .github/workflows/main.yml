@@ -38,3 +38,15 @@ jobs:
         run: cargo build ${{ matrix.extra_args }}
       - name: Test
         run: cargo test ${{ matrix.extra_args }}
+
+  check_rustfmt:
+    name: "rustfmt"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with: { submodules: recursive }
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check rustfmt
+        run: cargo fmt -- --check
