@@ -138,6 +138,10 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
     }
 }
 
+/// Convenience alias for an instruction with full operand information.
+#[cfg(feature = "full-decoder")]
+pub type FullInstruction = Instruction<AllOperands>;
+
 /// Basic information about an instruction.
 ///
 /// Instruction information can be accessed via [`core::ops::Deref`]. Please
