@@ -8,6 +8,9 @@ keywords = ["disassembler", "x86", "amd64", "decoder"]
 repository = "https://github.com/zyantific/zydis-rs/"
 edition = "2021"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [build-dependencies]
 cmake = "0.1"
 
