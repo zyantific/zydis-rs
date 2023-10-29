@@ -38,11 +38,8 @@ macro_rules! zeroed {
 /// let mov = insn32!(MOV EDX, 0x1234).encode();
 /// assert_eq!(mov.unwrap(), b"\xBA\x34\x12\x00\x00");
 ///
-/// // Dynamically computed operands are possible with parenthesis.
-/// // All identifiers outside of parenthesis are treated as registers.
-/// let dyn_disp: i64 = calc_some_disp();
 /// let dyn_imm: i64 = calc_some_imm();
-/// insn64!(MOV qword ptr [RAX + (dyn_disp + 99)], (dyn_imm))
+/// insn64!(MOV qword ptr [RAX + (calc_some_disp() + 99)], (dyn_imm))
 ///     .encode()
 ///     .unwrap();
 /// ```
