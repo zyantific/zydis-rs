@@ -659,11 +659,28 @@ macro_rules! insn_munch_operands {
 
 /// Macro for conveniently creating encoder requests (64-bit variant).
 ///
+/// The mnemonic is automatically qualified by prefixing `Mnemonic::$mnemonic`.
+/// All identifiers within the operands are automatically qualified as
+/// `Register::$reg`.
+///
+/// If you wish to insert variables or expressions, you need to wrap them
+/// into parenthesis. The parenthesized expression must eval to something
+/// that conforms to `impl Into<EncoderOperand>`.
+///
 /// Produces an [`EncoderRequest`] instance.
 ///
 /// ```rust
 /// # use zydis::*;
-/// insn64!(MOV RAX, 1234);
+/// insn64!(MOV RAX, 1234).encode().unwrap();
+/// insn64!(VPADDD YMM1, YMM2, YMM3).encode().unwrap();
+/// insn64!(CMP CL, byte ptr [RIP + 10]).encode().unwrap();
+///
+/// // Variables and expressions must be wrapped in parenthesis.
+/// let some_reg = Register::RSI;
+/// let some_imm = 0x1234;
+/// insn64!(PUSH (some_reg)).encode().unwrap();
+/// insn64!(PUSH (some_imm + 123)).encode().unwrap();
+/// insn64!(MOV RSI, (Register::RDI)).encode().unwrap();
 /// ```
 #[macro_export]
 macro_rules! insn64 {
