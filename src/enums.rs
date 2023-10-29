@@ -4,7 +4,7 @@
 mod generated;
 
 pub use self::generated::*;
-use super::{ffi, EncoderRequest};
+use super::ffi;
 use bitflags::bitflags;
 use core::fmt;
 #[cfg(feature = "serialization")]
@@ -64,14 +64,14 @@ impl Mnemonic {
 
     /// Shorthand for `EncoderRequest::new32(mnem)`.
     #[cfg(feature = "encoder")]
-    pub fn build32(self) -> EncoderRequest {
-        EncoderRequest::new32(self)
+    pub fn build32(self) -> crate::EncoderRequest {
+        crate::EncoderRequest::new32(self)
     }
 
     /// Shorthand for `EncoderRequest::new64(mnem)`.
     #[cfg(feature = "encoder")]
-    pub fn build64(self) -> EncoderRequest {
-        EncoderRequest::new64(self)
+    pub fn build64(self) -> crate::EncoderRequest {
+        crate::EncoderRequest::new64(self)
     }
 }
 
