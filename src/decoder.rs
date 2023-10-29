@@ -229,12 +229,21 @@ impl<O: Operands> Instruction<O> {
         }
     }
 
-    /// Retrieve the operand array.
+    /// Get the full operand array.
     ///
     /// If `O` is [`NoOperands`], this always returns an empty slice.
     #[inline]
     pub fn operands(&self) -> &[ffi::DecodedOperand] {
         self.operands.operands()
+    }
+
+    /// Retrieve the visible operands.
+    ///
+    /// If `O` is [`NoOperands`], this always returns an empty slice.
+    #[inline]
+    pub fn visible_operands(&self) -> &[ffi::DecodedOperand] {
+        let visible = self.info.operand_count_visible as usize;
+        &self.operands.operands()[..visible]
     }
 }
 
