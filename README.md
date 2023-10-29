@@ -5,7 +5,8 @@ Zydis Rust Bindings
 [![docs.rs][docs-badge]][docs-url]
 [![MIT licensed][mit-badge]][mit-url]
 
-Rust language bindings for [Zydis][zydis], a fast and lightweight x86/x86-64 disassembler library.
+Rust bindings for [Zydis][zydis], a fast and lightweight x86/x86-64 
+disassembler and code generator library.
 
 [crates-badge]: https://img.shields.io/crates/v/zydis.svg
 [crates-url]: https://crates.io/crates/zydis
