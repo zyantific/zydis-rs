@@ -287,6 +287,16 @@ impl EncoderRequest {
         }
     }
 
+    /// Appends the encoded instruction to the given buffer.
+    ///
+    /// On failure the output buffer remains untouched.
+    pub fn encode_extend(&self, mut buf: impl Extend<u8>) -> Result<usize> {
+        let mut tmp = [0; MAX_INSTRUCTION_LENGTH];
+        let length = self.encode_into(&mut tmp)?;
+        buf.extend(tmp.into_iter().take(length));
+        Ok(length)
+    }
+
     /// Encodes the instruction into a new buffer.
     pub fn encode(&self) -> Result<Vec<u8>> {
         let mut out = vec![0; MAX_INSTRUCTION_LENGTH];
