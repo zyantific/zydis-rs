@@ -1,7 +1,7 @@
 use crate::{ffi, *};
 use core::{
     mem::{self, ManuallyDrop, MaybeUninit},
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 /// Workaround for missing `const fn` in `core::mem::zeroed`.
@@ -24,9 +24,9 @@ macro_rules! zeroed {
 
 /// Describes an instruction to be encoded.
 ///
-/// # Examples
+/// ## Encoding new instructions from scratch  
 ///
-/// ## Using the [`insn32`] / [`insn64`] macros
+/// ### Using the [`insn32`] / [`insn64`] macros
 ///
 /// ```rust
 /// # use zydis::*;
@@ -47,7 +47,9 @@ macro_rules! zeroed {
 ///     .unwrap();
 /// ```
 ///
-/// ## Manually populating a request
+/// Please refer to the documentation on [`insn64`] for more details.
+///
+/// ### Manually populating a request
 ///
 /// ```rust
 /// # use zydis::*;
@@ -83,6 +85,8 @@ macro_rules! zeroed {
 /// assert_eq!(forever_long.unwrap(), b"\xE9\xFB\xFF\xFF\xFF")
 /// ```
 ///
+/// ### Helper methods on [`Mnemonic`]
+///
 /// There are also two helper functions [`Mnemonic::build32`] and
 /// [`Mnemonic::build64`] that allow for instantiating encoder requests in a
 /// slightly more compact fashion:
@@ -91,6 +95,33 @@ macro_rules! zeroed {
 /// # use zydis::*;
 /// let int3 = Mnemonic::INT3.build64().encode();
 /// assert_eq!(int3.unwrap(), b"\xCC");
+/// ```
+///
+/// ## Changing existing instructions
+///
+/// Previously decoded instructions can be converted into an encoder request.
+/// The encoder request can then be mutated in any way you wish before
+/// re-encoding it again.
+///
+/// ```
+/// # use zydis::*;
+/// let decoder = Decoder::new64();
+/// let add = b"\x83\x05\x45\x23\x01\x00\x11";
+///
+/// // Decode the instruction.
+/// let decoded: FullInstruction = decoder.decode_first(add).unwrap().unwrap();
+/// assert_eq!(decoded.to_string(), "add dword ptr [rip+0x12345], 0x11");
+///
+/// // Convert it into an encoder request, change some stuff and re-encode it.
+/// let reencoded = EncoderRequest::from(decoded)
+///     .set_mnemonic(Mnemonic::SUB)
+///     .replace_operand(1, 0x22)
+///     .encode().unwrap();
+/// assert_eq!(reencoded, b"\x83\x2D\x45\x23\x01\x00\x22");
+///
+/// // Decode & format it again for demonstration purposes.
+/// let redec: FullInstruction = decoder.decode_first(&reencoded).unwrap().unwrap();
+/// assert_eq!(redec.to_string(), "sub dword ptr [rip+0x12345], 0x22");
 /// ```
 #[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -101,6 +132,12 @@ impl Deref for EncoderRequest {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for EncoderRequest {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -121,6 +158,12 @@ impl EncoderRequest {
         request.machine_mode = machine_mode;
         request.mnemonic = mnemonic;
         Self(request)
+    }
+
+    /// Sets the mnemonic.
+    pub const fn set_mnemonic(mut self, mnemonic: Mnemonic) -> Self {
+        self.0.mnemonic = mnemonic;
+        self
     }
 
     /// Sets the prefixes.
@@ -257,11 +300,12 @@ impl EncoderRequest {
 impl<const N: usize> From<Instruction<OperandArrayVec<N>>> for EncoderRequest {
     fn from(instr: Instruction<OperandArrayVec<N>>) -> Self {
         unsafe {
+            let ops = instr.visible_operands();
             let mut request = MaybeUninit::uninit();
             ffi::ZydisEncoderDecodedInstructionToEncoderRequest(
                 &*instr,
-                instr.operands().as_ptr(),
-                instr.operands().len() as _,
+                ops.as_ptr(),
+                ops.len() as _,
                 request.as_mut_ptr(),
             )
             .as_result()
@@ -275,6 +319,9 @@ impl<const N: usize> From<Instruction<OperandArrayVec<N>>> for EncoderRequest {
 }
 
 /// Describes an operand in an [`EncoderRequest`].
+///
+/// You'll likely not want to construct these explicitly in most cases
+/// and instead rely on the [`From`] implementations.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct EncoderOperand(ffi::EncoderOperand);
@@ -287,11 +334,20 @@ impl EncoderOperand {
 
     /// Creates a new register operand.
     pub const fn reg(reg: Register) -> Self {
+        Self::reg_is4(reg, false)
+    }
+
+    /// Creates a new register operand and specify `is4`.
+    ///
+    /// > Is this 4th operand (`VEX`/`XOP`). Despite its name, `is4` encoding can sometimes be
+    /// > applied to 3rd operand instead of 4th. This field is used to resolve such ambiguities.
+    /// > For all other operands it should be set to `ZYAN_FALSE`.
+    pub const fn reg_is4(reg: Register, is4: bool) -> Self {
         Self(ffi::EncoderOperand {
             ty: OperandType::REGISTER,
             reg: ffi::OperandRegister {
                 value: reg as _,
-                is4: false,
+                is4,
             },
             mem: Self::ZERO_MEM,
             ptr: Self::ZERO_PTR,
@@ -381,6 +437,12 @@ impl Deref for EncoderOperand {
     }
 }
 
+impl DerefMut for EncoderOperand {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl From<Register> for EncoderOperand {
     fn from(reg: Register) -> Self {
         Self::reg(reg)
@@ -397,8 +459,17 @@ macro_rules! impl_imm_from_primitive {
     )*};
 }
 
+#[rustfmt::skip]
 impl_imm_from_primitive![
-    u64 as u64, u32 as u64, u16 as u64, u8 as u64, i64 as i64, i32 as i64, i16 as i64, i8 as i64
+    u64 as u64,
+    u32 as u64,
+    u16 as u64,
+    u8  as u64,
+    
+    i64 as i64,
+    i32 as i64,
+    i16 as i64,
+    i8  as i64
 ];
 
 #[doc(hidden)]
@@ -589,6 +660,11 @@ macro_rules! insn_munch_operands {
 /// Macro for conveniently creating encoder requests (64-bit variant).
 ///
 /// Produces an [`EncoderRequest`] instance.
+///
+/// ```rust
+/// # use zydis::*;
+/// insn64!(MOV RAX, 1234);
+/// ```
 #[macro_export]
 macro_rules! insn64 {
     ($mnemonic:ident $($operands:tt)*) => {{
@@ -600,7 +676,7 @@ macro_rules! insn64 {
 
 /// Macro for conveniently creating encoder requests (32-bit variant).
 ///
-/// Produces an [`EncoderRequest`] instance.
+/// See [`insn64`] for more details: this macro works exactly the same.
 #[macro_export]
 macro_rules! insn32 {
     ($mnemonic:ident $($operands:tt)*) => {{
