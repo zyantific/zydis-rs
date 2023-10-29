@@ -78,3 +78,5 @@ has a corresponding git tag.
 | v0.0.1   | [v2.0.0-develop@4a79d57](https://github.com/zyantific/zydis/tree/4a79d5762ea7f15a5961733cc6d3a7704d3d5206) |
 
 </details>
+
+<!-- for some reason this comment is required to not break MD parsing in rustdoc -->

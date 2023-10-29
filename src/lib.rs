@@ -2,6 +2,13 @@
 #![cfg_attr(feature = "formatter", doc = include_str!("../README.md"))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+//! ## Navigation
+//!
+//! - [Decode instructions and process them programmatically][`Decoder`]
+//! - [Format instructions to human-readable text][`Formatter`]
+//! - [Decode, change and re-encode instructions][`EncoderRequest`]
+//! - [Encode new instructions from scratch][`EncoderRequest`]
+
 #[macro_use]
 mod status;
 mod decoder;
