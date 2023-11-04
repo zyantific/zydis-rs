@@ -546,10 +546,12 @@ macro_rules! mem_impl {
     };
     (@index_or_disp_or_scale $x:ident + $index:ident $($tail:tt)*) => {
         $x.index = $crate::Register::$index;
+        $x.scale = 1;
         $crate::mem_impl!(@scale_or_disp $x $($tail)*);
     };
     (@index_or_disp_or_scale $x:ident + ($index:expr) $($tail:tt)*) => {
         $x.index = $index;
+        $x.scale = 1;
         $crate::mem_impl!(@scale_or_disp $x $($tail)*);
     };
     (@index_or_disp_or_scale $x:ident * $scale:literal $($tail:tt)*) => {
@@ -756,6 +758,7 @@ mod tests {
                 size: 8,
                 base: R::RAX,
                 index: R::RDX,
+                scale: 1,
                 ..EncoderOperand::ZERO_MEM
             })
         );
