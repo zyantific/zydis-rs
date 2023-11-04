@@ -55,5 +55,9 @@ name = "instruction_segments"
 required-features = ["full-decoder"]
 
 [[example]]
+name = "encode_manually"
+required-features = ["encoder"]
+
+[[example]]
 name = "decoded_to_encoder_req"
 required-features = ["encoder"]
