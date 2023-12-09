@@ -98,11 +98,16 @@ pub struct ImmediateInfo {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct AccessedFlags<FlagType> {
-    tested: FlagType,
-    modified: FlagType,
-    set_0: FlagType,
-    set_1: FlagType,
-    undefined: FlagType,
+    /// Flags that may be read by the instruction.
+    pub tested: FlagType,
+    /// Flags that may be modified by the instruction.
+    pub modified: FlagType,
+    /// Flags that the instruction sets to 0.
+    pub set_0: FlagType,
+    /// Flags that the instruction sets to 1.
+    pub set_1: FlagType,
+    /// Flags where access behavior is undefined / CPU model specific.
+    pub undefined: FlagType,
 }
 
 // NOTE: can't implement `deserialize` due to the static refs (no easy way to
