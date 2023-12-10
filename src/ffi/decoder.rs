@@ -145,9 +145,9 @@ pub struct DecodedInstruction {
     /// The bits in the masks correspond to the actual bits in the
     /// `FLAGS/EFLAGS/RFLAGS` register.
     // https://github.com/zyantific/zydis/issues/319
-    pub cpu_flags: Option<&'static AccessedFlags<CpuFlag>>,
+    pub cpu_flags: &'static AccessedFlags<CpuFlag>,
     /// Information about FPU flags accessed by the instruction.
-    pub fpu_flags: Option<&'static AccessedFlags<FpuFlag>>,
+    pub fpu_flags: &'static AccessedFlags<FpuFlag>,
     /// Extended information for `AVX` instructions.
     pub avx: AvxInfo,
     /// Meta info.
