@@ -304,7 +304,7 @@ impl fmt::Display for OutputBuffer<'_> {
 #[repr(C)]
 // needed, since we cast a *const ZydisFormatter to a *const Formatter and the
 // rust compiler could reorder the fields if this wasn't #[repr(C)].
-pub struct Formatter<UserData> {
+pub struct Formatter<UserData = ()> {
     formatter: ffi::Formatter,
 
     pre_instruction: Option<Box<WrappedGeneralFunc<UserData>>>,
