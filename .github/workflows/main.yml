@@ -18,6 +18,7 @@ jobs:
           - name: "Linux (all features)"
             image_name: "ubuntu-22.04"
             extra_args: "--all-features"
+            do_struct_checks: true
           - name: "Linux (minimal)"
             image_name: "ubuntu-22.04"
             extra_args: "--no-default-features"
@@ -35,7 +36,34 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Build
-        run: cargo build ${{ matrix.extra_args }}
+        run: cargo build --all --examples ${{ matrix.extra_args }}
+      - name: Validate FFI structs
+        if: matrix.do_struct_checks
+        run: |
+          set -eu
+
+          executable=target/debug/examples/pattern
+          if [[ ! -f "${executable}" ]]; then
+            echo "Test executable '${executable}' not built: skipping test"
+            exit 0
+          fi
+
+          sudo apt-get -qq install -y gdb
+
+          gdb -q "${executable}" -batch \
+            -ex 'source validate-structs.py' \
+            1>script-out.txt 2>gdb-stderr.txt
+
+          if [[ $(cat ./script-out.txt) != *"ALL STRUCTS OK"* ]]; then
+            echo >&2 "ERROR: struct validation failed!"
+            echo >&2 "================================"
+            cat  >&2 ./gdb-stderr.txt
+            echo >&2 "================================"
+            cat  >&2 ./script-out.txt
+            exit 1
+          fi
+
+          echo PASSED.
       - name: Test
         run: cargo test ${{ matrix.extra_args }}
 
