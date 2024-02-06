@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct Decoder {
     machine_mode: MachineMode,
     stack_width: StackWidth,
-    decoder_mode: [bool; DECODER_MODE_MAX_VALUE + 1],
+    decoder_mode: u32,
 }
 
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
