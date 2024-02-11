@@ -5,9 +5,9 @@ use core::{fmt, result};
 /// A convenience alias for a Result, holding either a value or a status.
 pub type Result<T = ()> = result::Result<T, Status>;
 
-const ZYAN_MODULE_ZYCORE: usize = 0x1;
-const ZYAN_MODULE_ZYDIS: usize = 0x2;
-const ZYAN_MODULE_USER: usize = 0x3FF;
+pub const ZYAN_MODULE_ZYCORE: usize = 0x1;
+pub const ZYAN_MODULE_ZYDIS: usize = 0x2;
+pub const ZYAN_MODULE_USER: usize = 0x3FF;
 
 macro_rules! make_status {
     ($error:expr, $module:expr, $code:expr) => {
@@ -57,7 +57,11 @@ impl Status {
         (self as usize) & 0xFFFFF
     }
 
-    /// Returns the module of this status.
+    /// Returns the module / ID space of this status code.
+    ///
+    /// Search doc for "ZYAN_MODULE" for the corresponding constants. This is 
+    /// doesn't return an enum because user-defined functions (e.g. formatter
+    /// hooks) can return arbitrary values.
     pub fn module(self) -> usize {
         (self as usize >> 20) & 0x7FF
     }
