@@ -18,7 +18,7 @@ disassembler and code generator library.
 
 ```toml
 [dependencies]
-zydis = "4.0.0-beta.4"
+zydis = "4.1.0"
 ```
 
 ## Example

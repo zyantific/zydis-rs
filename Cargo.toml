@@ -1,6 +1,6 @@
 [package]
 name = "zydis"
-version = "4.1.0-beta.1"
+version = "4.1.0"
 authors = ["Joel Höner <joel@zyantific.com>", "Timo von Hartz <th0rex@zyantific.com>"]
 description = "Bindings for Zydis"
 license = "MIT"
