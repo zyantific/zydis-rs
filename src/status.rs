@@ -8,6 +8,7 @@ pub type Result<T = ()> = result::Result<T, Status>;
 pub const ZYAN_MODULE_ZYCORE: usize = 0x1;
 pub const ZYAN_MODULE_ZYDIS: usize = 0x2;
 pub const ZYAN_MODULE_USER: usize = 0x3FF;
+pub const ZYAN_MODULE_ZYDIS_RS: usize = ZYAN_MODULE_USER + 0x42;
 
 macro_rules! make_status {
     ($error:expr, $module:expr, $code:expr) => {
@@ -46,9 +47,12 @@ pub enum Status {
     SkipToken = make_status!(0, ZYAN_MODULE_ZYDIS, 0x0B),
     ImpossibleInstruction = make_status!(1, ZYAN_MODULE_ZYDIS, 0x0C),
 
-    User = make_status!(1, ZYAN_MODULE_USER, 0x00),
-    NotUTF8 = make_status!(1, ZYAN_MODULE_USER, 0x01),
-    FormatterError = make_status!(1, ZYAN_MODULE_USER, 0x02),
+    /// Generic user-defined error (e.g. for use in formatter hooks).
+    User = make_status!(1, ZYAN_MODULE_ZYDIS_RS, 0x00),
+    /// String isn't UTF8 encoded.
+    NotUTF8 = make_status!(1, ZYAN_MODULE_ZYDIS_RS, 0x01),
+    /// Rust formatter returned an error.
+    FormatterError = make_status!(1, ZYAN_MODULE_ZYDIS_RS, 0x02),
 }
 
 impl Status {
@@ -59,7 +63,7 @@ impl Status {
 
     /// Returns the module / ID space of this status code.
     ///
-    /// Search doc for "ZYAN_MODULE" for the corresponding constants. This is 
+    /// Search doc for "ZYAN_MODULE" for the corresponding constants. This is
     /// doesn't return an enum because user-defined functions (e.g. formatter
     /// hooks) can return arbitrary values.
     pub fn module(self) -> usize {
