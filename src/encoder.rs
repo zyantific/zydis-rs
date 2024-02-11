@@ -1,3 +1,5 @@
+extern crate alloc;
+use alloc::{vec, vec::Vec};
 use crate::{ffi, *};
 use core::{
     mem::{self, ManuallyDrop, MaybeUninit},
