@@ -14,6 +14,8 @@ fn build_library() {
     config
         .define("ZYDIS_BUILD_EXAMPLES", "OFF")
         .define("ZYDIS_BUILD_TOOLS", "OFF")
+        .define("ZYDIS_BUILD_TESTS", "OFF")
+        .define("ZYDIS_BUILD_DOXYGEN", "OFF")
         .define("ZYDIS_FEATURE_DECODER", "ON");
 
     config.define(
