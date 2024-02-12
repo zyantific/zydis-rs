@@ -8,6 +8,7 @@
 //! - [Format instructions to human-readable text][`Formatter`]
 //! - [Decode, change and re-encode instructions][`EncoderRequest`]
 //! - [Encode new instructions from scratch][`EncoderRequest`]
+extern crate alloc;
 
 #[macro_use]
 mod status;
