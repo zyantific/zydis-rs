@@ -1,5 +1,7 @@
 use crate::*;
-use core::{fmt, hash, marker::PhantomData, mem, mem::MaybeUninit, ops, ptr};
+use core::{fmt, marker::PhantomData, mem::MaybeUninit, ops};
+#[cfg(feature = "full-decoder")]
+use core::{hash, mem, ptr};
 
 /// Decodes raw instruction bytes into a machine-readable struct.
 #[derive(Clone, Debug)]
