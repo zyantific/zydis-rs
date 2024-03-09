@@ -1,4 +1,5 @@
 use crate::{ffi, *};
+use alloc::{vec, vec::Vec};
 use core::{
     mem::{self, ManuallyDrop, MaybeUninit},
     ops::{Deref, DerefMut},
@@ -102,6 +103,7 @@ macro_rules! zeroed {
 ///
 /// ```
 /// # use zydis::*;
+/// # #[cfg(feature = "formatter")] {
 /// let decoder = Decoder::new64();
 /// let add = b"\x83\x05\x45\x23\x01\x00\x11";
 ///
@@ -119,6 +121,7 @@ macro_rules! zeroed {
 /// // Decode & format it again for demonstration purposes.
 /// let redec: FullInstruction = decoder.decode_first(&reencoded).unwrap().unwrap();
 /// assert_eq!(redec.to_string(), "sub dword ptr [rip+0x12345], 0x22");
+/// # }
 /// ```
 #[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -295,6 +298,7 @@ impl EncoderRequest {
     }
 
     /// Encodes the instruction into a new buffer.
+    #[cfg(feature = "alloc")]
     pub fn encode(&self) -> Result<Vec<u8>> {
         let mut out = vec![0; MAX_INSTRUCTION_LENGTH];
         let length = self.encode_into(&mut out[..])?;
@@ -712,7 +716,7 @@ macro_rules! insn32 {
     }}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "formatter"))]
 mod tests {
     use super::*;
 

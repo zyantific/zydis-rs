@@ -9,6 +9,9 @@
 //! - [Decode, change and re-encode instructions][`EncoderRequest`]
 //! - [Encode new instructions from scratch][`EncoderRequest`]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 #[macro_use]
 mod status;
 mod decoder;

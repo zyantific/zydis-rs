@@ -23,10 +23,11 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [features]
 default = ["std", "full-decoder", "formatter"]
-std = []
+alloc = []
+std = ["alloc"]
 full-decoder = []
 formatter = ["std", "full-decoder"]
-encoder = ["full-decoder"]
+encoder = ["alloc", "full-decoder"]
 serialization = ["serde", "bitflags/serde"]
 nolibc = []
 
@@ -56,11 +57,11 @@ required-features = ["full-decoder"]
 
 [[example]]
 name = "encode_manually"
-required-features = ["encoder"]
+required-features = ["encoder", "formatter"]
 
 [[example]]
 name = "encode_macro"
-required-features = ["encoder"]
+required-features = ["encoder", "formatter"]
 
 [[example]]
 name = "decoded_to_encoder_req"
