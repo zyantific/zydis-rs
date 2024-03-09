@@ -22,12 +22,15 @@ jobs:
           - name: "Linux (minimal)"
             image_name: "ubuntu-22.04"
             extra_args: "--no-default-features"
-          - name: "Linux (decoder only)"
+          - name: "Linux (!std + decoder)"
             image_name: "ubuntu-22.04"
             extra_args: "--no-default-features --features full-decoder"
           - name: "Linux (encoder)"
             image_name: "ubuntu-22.04"
             extra_args: "--features encoder"
+          - name: "Linux (!std + full-decoder + encoder + formatter)"
+            image_name: "ubuntu-22.04"
+            extra_args: "--no-default-features --features full-decoder,encoder,formatter"
 
     steps:
       - name: Checkout
