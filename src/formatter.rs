@@ -3,11 +3,11 @@
 use core::{
     fmt,
     mem::{self, MaybeUninit},
+    ffi::{c_void, CStr},
     ptr,
 };
 
 use crate::decoder::{Instruction, OperandArrayVec};
-use core::ffi::{c_void, CStr};
 
 use super::{
     enums::*,
