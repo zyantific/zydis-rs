@@ -719,6 +719,7 @@ macro_rules! insn32 {
 #[cfg(all(test, feature = "formatter"))]
 mod tests {
     use super::*;
+    use alloc::string::ToString as _;
 
     #[test]
     fn insn_macro() {
