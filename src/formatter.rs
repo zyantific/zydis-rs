@@ -1,9 +1,10 @@
 //! Textual instruction formatting routines.
 
+use alloc::{borrow::ToOwned, boxed::Box, string::String};
 use core::{
+    ffi::{c_void, CStr},
     fmt,
     mem::{self, MaybeUninit},
-    ffi::{c_void, CStr},
     ptr,
 };
 
