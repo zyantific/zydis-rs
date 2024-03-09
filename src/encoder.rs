@@ -298,7 +298,6 @@ impl EncoderRequest {
     }
 
     /// Encodes the instruction into a new buffer.
-    #[cfg(feature = "alloc")]
     pub fn encode(&self) -> Result<Vec<u8>> {
         let mut out = vec![0; MAX_INSTRUCTION_LENGTH];
         let length = self.encode_into(&mut out[..])?;
