@@ -55,6 +55,10 @@ fn build_library() {
 
     println!("cargo:rustc-link-lib=static=Zydis");
     println!("cargo:rustc-link-lib=static=Zycore");
+
+    if cfg!(feature = "windows-kernel") {
+        println!("cargo:rustc-link-lib=BufferOverflowK");
+    }
 }
 
 fn main() {

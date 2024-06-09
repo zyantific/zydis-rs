@@ -30,6 +30,7 @@ formatter = ["alloc", "full-decoder"]
 encoder = ["alloc", "full-decoder"]
 serialization = ["serde", "bitflags/serde"]
 nolibc = []
+windows-kernel = []
 
 [[example]]
 name = "pattern"
