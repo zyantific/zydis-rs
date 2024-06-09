@@ -29,7 +29,8 @@ full-decoder = []
 formatter = ["alloc", "full-decoder"]
 encoder = ["alloc", "full-decoder"]
 serialization = ["serde", "bitflags/serde"]
-nolibc = []
+nolibc = ["no-stack-protector"]
+no-stack-protector = []
 
 [[example]]
 name = "pattern"

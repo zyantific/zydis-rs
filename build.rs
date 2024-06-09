@@ -35,11 +35,18 @@ fn build_library() {
         bool2cmake(env::var("CARGO_FEATURE_NOLIBC").is_ok()),
     );
 
-    let dst = config.build();
-
     let target = env::var("TARGET").unwrap_or("(unknown)".to_string());
     let is_msvc = target.ends_with("windows-msvc");
 
+    if env::var("CARGO_FEATURE_NO_STACK_PROTECTOR").is_ok() {
+        if is_msvc {
+            config.cflag("/GS-");
+        } else {
+            config.cflag("-fno-stack-protector");
+        }
+    }
+
+    let dst = config.build();
     let relative_build_dir = if is_msvc { config.get_profile() } else { "" };
 
     println!(
