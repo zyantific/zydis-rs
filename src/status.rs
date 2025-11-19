@@ -95,7 +95,7 @@ impl Status {
             }
             Status::DecodingError => {
                 "An general error occured while decoding the current instruction. The instruction \
-                 might be undfined."
+                 might be undefined."
             }
             Status::InstructionTooLong => {
                 "The instruction exceeded the maximum length of 15 bytes."
