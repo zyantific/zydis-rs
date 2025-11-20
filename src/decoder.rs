@@ -105,6 +105,7 @@ impl Decoder {
             decoder: self,
             buffer,
             ip,
+            sealed: false,
             _marker: PhantomData,
         }
     }
@@ -118,6 +119,7 @@ pub struct InstructionIter<'decoder, 'buffer, O: Operands> {
     decoder: &'decoder Decoder,
     buffer: &'buffer [u8],
     ip: u64,
+    sealed: bool,
     _marker: PhantomData<*const O>,
 }
 
@@ -126,6 +128,10 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
+        if self.sealed {
+            return None;
+        }
+
         match self.decoder.decode_first(self.buffer) {
             Ok(Some(insn)) => {
                 let ip = self.ip;
@@ -135,7 +141,10 @@ impl<'decoder, 'buffer, O: Operands> Iterator for InstructionIter<'decoder, 'buf
                 Some(Ok((ip, insn_bytes, insn)))
             }
             Ok(None) => None,
-            Err(e) => Some(Err(e)),
+            Err(e) => {
+                self.sealed = true;
+                Some(Err(e))
+            }
         }
     }
 }
@@ -371,5 +380,24 @@ impl<const MAX_OPERANDS: usize> fmt::Debug for OperandArrayVec<MAX_OPERANDS> {
         f.debug_tuple("OperandArrayVec")
             .field(&self.operands())
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Decoder;
+    use crate::NoOperands;
+
+    #[test]
+    fn decode_all_terminates() {
+        let decoder = Decoder::new64();
+        let mut iter = decoder.decode_all::<NoOperands>(&[0x06], 0);
+        assert!(matches!(iter.next(), Some(Err(_))));
+        assert!(iter.next().is_none());
+
+        let mut iter = decoder.decode_all::<NoOperands>(&[0x50, 0x06], 0);
+        assert!(matches!(iter.next(), Some(Ok(_))));
+        assert!(matches!(iter.next(), Some(Err(_))));
+        assert!(iter.next().is_none());
     }
 }
